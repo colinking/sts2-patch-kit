@@ -13,7 +13,7 @@ using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
 
-namespace MapMod.MapModCode;
+namespace ColinsPatchKit.ColinsPatchKitCode;
 
 // Vanilla NMapPoint.OnFocus only shows the room-history tooltip on previously
 // traveled nodes, explicitly skipping the node the player is currently on.
@@ -35,7 +35,7 @@ public static class CurrentNodeTooltipPatch
 
     private static void ShowCurrentNodeTooltip(NMapPoint point, IRunState runState, NMapScreen screen)
     {
-        if (!MapModConfig.ShowCurrentNodeTooltip)
+        if (!ColinsPatchKitConfig.ShowCurrentNodeTooltip)
         {
             return;
         }

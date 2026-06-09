@@ -10,9 +10,9 @@ config_version=5
 
 [application]
 
-config/name="MapMod"
+config/name="ColinsPatchKit"
 config/features=PackedStringArray("4.5", "C#", "Mobile")
-config/icon="res://MapMod/mod_image.png"
+config/icon="res://ColinsPatchKit/mod_image.png"
 
 [display]
 
@@ -24,7 +24,7 @@ window/stretch/aspect="expand"
 
 [dotnet]
 
-project/assembly_name="MapMod"
+project/assembly_name="ColinsPatchKit"
 
 [rendering]
 

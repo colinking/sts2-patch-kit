@@ -1,8 +1,8 @@
 {
-  "id": "MapMod",
-  "name": "Colin's Map Mod",
+  "id": "ColinsPatchKit",
+  "name": "Colin's Patch Kit",
   "author": "colinking",
-  "description": "Slay the Spire 2 map mod",
+  "description": "Slay the Spire 2 quality-of-life patches",
   "version": "v0.0.0",
   "has_pck": true,
   "has_dll": true,

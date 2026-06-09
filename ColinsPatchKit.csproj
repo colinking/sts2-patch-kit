@@ -38,17 +38,17 @@
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*"/>
         <!-- Generates a .pck file when building if only using simple assets. May not work on all setups. Uncomment to test. -->
         <!-- <PackageReference Include="BSchneppe.StS2.PckPacker" Version="0.1.1" PrivateAssets="All" /> -->
-        <AdditionalFiles Include="MapMod/localization/**/*.json"/> <!-- Used by analyzer -->
+        <AdditionalFiles Include="ColinsPatchKit/localization/**/*.json"/> <!-- Used by analyzer -->
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="MapMod/**"/>
+        <Compile Remove="ColinsPatchKit/**"/>
         <Compile Remove="materials/**"/>
         <Compile Remove="shaders/**"/>
         <Compile Remove="images/**"/>
         <Compile Remove=".godot/**"/>
         <Compile Remove="tmp/**"/>
-        <EmbeddedResource Remove="MapMod/**"/>
+        <EmbeddedResource Remove="ColinsPatchKit/**"/>
         <EmbeddedResource Remove="materials/**"/>
         <EmbeddedResource Remove="shaders/**"/>
         <EmbeddedResource Remove="images/**"/>
@@ -57,9 +57,9 @@
     <ItemGroup>
         <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props"/>
         <None Include=".gitignore"/>
-        <None Include="MapMod.json"/>
+        <None Include="ColinsPatchKit.json"/>
         <None Include="project.godot"/>
-        <None Include="MapMod/**"/>
+        <None Include="ColinsPatchKit/**"/>
     </ItemGroup>
 
     <Target Name="CheckDependencyPaths">
@@ -89,7 +89,7 @@
     </Target>
 
     <ItemGroup>
-        <GodotResourceFiles Include="MapMod/**"/>
+        <GodotResourceFiles Include="ColinsPatchKit/**"/>
     </ItemGroup>
 
     <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'" Inputs="@(GodotResourceFiles)" Outputs="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck">

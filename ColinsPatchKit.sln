@@ -1,6 +1,6 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMod", "MapMod.csproj", "{1F6D96F7-6103-49B3-B136-BA84D01E1AE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColinsPatchKit", "ColinsPatchKit.csproj", "{1F6D96F7-6103-49B3-B136-BA84D01E1AE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

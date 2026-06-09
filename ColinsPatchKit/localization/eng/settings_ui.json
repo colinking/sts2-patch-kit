@@ -1,0 +1,5 @@
+{
+  "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.title": "Show tooltip on current map node",
+  "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.hover.title": "Current Node Tooltip",
+  "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.hover.desc": "Show the room-history tooltip when hovering over the map node you are currently on, instead of only on previously visited nodes."
+}
