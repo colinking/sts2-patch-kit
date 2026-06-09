@@ -1,0 +1,11 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.DS_Store
+.idea
+.godot
+tmp
+MapMod.sln.DotSettings.user
+__pycache__

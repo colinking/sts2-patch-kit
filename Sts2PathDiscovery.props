@@ -1,0 +1,9 @@
+<Project>
+    <!-- Attempt to automatically discover the Slay the Spire 2 installation directory -->
+    <PropertyGroup>
+        <Sts2Path Condition="'$(Sts2Path)' == ''">/Applications/Slay the Spire 2.app/Contents/Resources/data</Sts2Path>
+        <Sts2Path Condition="'$(Sts2Path)' == '' and '$(SteamLibraryPath)' != ''">$(SteamLibraryPath)/steamapps/common/Slay the Spire 2</Sts2Path>
+        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)</Sts2DataDir>
+        <ModsPath Condition="'$(ModsPath)' == ''">$(Sts2DataDir)/Mods</ModsPath>
+    </PropertyGroup>
+</Project>
