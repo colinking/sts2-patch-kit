@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cj0egoab7os6l"
-path="res://.godot/imported/mod_image.png-5096d810e03e25863416de949b1c7971.ctex"
+path="res://.godot/imported/mod_image.png-4fe3b46b686d9e78981f5dfd5c57f377.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://MapMod/mod_image.png"
-dest_files=["res://.godot/imported/mod_image.png-5096d810e03e25863416de949b1c7971.ctex"]
+dest_files=["res://.godot/imported/mod_image.png-4fe3b46b686d9e78981f5dfd5c57f377.ctex"]
 
 [params]
 
