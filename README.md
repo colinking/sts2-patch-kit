@@ -2,15 +2,13 @@
 
 A Slay the Spire 2 mod with various quality-of-life patches.
 
-All patches are enabled by default, but can be disabled individually via the BaseLib mod configuration UI.
-
-All patches are purely QOL and do not impact gameplay. They are safe to use in multiplayer.
-
 This mod has been tested with the latest beta branch (`v0.107.0`).
 
 ## Patches
 
 All patches are enabled by default, but can be disabled individually via the BaseLib mod configuration UI.
+
+All patches are purely QOL and do not impact gameplay. They are safe to use in multiplayer.
 
 ### Map: Show Current Room Tooltip
 
