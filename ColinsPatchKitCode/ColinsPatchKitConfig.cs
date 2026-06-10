@@ -7,6 +7,17 @@ namespace ColinsPatchKit.ColinsPatchKitCode;
 // persists them to user://mod_configs/ColinsPatchKit.cfg (named after the root namespace).
 public class ColinsPatchKitConfig : SimpleModConfig
 {
+    // Declaration order drives the order of the toggles in the config UI;
+    // keep in sync with the patch order in README.md.
     [ConfigHoverTip(true)]
     public static bool ShowCurrentNodeTooltip { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool SkipIntroLogo { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool MakeEtherealCardsTranslucent { get; set; } = true;
 }

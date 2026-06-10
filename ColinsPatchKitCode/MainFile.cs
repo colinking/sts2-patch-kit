@@ -1,4 +1,5 @@
 using BaseLib.Config;
+using ColinsPatchKit.ColinsPatchKitCode.Patches;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
@@ -20,6 +21,8 @@ public partial class MainFile : Node
 
         harmony.PatchAll();
 
-        ModConfigRegistry.Register(ModId, new ColinsPatchKitConfig());
+        ColinsPatchKitConfig config = new();
+        ModConfigRegistry.Register(ModId, config);
+        config.ConfigChanged += (_, _) => EtherealTransparencyManager.RefreshAllCards();
     }
 }

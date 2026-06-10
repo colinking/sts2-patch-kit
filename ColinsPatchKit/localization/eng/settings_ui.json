@@ -1,5 +1,14 @@
 {
   "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.title": "Show tooltip on current map node",
   "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.hover.title": "Current Node Tooltip",
-  "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.hover.desc": "Show the room-history tooltip when hovering over the map node you are currently on, instead of only on previously visited nodes."
+  "COLINSPATCHKIT-SHOW_CURRENT_NODE_TOOLTIP.hover.desc": "Show the room-history tooltip when hovering over the map node you are currently on, instead of only on previously visited nodes.",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "Show retain slots for Well Laid Plans",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "Well Laid Plans Retain Slots",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "When choosing cards to Retain with Well Laid Plans, show one dotted card outline per retain slot so it is obvious how many cards can still be picked. Selected cards fill the slots left to right.",
+  "COLINSPATCHKIT-SKIP_INTRO_LOGO.title": "Skip intro Mega Crit logo",
+  "COLINSPATCHKIT-SKIP_INTRO_LOGO.hover.title": "Skip Intro Mega Crit Logo",
+  "COLINSPATCHKIT-SKIP_INTRO_LOGO.hover.desc": "Skip the Mega Crit logo animation at startup and go straight to the main menu.",
+  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.title": "Make Ethereal card frames translucent",
+  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.title": "Translucent Ethereal Frames",
+  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.desc": "Render the colored frame of Ethereal cards slightly transparent so they are easy to spot at a glance. Card text, art and icons stay fully opaque."
 }
