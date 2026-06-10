@@ -1,12 +1,16 @@
 # Colin's Patch Kit
 
-A Slay the Spire 2 mod with quality-of-life patches.
+A Slay the Spire 2 mod with various quality-of-life patches.
 
-This mod has been tested with `v0.107.0`.
+All patches are enabled by default, but can be disabled individually via the BaseLib mod configuration UI.
+
+All patches are purely QOL and do not impact gameplay. They are safe to use in multiplayer.
+
+This mod has been tested with the latest beta branch (`v0.107.0`).
 
 ## Patches
 
-All patches are default enabled. They can be toggled via the BaseLib mod configuration UI.
+All patches are enabled by default, but can be disabled individually via the BaseLib mod configuration UI.
 
 ### Map: Show Current Room Tooltip
 
@@ -35,8 +39,13 @@ If enabled, the colored frame of Ethereal cards is rendered slightly transparent
 to spot at a glance. Card text, art and icons stay fully opaque. (Quest and Ancient cards are
 excluded; their frames use a different texture layout.)
 
-This UI is a WIP. It's unclear what the best way to indicate Ethereal (and eventually Retain, Sly, and Exhaust)
+This UI is experimental. It's unclear what the best way to indicate Ethereal (and eventually Retain, Sly, and Exhaust)
 keywords without conflicting with enchantments and afflictions.
+
+## Installation instructions
+
+You will need to download the `.dll`, `.pck`, and `.json` files from
+[Releases](https://github.com/colinking/sts2-patch-kit/releases) and put them in your `Slay the Spire 2/mods` folder.
 
 ## Development
 
