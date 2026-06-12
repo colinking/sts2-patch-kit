@@ -54,9 +54,12 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
 - For scripted UI driving, the game ships `MegaCrit.Sts2.Core.AutoSlay.Helpers`
   (`WaitHelper.Until/ForNode`, `UiHelper.Click/FindAll`) and `AutoSlayer` shows the menu node
   paths for starting a run. Gotchas: `NClickableControl.ForceClick()` only emits `Released`, which
-  card holders ignore (drive `NPlayerHand.SelectCardInSimpleMode` via reflection instead), and
+  card holders ignore (drive `NPlayerHand.SelectCardInSimpleMode` via reflection instead),
   end-turn must go through `NEndTurnButton.CallReleaseLogic()` because a synthetic click is a
-  no-op when the long-press-to-end-turn preference is enabled.
+  no-op when the long-press-to-end-turn preference is enabled, and the real OS cursor resting
+  over a hitbox fires genuine focus/unfocus events that race synthetic hover signals (re-fired
+  as hover scale tweens move the hitbox edge under the cursor) — park it in an empty window
+  corner first with `Input.WarpMouse(tree.Root.GetVisibleRect().Size - new Vector2(8, 8))`.
 
 ## Verification
 

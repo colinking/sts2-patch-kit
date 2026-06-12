@@ -19,5 +19,8 @@
   "COLINSPATCHKIT-SHOW_POWER_READY_PULSES.hover.desc": "Pulse power icons the way Escape Artist pulses when its effect is imminent: first-each-turn effects (Echo Form, Iteration, Nostalgia, Phantom Blades, Lethality, Unmovable, Pale Blue Dot, Smoggy) while still available, counters (Juggling, Orbit, Automation, Panache, Outbreak, Withering Presence) when one step from triggering, countdowns (The Bomb, Asleep, Slumber, Hatch) when they fire after this turn, and end-of-turn damage debuffs (Constrict, Disintegration) as a constant reminder to block.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Match Compendium multiplayer cards to run",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Compendium Multiplayer Cards Default",
-  "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "When opening the Compendium's card library during a run, default the \"Multiplayer cards\" toggle to on in multiplayer runs and off in singleplayer runs, instead of always on. Outside a run the toggle keeps its vanilla always-on default."
+  "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "When opening the Compendium's card library during a run, default the \"Multiplayer cards\" toggle to on in multiplayer runs and off in singleplayer runs, instead of always on. Outside a run the toggle keeps its vanilla always-on default.",
+  "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.title": "Move shop hand away faster",
+  "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.title": "Faster Shop Hand",
+  "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "When you stop hovering over a shop item, the merchant's pointing hand returns to its resting spot after a brief moment (0.3s) instead of lingering over the wares for two seconds. Moving between items keeps the hand pointing. The pointing gesture after a purchase is unchanged."
 }

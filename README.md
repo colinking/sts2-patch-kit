@@ -81,6 +81,13 @@ multiplayer runs show them. The vanilla game always defaults the toggle to on. O
 (the main menu Compendium) the vanilla default is kept, and the toggle can still be flipped
 manually at any time.
 
+### Shop: Move Hand Away Faster
+
+If enabled, the merchant's pointing hand returns to its resting position 0.3 seconds after you
+stop hovering over a shop item, instead of lingering over the wares for two seconds and blocking
+your view of the goods. The brief delay keeps the hand from twitching back while you move between
+adjacent items. The pointing gesture after a purchase is unchanged.
+
 ### Cards: Translucent Ethereal Card Frames (Experimental: disabled by default)
 
 If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy
