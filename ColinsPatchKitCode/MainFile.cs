@@ -23,6 +23,10 @@ public partial class MainFile : Node
 
         ColinsPatchKitConfig config = new();
         ModConfigRegistry.Register(ModId, config);
-        config.ConfigChanged += (_, _) => EtherealTransparencyManager.RefreshAllCards();
+        config.ConfigChanged += (_, _) =>
+        {
+            EtherealTransparencyManager.RefreshAllCards();
+            RelicReadyPulsesManager.RefreshAll();
+        };
     }
 }

@@ -40,6 +40,21 @@ excluded; their frames use a different texture layout.)
 This UI is experimental. It's unclear what the best way to indicate Ethereal (and eventually Retain, Sly, and Exhaust)
 keywords without conflicting with enchantments and afflictions.
 
+### Relics: Ready-Effect Pulses
+
+Vanilla relics with a limited effect (e.g. Vambrace) pulse their inventory icon while the effect
+is still available and stop once it is used. Seven relics with the same kind of once-per-turn or
+once-per-combat effect don't, so you can't tell whether the effect is still pending. If enabled,
+these relics pulse the same way:
+
+- **Permafrost** — once per combat, your first Power card grants Block.
+- **Centennial Puzzle** — once per combat, the first time you take unblocked damage you draw cards.
+- **Ruined Helmet** — once per combat, your first Strength gain is doubled.
+- **Lava Lamp** — pulses while you still qualify for upgraded card rewards (no unblocked damage taken).
+- **Demon Tongue** — once per turn, the first unblocked damage taken during your turn heals you.
+- **Mini Regent** — once per turn, the first time you spend stars you gain Strength.
+- **Music Box** — once per turn, your first Attack is duplicated.
+
 ## Installation instructions
 
 You will need to download the `.dll`, `.pck`, and `.json` files from

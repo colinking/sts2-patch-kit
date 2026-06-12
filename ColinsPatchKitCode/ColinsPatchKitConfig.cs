@@ -20,4 +20,7 @@ public class ColinsPatchKitConfig : SimpleModConfig
 
     [ConfigHoverTip(true)]
     public static bool MakeEtherealCardsTranslucent { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool ShowRelicReadyPulses { get; set; } = true;
 }

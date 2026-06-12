@@ -10,5 +10,8 @@
   "COLINSPATCHKIT-SKIP_INTRO_LOGO.hover.desc": "Skip the Mega Crit logo animation at startup and go straight to the main menu.",
   "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.title": "Make Ethereal card frames translucent",
   "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.title": "Translucent Ethereal Frames",
-  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.desc": "Render the colored frame of Ethereal cards slightly transparent so they are easy to spot at a glance. Card text, art and icons stay fully opaque."
+  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.desc": "Render the colored frame of Ethereal cards slightly transparent so they are easy to spot at a glance. Card text, art and icons stay fully opaque.",
+  "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Pulse relics while their effect is ready",
+  "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Relic Ready Pulses",
+  "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Some relics with once-per-turn or once-per-combat effects give no hint whether the effect is still available. Show the same pulsing glow used by relics like Vambrace while the effect is ready. Applies to Permafrost, Centennial Puzzle, Ruined Helmet, Lava Lamp, Demon Tongue, Mini Regent and Music Box."
 }

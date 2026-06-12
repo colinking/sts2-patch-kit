@@ -1,0 +1,192 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Runs;
+
+namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
+
+// Vanilla relics with a limited "armed" effect (Vambrace, Burning Sticks, Throwing Axe, ...)
+// pulse their inventory icon via RelicModel.Status = RelicStatus.Active while the effect is
+// still available, and stop once it is consumed. Seven relics with the same kind of
+// once-per-turn / once-per-combat gate never touch Status, so the player cannot tell whether
+// the effect is still pending. This patch drives Status for them from their private gate
+// fields, following the Vambrace convention (Active while armed, Normal once consumed or
+// when combat ends).
+//
+// Deliberately not covered: Orichalcum / Fake Orichalcum (their gate only exists for an
+// instant inside end-of-turn resolution, and the armed condition — 0 Block — is already
+// visible), Lasting Candy (already shows a counter), and Pael's Tears (whether it will
+// trigger is just "do I have energy left", which the energy orb already shows).
+//
+// All gated relics except Lava Lamp call the non-virtual RelicModel.Flash() at the exact
+// moment their effect is consumed, so a single postfix there handles "armed -> consumed".
+// The gate fields cannot be read at that point: several triggers are async methods that set
+// the field only after their first await, while a Harmony postfix on an async method runs
+// after just the synchronous prelude. Arming instead recomputes from the gate field in
+// synchronous reset hooks where the field has already settled.
+public static class RelicReadyPulsesManager
+{
+    private sealed record TrackedRelic(FieldInfo Gate, bool ArmedWhenTrue);
+
+    // Gate field per relic, and the field value that means "effect still available".
+    private static readonly Dictionary<Type, TrackedRelic> _tracked = new()
+    {
+        // Once per combat: first Power card played grants Block.
+        [typeof(Permafrost)] = Track<Permafrost>("_activatedThisCombat", armedWhenTrue: false),
+        // Once per combat: first unblocked damage draws cards.
+        [typeof(CentennialPuzzle)] = Track<CentennialPuzzle>("_usedThisCombat", armedWhenTrue: false),
+        // Once per combat: first Strength gain is doubled.
+        [typeof(RuinedHelmet)] = Track<RuinedHelmet>("_usedThisCombat", armedWhenTrue: false),
+        // Per combat: card rewards are upgraded unless unblocked damage was taken.
+        [typeof(LavaLamp)] = Track<LavaLamp>("_tookDamageThisCombat", armedWhenTrue: false),
+        // Once per turn: first unblocked damage during your turn heals.
+        [typeof(DemonTongue)] = Track<DemonTongue>("_triggeredThisTurn", armedWhenTrue: false),
+        // Once per turn: first stars spent grant Strength.
+        [typeof(MiniRegent)] = Track<MiniRegent>("_usedThisTurn", armedWhenTrue: false),
+        // Once per turn: first Attack played is duplicated.
+        [typeof(MusicBox)] = Track<MusicBox>("_wasUsedThisTurn", armedWhenTrue: false),
+    };
+
+    private static TrackedRelic Track<T>(string fieldName, bool armedWhenTrue) where T : RelicModel
+    {
+        FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new MissingFieldException(typeof(T).Name, fieldName);
+        return new TrackedRelic(field, armedWhenTrue);
+    }
+
+    // Recomputes Status from the relic's gate field. Only valid at points where the field
+    // has already settled (synchronous hooks); never call this from a Flash postfix.
+    public static void Refresh(RelicModel relic)
+    {
+        try
+        {
+            if (!_tracked.TryGetValue(relic.GetType(), out TrackedRelic? tracked) || !relic.IsMutable)
+            {
+                return;
+            }
+            bool armed = ColinsPatchKitConfig.ShowRelicReadyPulses
+                && CombatManager.Instance.IsInProgress
+                && (bool)tracked.Gate.GetValue(relic)! == tracked.ArmedWhenTrue;
+            relic.Status = armed ? RelicStatus.Active : RelicStatus.Normal;
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to refresh relic ready pulse: {e}");
+        }
+    }
+
+    // Stops the pulse without consulting the gate field (it may not be written yet when the
+    // relic Flash()es from an async trigger). A no-op when the status is already Normal.
+    public static void StopPulse(RelicModel relic)
+    {
+        try
+        {
+            if (!_tracked.ContainsKey(relic.GetType()) || !relic.IsMutable)
+            {
+                return;
+            }
+            relic.Status = RelicStatus.Normal;
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to stop relic ready pulse: {e}");
+        }
+    }
+
+    // Re-evaluates every tracked relic in the current run; used when the config toggle
+    // changes so pulses appear/disappear immediately instead of at the next combat hook.
+    public static void RefreshAll()
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState == null)
+        {
+            return;
+        }
+        foreach (Player player in runState.Players)
+        {
+            foreach (RelicModel relic in player.Relics)
+            {
+                Refresh(relic);
+            }
+        }
+    }
+}
+
+// Every tracked relic except Lava Lamp consumes its effect exactly when it Flash()es. The
+// parameterless Flash() funnels into this overload.
+[HarmonyPatch(typeof(RelicModel), nameof(RelicModel.Flash), typeof(IEnumerable<Creature>))]
+public static class RelicReadyPulsesFlashPatch
+{
+    public static void Postfix(RelicModel __instance)
+    {
+        RelicReadyPulsesManager.StopPulse(__instance);
+    }
+}
+
+// Arms the per-combat relics. BeforeCombatStart fires after the room-entry hooks that reset
+// their gate fields, and none of the tracked relics override it, so the base no-op body is
+// what executes for them.
+[HarmonyPatch(typeof(AbstractModel), nameof(AbstractModel.BeforeCombatStart))]
+public static class RelicReadyPulsesCombatStartPatch
+{
+    public static void Postfix(AbstractModel __instance)
+    {
+        if (__instance is RelicModel relic)
+        {
+            RelicReadyPulsesManager.Refresh(relic);
+        }
+    }
+}
+
+// Re-arming and non-Flash consumption points: each target is a synchronous override on the
+// relic itself, so its gate field has settled by the time the postfix runs.
+[HarmonyPatch]
+public static class RelicReadyPulsesRefreshPatch
+{
+    public static IEnumerable<MethodBase> TargetMethods()
+    {
+        // Per-turn relics reset their gate at the start of their owner's turn.
+        yield return AccessTools.DeclaredMethod(typeof(DemonTongue), "BeforeSideTurnStart");
+        yield return AccessTools.DeclaredMethod(typeof(MiniRegent), "BeforeSideTurnStart");
+        yield return AccessTools.DeclaredMethod(typeof(MusicBox), "BeforeSideTurnStart");
+        // Lava Lamp never Flash()es; taking unblocked damage consumes it.
+        yield return AccessTools.DeclaredMethod(typeof(LavaLamp), "AfterDamageReceived");
+    }
+
+    public static void Postfix(AbstractModel __instance)
+    {
+        RelicReadyPulsesManager.Refresh((RelicModel)__instance);
+    }
+}
+
+// Clears any leftover pulse when combat ends, mirroring Vambrace's AfterCombatEnd reset so
+// nothing keeps pulsing on the map. Tracked relics that don't override AfterCombatEnd run
+// the base no-op body; the rest need their override patched.
+[HarmonyPatch]
+public static class RelicReadyPulsesCombatEndPatch
+{
+    public static IEnumerable<MethodBase> TargetMethods()
+    {
+        // Covers Permafrost, DemonTongue and LavaLamp, which don't override AfterCombatEnd.
+        yield return AccessTools.DeclaredMethod(typeof(AbstractModel), "AfterCombatEnd");
+        yield return AccessTools.DeclaredMethod(typeof(CentennialPuzzle), "AfterCombatEnd");
+        yield return AccessTools.DeclaredMethod(typeof(MiniRegent), "AfterCombatEnd");
+        yield return AccessTools.DeclaredMethod(typeof(MusicBox), "AfterCombatEnd");
+        yield return AccessTools.DeclaredMethod(typeof(RuinedHelmet), "AfterCombatEnd");
+    }
+
+    public static void Postfix(AbstractModel __instance)
+    {
+        if (__instance is RelicModel relic)
+        {
+            RelicReadyPulsesManager.StopPulse(relic);
+        }
+    }
+}

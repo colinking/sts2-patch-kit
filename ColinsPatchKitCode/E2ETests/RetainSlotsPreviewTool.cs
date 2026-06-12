@@ -141,21 +141,8 @@ public static class RetainSlotsE2EPatch
             return;
         }
         SceneTree tree = __instance.GetTree();
-        if (SaveManager.Instance.CurrentProfileId != targetProfile)
+        if (!E2EHelpers.EnsureProfile(tree, targetProfile, ref _originalProfileId, "retainslots-e2e"))
         {
-            if (_originalProfileId >= 0)
-            {
-                return;
-            }
-            _originalProfileId = SaveManager.Instance.CurrentProfileId;
-            tree.CreateTimer(1.0).Timeout += () =>
-            {
-                MainFile.Logger.Info($"retainslots-e2e: switching profile {_originalProfileId} -> {targetProfile}");
-                SaveManager.Instance.SwitchProfileId(targetProfile);
-                SaveManager.Instance.InitPrefsData();
-                SaveManager.Instance.InitProgressData();
-                NGame.Instance!.ReloadMainMenu();
-            };
             return;
         }
         if (_started)
@@ -180,13 +167,7 @@ public static class RetainSlotsE2EPatch
         }
         finally
         {
-            if (_originalProfileId >= 0)
-            {
-                MainFile.Logger.Info($"retainslots-e2e: switching back to profile {_originalProfileId}");
-                SaveManager.Instance.SwitchProfileId(_originalProfileId);
-                SaveManager.Instance.InitPrefsData();
-                SaveManager.Instance.InitProgressData();
-            }
+            E2EHelpers.RestoreProfile(_originalProfileId, "retainslots-e2e");
             await Task.Delay(500);
             tree.Quit();
         }
@@ -195,57 +176,7 @@ public static class RetainSlotsE2EPatch
     private static async Task RunInternal(SceneTree tree)
     {
         CancellationToken ct = CancellationToken.None;
-        SaveManager.Instance.SetFtuesEnabled(enabled: false);
-        Control mainMenu = await WaitHelper.ForNode<Control>(tree.Root, "/root/Game/RootSceneContainer/MainMenu", ct, TimeSpan.FromSeconds(30));
-
-        NButton? abandon = mainMenu.GetNodeOrNull<NButton>("MainMenuTextButtons/AbandonRunButton");
-        if (abandon != null && abandon.Visible)
-        {
-            MainFile.Logger.Info("retainslots-e2e: abandoning leftover test run on the scratch profile");
-            await UiHelper.Click(abandon);
-            await WaitHelper.Until(() => NModalContainer.Instance?.OpenModal != null,
-                ct, TimeSpan.FromSeconds(15), "abandon confirmation did not appear");
-            Node modal = (Node)NModalContainer.Instance!.OpenModal!;
-            await UiHelper.Click(modal.GetNode<NButton>("VerticalPopup/YesButton"));
-            await WaitHelper.Until(() => NModalContainer.Instance.OpenModal == null,
-                ct, TimeSpan.FromSeconds(15), "abandon confirmation did not close");
-        }
-
-        MainFile.Logger.Info("retainslots-e2e: starting run");
-        await UiHelper.Click(mainMenu.GetNode<NButton>("MainMenuTextButtons/SingleplayerButton"));
-        Control? charSelect = null;
-        NButton? standardButton = null;
-        await WaitHelper.Until(() =>
-        {
-            charSelect = mainMenu.GetNodeOrNull<Control>("Submenus/CharacterSelectScreen");
-            standardButton = mainMenu.GetNodeOrNull<NButton>("Submenus/SingleplayerSubmenu/StandardButton");
-            return (charSelect?.Visible ?? false) || (standardButton?.Visible ?? false);
-        }, ct, TimeSpan.FromSeconds(15), "no singleplayer submenu or character select");
-        if ((standardButton?.Visible ?? false) && !(charSelect?.Visible ?? false))
-        {
-            await UiHelper.Click(standardButton!);
-            await WaitHelper.Until(() => mainMenu.GetNodeOrNull<Control>("Submenus/CharacterSelectScreen")?.Visible ?? false,
-                ct, TimeSpan.FromSeconds(15), "character select did not appear");
-            charSelect = mainMenu.GetNode<Control>("Submenus/CharacterSelectScreen");
-        }
-
-        Node buttonContainer = charSelect!.GetNode("CharSelectButtons/ButtonContainer");
-        List<NCharacterSelectButton> characters = UiHelper.FindAll<NCharacterSelectButton>(buttonContainer);
-        foreach (NCharacterSelectButton button in characters)
-        {
-            button.UnlockIfPossible();
-        }
-        NCharacterSelectButton chosen = characters.First(b => !b.IsLocked);
-        MainFile.Logger.Info($"retainslots-e2e: selecting {chosen.Character.Id}");
-        chosen.Select();
-        await Task.Delay(200);
-        await UiHelper.Click(await WaitHelper.ForNode<NButton>(mainMenu, "Submenus/CharacterSelectScreen/ConfirmButton", ct));
-
-        await WaitHelper.Until(() => RunManager.Instance.DebugOnlyGetState() != null, ct, TimeSpan.FromSeconds(60), "run did not start");
-        RunState runState = RunManager.Instance.DebugOnlyGetState()!;
-        await WaitHelper.Until(() => runState.CurrentRoom != null && runState.CurrentRoom.RoomType != RoomType.Unassigned,
-            ct, TimeSpan.FromSeconds(30), "no room assigned");
-        await Task.Delay(1500);
+        await E2EHelpers.StartThrowawayRun(tree, "retainslots-e2e", ct);
 
         GameDevConsole console = new(shouldAllowDebugCommands: true);
         string encounterId = ModelDb.GetId(typeof(BowlbugsWeak)).Entry;
@@ -317,11 +248,8 @@ public static class RetainSlotsE2EPatch
         AccessTools.Method(typeof(NPlayerHand), "SelectCardInSimpleMode").Invoke(hand, new object[] { holder });
     }
 
-    private static async Task Shot(SceneTree tree, string path)
+    private static Task Shot(SceneTree tree, string path)
     {
-        await Task.Delay(100);
-        Image image = tree.Root.GetTexture().GetImage();
-        Error err = image.SavePng(path);
-        MainFile.Logger.Info($"retainslots-e2e: shot '{path}' ({err})");
+        return E2EHelpers.Shot(tree, path, "retainslots-e2e");
     }
 }

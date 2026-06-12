@@ -60,8 +60,9 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
 
 ## Verification
 
-- Two launch-flag harnesses (`ColinsPatchKitCode/E2ETests/`) verify the retain slots without
-  manual play. Launch the game binary directly from
+- Launch-flag harnesses (`ColinsPatchKitCode/E2ETests/`) verify patches without manual play;
+  shared plumbing (scratch-profile switch, throwaway-run bootstrap) is in `E2ETests/E2EHelpers.cs`.
+  Launch the game binary directly from
   `.../Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS`:
   - `"./Slay the Spire 2" --retainslots=3:1 --retainslots-shot=/tmp/retain_slots.png --retainslots-quit`
     — static visual check at the main menu (~15s boot, then screenshots and exits); `3:1` = 3 slots
@@ -71,6 +72,12 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     re-picks cards, saving /tmp/retain_e2e_*.png at each step, and switches back to the original
     profile before quitting. It **abandons any run in progress on the given profile** — only ever
     pass a scratch profile whose saves are disposable, never one with a real run.
+  - `"./Slay the Spire 2" --relicpulse-e2e=<profile>` — verifies the relic ready-pulse patch in a
+    real combat: grants Permafrost/Music Box (tracked) plus Pael's Tears (untracked negative
+    control), jumps to a weak fight, and logs a `relicpulse-e2e: PASS <assertion>` line per
+    expected Status transition (armed at combat start, consumed on Flash, untracked relic never
+    pulses across its real turn-boundary trigger, all cleared after combat), saving
+    /tmp/relic_pulse_*.png. Same scratch-profile warning as above.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at
   `~/Library/Application Support/SlayTheSpire2/logs/godot.log` (rotated per launch — the current
