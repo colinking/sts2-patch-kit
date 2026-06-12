@@ -83,6 +83,12 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     (countdown) to the player, plays through three turns, and asserts the actual `pulse` shader
     parameter on the NPower icons at each step (`powerpulse-e2e: PASS ...` lines), saving
     /tmp/power_pulse_*.png. Same scratch-profile warning as above.
+  - `"./Slay the Spire 2" --pulsegif=<profile>` — captures 30 frames (100ms apart) of pulsing
+    relics and powers to /tmp/pulse_gif/ for the README GIFs (assemble with ffmpeg crop+
+    palettegen). Uses `RenderingServer.ForceDraw(swapBuffers, frameStep)` per frame because
+    macOS stops redrawing occluded windows (frozen identical frames otherwise) — never grab
+    window focus from a harness instead; stray user keystrokes leak into the game. Same
+    scratch-profile warning as above.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at
   `~/Library/Application Support/SlayTheSpire2/logs/godot.log` (rotated per launch — the current

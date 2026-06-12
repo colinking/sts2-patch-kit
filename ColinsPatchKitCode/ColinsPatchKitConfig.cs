@@ -16,14 +16,15 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
 
     [ConfigHoverTip(true)]
-    public static bool SkipIntroLogo { get; set; } = true;
-
-    [ConfigHoverTip(true)]
-    public static bool MakeEtherealCardsTranslucent { get; set; } = true;
-
-    [ConfigHoverTip(true)]
     public static bool ShowRelicReadyPulses { get; set; } = true;
 
     [ConfigHoverTip(true)]
     public static bool ShowPowerReadyPulses { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool SkipIntroLogo { get; set; } = true;
+
+    // Experimental; off by default (see README).
+    [ConfigHoverTip(true)]
+    public static bool MakeEtherealCardsTranslucent { get; set; } = false;
 }

@@ -6,7 +6,8 @@ This mod has been tested with the latest beta branch (`v0.107.0`).
 
 ## Patches
 
-All patches are enabled by default, but can be disabled individually via the BaseLib mod configuration UI.
+All patches are enabled by default (except where marked experimental) and can be toggled
+individually via the BaseLib mod configuration UI.
 
 All patches are purely QOL and do not impact gameplay. They are safe to use in multiplayer.
 
@@ -26,20 +27,6 @@ how many cards you can still retain.
 
 ![Retain slots](docs/images/retain-slots.png)
 
-### Startup: Skip Intro Logo
-
-If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
-main menu.
-
-### Cards: Translucent Ethereal Card Frames
-
-If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy
-to spot at a glance. Card text, art and icons stay fully opaque. (Quest and Ancient cards are
-excluded; their frames use a different texture layout.)
-
-This UI is experimental. It's unclear what the best way to indicate Ethereal (and eventually Retain, Sly, and Exhaust)
-keywords without conflicting with enchantments and afflictions.
-
 ### Relics: Ready-Effect Pulses
 
 Vanilla relics with a limited effect (e.g. Vambrace) pulse their inventory icon while the effect
@@ -54,6 +41,11 @@ these relics pulse the same way:
 - **Demon Tongue** — once per turn, the first unblocked damage taken during your turn heals you.
 - **Mini Regent** — once per turn, the first time you spend stars you gain Strength.
 - **Music Box** — once per turn, your first Attack is duplicated.
+
+![Relic pulses](docs/images/relic-pulses.gif)
+
+*Centennial Puzzle pulsing while its effect is still available; Burning Blood (no limited
+effect) stays static.*
 
 ### Powers: Ready-Effect Pulses
 
@@ -71,6 +63,25 @@ escapes after the next turn). If enabled, the same pulse is applied consistently
   Hatch, and the Battleworn Dummy time limit.
 - **End-of-turn damage debuffs** pulse the whole time as a "don't forget to block" reminder:
   Constrict and Disintegration.
+
+![Power pulses](docs/images/power-pulses.gif)
+
+*Juggling pulsing after the second Attack this turn — the next Attack triggers it.*
+
+### Startup: Skip Intro Logo
+
+If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
+main menu.
+
+### Cards: Translucent Ethereal Card Frames (Experimental: disabled by default)
+
+If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy
+to spot at a glance. Card text, art and icons stay fully opaque. (Quest and Ancient cards are
+excluded; their frames use a different texture layout.)
+
+This UI is experimental and therefore disabled by default. It's unclear what the best way is to
+indicate Ethereal (and eventually Retain, Sly, and Exhaust) keywords without conflicting with
+enchantments and afflictions.
 
 ## Installation instructions
 
