@@ -24,6 +24,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     [ConfigHoverTip(true)]
     public static bool SkipIntroLogo { get; set; } = true;
 
+    [ConfigHoverTip(true)]
+    public static bool MatchCompendiumMultiplayerCardsToRun { get; set; } = true;
+
     // Experimental; off by default (see README).
     [ConfigHoverTip(true)]
     public static bool MakeEtherealCardsTranslucent { get; set; } = false;

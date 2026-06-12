@@ -73,6 +73,14 @@ escapes after the next turn). If enabled, the same pulse is applied consistently
 If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
 main menu.
 
+### Compendium: Multiplayer Cards Toggle Matches Run
+
+If enabled, opening the Compendium's card library during a run defaults the "Multiplayer cards"
+toggle to whether the run is multiplayer — singleplayer runs hide multiplayer-only cards, and
+multiplayer runs show them. The vanilla game always defaults the toggle to on. Outside a run
+(the main menu Compendium) the vanilla default is kept, and the toggle can still be flipped
+manually at any time.
+
 ### Cards: Translucent Ethereal Card Frames (Experimental: disabled by default)
 
 If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy
