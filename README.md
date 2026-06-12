@@ -55,6 +55,23 @@ these relics pulse the same way:
 - **Mini Regent** — once per turn, the first time you spend stars you gain Strength.
 - **Music Box** — once per turn, your first Attack is duplicated.
 
+### Powers: Ready-Effect Pulses
+
+Power icons can pulse too, but vanilla only uses it for Escape Artist (pulses when the enemy
+escapes after the next turn). If enabled, the same pulse is applied consistently:
+
+- **First-each-turn effects** pulse while still available this turn: Echo Form (next card
+  duplicated), Iteration, Nostalgia, Phantom Blades, Lethality, Unmovable, Pale Blue Dot
+  (5+ cards played — bonus draw locked in), and Smoggy (warning: your first Skill will
+  trigger it).
+- **Counters** pulse when one step from triggering: Juggling (2 of 3 attacks played), Orbit,
+  Automation, Panache, Outbreak, and the Aeonglass's Withering Presence (your next card play
+  adds a Wither).
+- **Countdowns** pulse when the event fires after this turn: The Bomb, Asleep, Slumber,
+  Hatch, and the Battleworn Dummy time limit.
+- **End-of-turn damage debuffs** pulse the whole time as a "don't forget to block" reminder:
+  Constrict and Disintegration.
+
 ## Installation instructions
 
 You will need to download the `.dll`, `.pck`, and `.json` files from

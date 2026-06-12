@@ -78,6 +78,11 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     expected Status transition (armed at combat start, consumed on Flash, untracked relic never
     pulses across its real turn-boundary trigger, all cleared after combat), saving
     /tmp/relic_pulse_*.png. Same scratch-profile warning as above.
+  - `"./Slay the Spire 2" --powerpulse-e2e=<profile>` — verifies the power ready-pulse patch in a
+    real combat: applies Echo Form (armed gate), Constrict (constant reminder) and The Bomb x3
+    (countdown) to the player, plays through three turns, and asserts the actual `pulse` shader
+    parameter on the NPower icons at each step (`powerpulse-e2e: PASS ...` lines), saving
+    /tmp/power_pulse_*.png. Same scratch-profile warning as above.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at
   `~/Library/Application Support/SlayTheSpire2/logs/godot.log` (rotated per launch — the current

@@ -13,5 +13,8 @@
   "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.desc": "Render the colored frame of Ethereal cards slightly transparent so they are easy to spot at a glance. Card text, art and icons stay fully opaque.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Pulse relics while their effect is ready",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Relic Ready Pulses",
-  "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Some relics with once-per-turn or once-per-combat effects give no hint whether the effect is still available. Show the same pulsing glow used by relics like Vambrace while the effect is ready. Applies to Permafrost, Centennial Puzzle, Ruined Helmet, Lava Lamp, Demon Tongue, Mini Regent and Music Box."
+  "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Some relics with once-per-turn or once-per-combat effects give no hint whether the effect is still available. Show the same pulsing glow used by relics like Vambrace while the effect is ready. Applies to Permafrost, Centennial Puzzle, Ruined Helmet, Lava Lamp, Demon Tongue, Mini Regent and Music Box.",
+  "COLINSPATCHKIT-SHOW_POWER_READY_PULSES.title": "Pulse buffs/debuffs while their effect is ready",
+  "COLINSPATCHKIT-SHOW_POWER_READY_PULSES.hover.title": "Power Ready Pulses",
+  "COLINSPATCHKIT-SHOW_POWER_READY_PULSES.hover.desc": "Pulse power icons the way Escape Artist pulses when its effect is imminent: first-each-turn effects (Echo Form, Iteration, Nostalgia, Phantom Blades, Lethality, Unmovable, Pale Blue Dot, Smoggy) while still available, counters (Juggling, Orbit, Automation, Panache, Outbreak, Withering Presence) when one step from triggering, countdowns (The Bomb, Asleep, Slumber, Hatch) when they fire after this turn, and end-of-turn damage debuffs (Constrict, Disintegration) as a constant reminder to block."
 }

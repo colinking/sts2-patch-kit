@@ -23,4 +23,7 @@ public class ColinsPatchKitConfig : SimpleModConfig
 
     [ConfigHoverTip(true)]
     public static bool ShowRelicReadyPulses { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool ShowPowerReadyPulses { get; set; } = true;
 }
