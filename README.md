@@ -88,6 +88,19 @@ stop hovering over a shop item, instead of lingering over the wares for two seco
 your view of the goods. The brief delay keeps the hand from twitching back while you move between
 adjacent items. The pointing gesture after a purchase is unchanged.
 
+### Card Rewards: View Upgrades Toggle
+
+If enabled, the card reward screen gets the same "View Upgrades" toggle as the deck view, in the
+same bottom-left spot. Ticking it shows each reward card in its upgraded form (cards that cannot be
+upgraded are unaffected); picking a card still grants the regular, unupgraded version. Like the
+deck view's toggle, it is mouse-only and hidden while playing with a controller.
+
+The toggle also appears on the choose-a-pack screen used by the Scroll Boxes relic, where it
+previews the cards of both bundles — stacked or spread out — and clears while a chosen bundle
+flies into the deck.
+
+![Card reward upgrades](docs/images/card-reward-upgrades.png)
+
 ### Cards: Translucent Ethereal Card Frames (Experimental: disabled by default)
 
 If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy

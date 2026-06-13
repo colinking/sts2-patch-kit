@@ -22,5 +22,8 @@
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "When opening the Compendium's card library during a run, default the \"Multiplayer cards\" toggle to on in multiplayer runs and off in singleplayer runs, instead of always on. Outside a run the toggle keeps its vanilla always-on default.",
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.title": "Move shop hand away faster",
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.title": "Faster Shop Hand",
-  "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "When you stop hovering over a shop item, the merchant's pointing hand returns to its resting spot after a brief moment (0.3s) instead of lingering over the wares for two seconds. Moving between items keeps the hand pointing. The pointing gesture after a purchase is unchanged."
+  "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "When you stop hovering over a shop item, the merchant's pointing hand returns to its resting spot after a brief moment (0.3s) instead of lingering over the wares for two seconds. Moving between items keeps the hand pointing. The pointing gesture after a purchase is unchanged.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Show View Upgrades toggle on card rewards",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Card Reward View Upgrades Toggle",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen and to the Scroll Boxes choose-a-pack screen, so reward cards can be previewed in their upgraded form before picking. Mouse only; hidden while playing with a controller, like the deck view's toggle."
 }

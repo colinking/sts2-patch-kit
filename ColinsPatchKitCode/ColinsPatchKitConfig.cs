@@ -30,6 +30,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     [ConfigHoverTip(true)]
     public static bool MoveShopHandAwayFaster { get; set; } = true;
 
+    [ConfigHoverTip(true)]
+    public static bool ShowCardRewardViewUpgradesToggle { get; set; } = true;
+
     // Experimental; off by default (see README).
     [ConfigHoverTip(true)]
     public static bool MakeEtherealCardsTranslucent { get; set; } = false;
