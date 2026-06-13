@@ -28,5 +28,8 @@
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen and to the Scroll Boxes choose-a-pack screen, so reward cards can be previewed in their upgraded form before picking. Mouse only; hidden while playing with a controller, like the deck view's toggle.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Send returned reward cards straight to deck",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Skip Returned Card Preview Delay",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "When you take a special card reward — the card the Thieving Hopper stole and hands back, or the Lantern Key event's card — it normally floats in the center of the screen for two seconds, hiding the card behind it (such as the middle card on the reward screen). Send it straight to your deck instead, like a normal card reward."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "When you take a special card reward — the card the Thieving Hopper stole and hands back, or the Lantern Key event's card — it normally floats in the center of the screen for two seconds, hiding the card behind it (such as the middle card on the reward screen). Send it straight to your deck instead, like a normal card reward.",
+  "COLINSPATCHKIT-EXCLUDE_CHARACTERS_FROM_RANDOM.title": "Ban characters from the Random pick",
+  "COLINSPATCHKIT-EXCLUDE_CHARACTERS_FROM_RANDOM.hover.title": "Random Character Bans",
+  "COLINSPATCHKIT-EXCLUDE_CHARACTERS_FROM_RANDOM.hover.desc": "With Random selected on the character select screen, right-click a character to ban it from the Random pick; right-click again to unban. Embarking as Random then rolls only among the characters you haven't banned. In multiplayer, only your own pick is affected."
 }

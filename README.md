@@ -27,6 +27,15 @@ how many cards you can still retain.
 
 ![Retain slots](docs/images/retain-slots.png)
 
+### Character Select: Random Character Bans
+
+If enabled, you can ban characters from the "Random" pick. With Random selected on the character
+select screen, right-click a character to ban it (right-click again to unban); embarking as Random
+then chooses only from the characters you haven't banned. In multiplayer, only your own Random pick
+is affected.
+
+![Random character bans](docs/images/random-ban.png)
+
 ### Relics: Ready-Effect Pulses
 
 Vanilla relics with a limited effect (e.g. Vambrace) pulse their inventory icon while the effect

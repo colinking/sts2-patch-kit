@@ -28,6 +28,7 @@ public partial class MainFile : Node
             EtherealTransparencyManager.RefreshAllCards();
             RelicReadyPulsesManager.RefreshAll();
             PowerReadyPulsesManager.RefreshAll(force: true);
+            RandomCharacterExclusionManager.RefreshAll();
         };
     }
 }
