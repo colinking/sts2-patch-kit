@@ -19,6 +19,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool ExcludeCharactersFromRandom { get; set; } = true;
 
     [ConfigHoverTip(true)]
+    public static bool SortCursesAndStatusesFirst { get; set; } = true;
+
+    [ConfigHoverTip(true)]
     public static bool ShowRelicReadyPulses { get; set; } = true;
 
     [ConfigHoverTip(true)]

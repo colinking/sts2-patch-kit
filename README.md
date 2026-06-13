@@ -36,6 +36,15 @@ is affected.
 
 ![Random character bans](docs/images/random-ban.png)
 
+### Combat: Curses & Statuses First When Exhausting
+
+If enabled, choosing a card from your draw pile to exhaust (Cleanse) or transform into a specific
+card (Charge, Séance) lists curses first, then statuses, then the rest of the pile — instead of
+sorting them to the very bottom as the game does by default. These are almost always the cards you
+opened the screen to get rid of, so this puts them where you look first. Cards within each group
+keep their usual rarity-then-alphabetical order. Other draw-pile choices that pull a card to play
+(such as Wish), and the deck view, are unaffected.
+
 ### Relics: Ready-Effect Pulses
 
 Vanilla relics with a limited effect (e.g. Vambrace) pulse their inventory icon while the effect
