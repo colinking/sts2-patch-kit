@@ -66,7 +66,15 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
 - Launch-flag harnesses (`ColinsPatchKitCode/E2ETests/`) verify patches without manual play;
   shared plumbing (scratch-profile switch, throwaway-run bootstrap) is in `E2ETests/E2EHelpers.cs`.
   Launch the game binary directly from
-  `.../Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS`:
+  `.../Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS`. **Prefer launching via macOS `open -g`**
+  so the game doesn't steal foreground focus — the app activates itself at process launch (before
+  any mod/`NoFocus` code runs), which a direct `./binary` invocation can't avoid; `-g` opens it in
+  the background instead. Steamworks still initializes (steam_appid.txt resolves next to the binary,
+  not from cwd). Pass launch flags after `--args`:
+  `open -g -n -a ".../Slay the Spire 2/SlayTheSpire2.app" --args --powerpulse-e2e=2`. `open` returns
+  immediately and detaches the process; monitor `godot.log` and `pkill -9 -f "Slay the Spire 2"` to
+  stop it. The bare-binary form below still works but grabs focus, so reserve it for the rare case
+  Steam isn't running. The per-flag examples below list just the flags:
   - `"./Slay the Spire 2" --retainslots=3:1 --retainslots-shot=/tmp/retain_slots.png --retainslots-quit`
     — static visual check at the main menu (~15s boot, then screenshots and exits); `3:1` = 3 slots
     with slot index 1 filled by a card.
@@ -92,6 +100,28 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     macOS stops redrawing occluded windows (frozen identical frames otherwise) — never grab
     window focus from a harness instead; stray user keystrokes leak into the game. Same
     scratch-profile warning as above.
+  - `"./Slay the Spire 2" --conflag-sandbox=<profile>` — manual playtest setup (not an
+    automated assertion harness): starts a throwaway **Ironclad** run, jumps to the Thieving
+    Hopper fight (the bug that steals a card), grants 100 Strength and stocks Conflagration
+    (x2 hand, x4 draw), then **stops and hands control to you** — it does NOT end turns, kill
+    enemies, restore the profile or quit. Same scratch-profile warning as above; quit to menu
+    and switch back to your own profile when done. Verify the setup via the
+    `conflag-sandbox:` log lines (each console step logs success), not a "complete" line.
+- Window placement: whenever any of the above launch flags is present, `TestWindowPatch`
+  (`E2ETests/TestWindowTool.cs`) wraps `NGame.ApplyDisplaySettings` so the game boots **windowed**
+  (1280x800, top-left of the target display) instead of fullscreen — it must *prevent* fullscreen,
+  not undo it, because once macOS puts the window in a fullscreen Space a later
+  `WindowSetMode(Windowed)` doesn't reliably stick. This keeps a test run from hijacking the active
+  screen. Target display defaults to the physically smallest screen — the laptop built-in on a
+  laptop+external setup, which macOS may report as the *primary* "Main" display, so target by size
+  not index (override with `--test-screen=<index>`). Automated harnesses also get
+  the `NoFocus` window flag so the game never steals keyboard focus; `--conflag-sandbox` stays
+  focusable since you play it. The patch snapshots and restores every `SettingsSave` display field
+  it touches (Fullscreen/TargetDisplay/WindowSize/WindowPosition) — that store is global and
+  `NGame.Quit()` persists it, so without the restore a test run would overwrite the user's real
+  fullscreen/resolution preferences (settings live at `.../SlayTheSpire2/steam/<id>/settings.save`).
+  Note this also shrinks `--pulsegif`/`--retainslots` captures to the 1280x800 window; re-derive
+  GIF crop coords if you regenerate README assets, or pass `--test-screen` to a full-size display.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at
   `~/Library/Application Support/SlayTheSpire2/logs/godot.log` (rotated per launch — the current

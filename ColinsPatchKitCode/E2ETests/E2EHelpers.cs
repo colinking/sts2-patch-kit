@@ -61,7 +61,10 @@ internal static class E2EHelpers
     // Abandons any leftover test run on the current (scratch) profile, then
     // clicks through the main menu and character select into a fresh
     // singleplayer run. Returns once a room is assigned and settled.
-    public static async Task<RunState> StartThrowawayRun(SceneTree tree, string tag, CancellationToken ct)
+    // preferredCharacterId (a SCREAMING_SNAKE model id entry, e.g. "IRONCLAD") selects that
+    // character when it is unlocked; null keeps the default of the first unlocked character.
+    public static async Task<RunState> StartThrowawayRun(SceneTree tree, string tag, CancellationToken ct,
+        string? preferredCharacterId = null)
     {
         SaveManager.Instance.SetFtuesEnabled(enabled: false);
         Control mainMenu = await WaitHelper.ForNode<Control>(tree.Root, "/root/Game/RootSceneContainer/MainMenu", ct, TimeSpan.FromSeconds(30));
@@ -103,7 +106,15 @@ internal static class E2EHelpers
         {
             button.UnlockIfPossible();
         }
-        NCharacterSelectButton chosen = characters.First(b => !b.IsLocked);
+        NCharacterSelectButton chosen =
+            (preferredCharacterId != null
+                ? characters.FirstOrDefault(b => !b.IsLocked && b.Character.Id.Entry == preferredCharacterId)
+                : null)
+            ?? characters.First(b => !b.IsLocked);
+        if (preferredCharacterId != null && chosen.Character.Id.Entry != preferredCharacterId)
+        {
+            MainFile.Logger.Info($"{tag}: '{preferredCharacterId}' not available, falling back to {chosen.Character.Id.Entry}");
+        }
         MainFile.Logger.Info($"{tag}: selecting {chosen.Character.Id}");
         chosen.Select();
         await Task.Delay(200);
