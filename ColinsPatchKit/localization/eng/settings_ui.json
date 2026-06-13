@@ -25,5 +25,8 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "When you stop hovering over a shop item, the merchant's pointing hand returns to its resting spot after a brief moment (0.3s) instead of lingering over the wares for two seconds. Moving between items keeps the hand pointing. The pointing gesture after a purchase is unchanged.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Show View Upgrades toggle on card rewards",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Card Reward View Upgrades Toggle",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen and to the Scroll Boxes choose-a-pack screen, so reward cards can be previewed in their upgraded form before picking. Mouse only; hidden while playing with a controller, like the deck view's toggle."
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen and to the Scroll Boxes choose-a-pack screen, so reward cards can be previewed in their upgraded form before picking. Mouse only; hidden while playing with a controller, like the deck view's toggle.",
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Send returned reward cards straight to deck",
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Skip Returned Card Preview Delay",
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "When you take a special card reward — the card the Thieving Hopper stole and hands back, or the Lantern Key event's card — it normally floats in the center of the screen for two seconds, hiding the card behind it (such as the middle card on the reward screen). Send it straight to your deck instead, like a normal card reward."
 }

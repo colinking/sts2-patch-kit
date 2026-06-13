@@ -101,6 +101,14 @@ flies into the deck.
 
 ![Card reward upgrades](docs/images/card-reward-upgrades.png)
 
+### Card Rewards: Skip Returned Card Preview Delay
+
+If enabled, taking a "special card" reward — the card the Thieving Hopper stole and hands back when
+it dies, or the card from the Lantern Key event — sends it straight to your deck instead of floating
+it in the center of the screen for two seconds first. The centered hold otherwise blocks your view
+of whatever is behind it, such as the middle card on the card reward screen. Normal card rewards
+already behave this way; this just makes special card rewards match.
+
 ### Cards: Translucent Ethereal Card Frames (Experimental: disabled by default)
 
 If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easy
