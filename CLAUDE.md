@@ -107,6 +107,14 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     enemies, restore the profile or quit. Same scratch-profile warning as above; quit to menu
     and switch back to your own profile when done. Verify the setup via the
     `conflag-sandbox:` log lines (each console step logs success), not a "complete" line.
+  - `"./Slay the Spire 2" --gameover-skip-sandbox=<profile>` — manual playtest setup (not an
+    automated assertion harness) for the click-to-skip game-over patch: starts a throwaway run,
+    jumps to the Bowlbugs (weak) fight, then runs the `die` console command to lose, landing you
+    on the run-summary screen, and **stops and hands control to you** — it does NOT restore the
+    profile or quit. Click Continue, then click (or press confirm) to fast-forward the score-line
+    reveal. Same scratch-profile warning as above; quit to menu and switch back to your own
+    profile when done. Verify the setup via the `gameover-skip-sandbox:` log lines, not a
+    "complete" line.
 - Window placement: whenever any of the above launch flags is present, `TestWindowPatch`
   (`E2ETests/TestWindowTool.cs`) wraps `NGame.ApplyDisplaySettings` so the game boots **windowed**
   (1280x800, top-left of the target display) instead of fullscreen — it must *prevent* fullscreen,

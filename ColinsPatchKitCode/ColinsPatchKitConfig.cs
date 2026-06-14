@@ -31,6 +31,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool SkipIntroLogo { get; set; } = true;
 
     [ConfigHoverTip(true)]
+    public static bool SkipGameOverAnimations { get; set; } = true;
+
+    [ConfigHoverTip(true)]
     public static bool MatchCompendiumMultiplayerCardsToRun { get; set; } = true;
 
     [ConfigHoverTip(true)]

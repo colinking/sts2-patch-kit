@@ -91,6 +91,13 @@ escapes after the next turn). If enabled, the same pulse is applied consistently
 If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
 main menu.
 
+### Game Over: Click to Skip Reveal
+
+If enabled, clicking (or pressing confirm) on the run-summary screen shown when a run ends
+fast-forwards the score-line and badge reveal animations. Each click snaps the current line into
+place and collapses the remaining pauses between sections, so a few clicks reach the Return to Main
+Menu button immediately. Doing nothing keeps the vanilla pacing.
+
 ### Compendium: Multiplayer Cards Toggle Matches Run
 
 If enabled, opening the Compendium's card library during a run defaults the "Multiplayer cards"
