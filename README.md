@@ -18,6 +18,32 @@ only shows this tooltip for previously visited nodes.
 
 ![Map tooltip](docs/images/map-tooltip.png)
 
+### Map: Show Upcoming Room Info
+
+If enabled, hovering over an upcoming (not-yet-visited) map node shows a tooltip summarising what that
+room type is worth. It only ever shows wiki-level information a diligent player could already work out —
+never the actual pre-rolled outcome of that specific node:
+
+- **Unknown (`?`)** — the live chance it resolves into a Monster / Treasure / Shop / Event. Hold
+  Cmd (macOS) / Ctrl (Windows) while hovering to list the events that could still spawn this run
+  (events you've already had are excluded).
+- **Elite** — the gold range and your potion chance. Hold Cmd / Ctrl to list the elites this act
+  can still spawn (already-fought elites are excluded).
+- **Enemy** — the gold range and your potion chance. Hold Cmd / Ctrl to list the enemies that
+  could still spawn here (already-fought ones excluded). The act's opening combats draw from an
+  easy pool and later ones from a hard pool, so the list narrows to just the easy or hard pool
+  when every route to the node guarantees it, and shows both (labelled) while it's still uncertain.
+- **Treasure** — the relic pick and gold range (including any Spoils Map bonus, or "empty" when a
+  relic like Silver Crucible suppresses the reward).
+- **Merchant** — the price ranges for cards, relics and potions, plus the next card-removal cost.
+- **Rest Site** — how much HP you would heal.
+
+Potion chance is also shown on the current node while you're mid-combat (before the reward
+screen). Generally, potion chances are marked with a `*` when it will still shift as you
+clear combats on the way there.
+
+![Upcoming map nodes](docs/images/future-map-nodes.png)
+
 ### Combat: Well Laid Plans Retain Slots
 
 If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card outline ("slot")

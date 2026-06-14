@@ -13,6 +13,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool ShowCurrentNodeTooltip { get; set; } = true;
 
     [ConfigHoverTip(true)]
+    public static bool ShowMapNodeInfoTooltips { get; set; } = true;
+
+    [ConfigHoverTip(true)]
     public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
 
     [ConfigHoverTip(true)]

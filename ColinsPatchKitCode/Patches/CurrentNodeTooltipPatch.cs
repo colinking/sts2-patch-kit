@@ -92,9 +92,26 @@ public static class CurrentNodeTooltipPatch
             floorNum += runState.MapPointHistory[i].Count;
         }
         NHoverTipSet.Remove(point);
-        NHoverTipSet tip = NHoverTipSet.CreateAndShowMapPointHistory(point, NMapPointHistoryHoverTip.Create(floorNum, LocalContext.NetId.Value, entry));
+        NMapPointHistoryHoverTip historyTip = NMapPointHistoryHoverTip.Create(floorNum, LocalContext.NetId.Value, entry);
+        NHoverTipSet tip = NHoverTipSet.CreateAndShowMapPointHistory(point, historyTip);
+        // While a combat is in progress here the post-combat potion roll hasn't happened yet, so
+        // show its live chance inside this same tooltip. We append it to one of the history tip's
+        // own labels (rather than a separate hover-tip card, which the set's flow container would
+        // wrap into a second floating box). Done deferred so the history tip's _Ready has already
+        // populated the label and won't overwrite it.
+        string? potionLine = MapNodeInfoTooltipPatch.CurrentRoomPotionLine(runState);
         Callable.From(delegate
         {
+            if (potionLine != null && GodotObject.IsInstanceValid(historyTip))
+            {
+                RichTextLabel? label = historyTip.GetNodeOrNull<RichTextLabel>("%CardStats")
+                    ?? historyTip.GetNodeOrNull<RichTextLabel>("%PlayerStats");
+                if (label != null)
+                {
+                    label.Text = string.IsNullOrEmpty(label.Text) ? potionLine : label.Text + "\n" + potionLine;
+                    label.Visible = true;
+                }
+            }
             tip.SetAlignment(point, HoverTip.GetHoverTipAlignment(point));
         }).CallDeferred();
     }
