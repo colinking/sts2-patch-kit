@@ -20,7 +20,16 @@ public static class ViewUpgradesTickboxHelper
     private const string LabelFontPath = "res://themes/kreon_bold_glyph_space_one.tres";
 
     private const float BoxSize = 64f;
-    private const float BoxLabelGap = 6f;
+    // Vanilla's ViewUpgrades HBox (deck_upgrade_select_screen.tscn) uses separation = 0: the label
+    // butts straight up against the 64px tickbox node. The visible gap is purely the box's own
+    // internal padding (its checkbox texture renders at 0.8 scale, centered in the 64px node), so
+    // any extra gap here makes our tickbox look more spaced out than the vanilla one beside it.
+    private const float BoxLabelGap = 0f;
+    // Vanilla insets the box+label inside a MarginContainer with margin_left = margin_right = 6.
+    // We must inset the contents by the same amount on the left (not just pad the clickable rect on
+    // the right), or our widget sits ~6px further left than the vanilla deck-screen tickbox and
+    // visibly jumps when switching between the card-reward and deck views.
+    private const float SideMargin = 6f;
 
     // Builds the tickbox in the deck view's bottom-left ViewUpgrades spot (offsets 16/-76 at
     // 0.75 scale, left-middle pivot), adds it to parent, and wires onToggleChanged to both
@@ -38,7 +47,7 @@ public static class ViewUpgradesTickboxHelper
         // only resolves after the node is registered as unique in the tickbox's owner registry.
         visuals.Owner = tickbox;
         visuals.UniqueNameInOwner = true;
-        visuals.Position = Vector2.Zero;
+        visuals.Position = new Vector2(SideMargin, 0f);
         visuals.Size = new Vector2(BoxSize, BoxSize);
 
         // Styling copied from the ViewUpgradesLabel nodes in the deck screens' scenes.
@@ -80,12 +89,12 @@ public static class ViewUpgradesTickboxHelper
         // the label measures with the same fully resolved theme it renders with. A detached
         // measure can come out narrower (theme/font resolution differs without a parent), and
         // since NClickableControl only receives input inside the control rect, that left the
-        // right part of the drawn text unclickable. The 6px right padding matches the vanilla
-        // ViewUpgrades MarginContainer's margin.
+        // right part of the drawn text unclickable. The SideMargin on each end matches the vanilla
+        // ViewUpgrades MarginContainer's left/right margins.
         float labelWidth = label.GetMinimumSize().X;
-        label.Position = new Vector2(BoxSize + BoxLabelGap, 0f);
+        label.Position = new Vector2(SideMargin + BoxSize + BoxLabelGap, 0f);
         label.Size = new Vector2(labelWidth, BoxSize);
-        tickbox.OffsetRight = tickbox.OffsetLeft + BoxSize + BoxLabelGap + labelWidth + 6f;
+        tickbox.OffsetRight = tickbox.OffsetLeft + SideMargin + BoxSize + BoxLabelGap + labelWidth + SideMargin;
 
         tickbox.IsTicked = false;
         tickbox.Visible = NControllerManager.Instance?.IsUsingController != true;
