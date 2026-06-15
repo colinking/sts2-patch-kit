@@ -21,6 +21,27 @@ Download the latest version of `ColinsPatchKit-vX.zip` from the [Releases](https
 All patches are **enabled by default** and can be toggled
 individually (Main Menu > Mod Configuration > ColinsPatchKit).
 
+- [Map](#map)
+  - [Current floor tooltip](#current-floor-tooltip)
+  - [Upcoming floor tooltips](#upcoming-floor-tooltips)
+  - [Potion chances](#potion-chances)
+- [Combat](#combat)
+  - [Well Laid Plans retain slots](#well-laid-plans-retain-slots)
+  - [Curses & statuses first when exhausting/transforming](#curses--statuses-first-when-exhaustingtransforming)
+  - [More active relic pulses](#more-active-relic-pulses)
+  - [Active buff/debuff pulses](#active-buffdebuff-pulses)
+- [Menus](#menus)
+  - [Random character bans](#random-character-bans)
+  - [View Upgrades toggle](#view-upgrades-toggle)
+  - [Multiplayer cards Compendium toggle](#multiplayer-cards-compendium-toggle)
+- [Speed-ups](#speed-ups)
+  - [Skip game over animations](#skip-game-over-animations)
+  - [Move shop hand away faster](#move-shop-hand-away-faster)
+  - [Skip special card reward delay](#skip-special-card-reward-delay)
+  - [Skip intro logo](#skip-intro-logo)
+- [Experimental](#experimental)
+  - [Translucent Ethereal card frames](#translucent-ethereal-card-frames)
+
 ### Map
 
 #### Current floor tooltip
@@ -63,7 +84,7 @@ If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card 
 
 ![Retain slots](docs/images/retain-slots.png)
 
-#### Curses & statuses first when exhausting
+#### Curses & statuses first when exhausting/transforming
 
 If enabled, curses and statuses will be rendered first when choosing a card from your draw pile to exhaust (Cleanse) or transform into a specific
 card (Charge, Séance).
@@ -86,8 +107,6 @@ If enabled, this patch enables pulsing for a handful of additional relics that b
 - **Music Box** — once per turn, your first Attack is duplicated.
 
 ![Relic pulses](docs/images/relic-pulses.gif)
-
-*Centennial Puzzle pulsing while its effect is still available.*
 
 #### Active buff/debuff pulses
 
