@@ -39,7 +39,7 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Move shop hand away faster](#move-shop-hand-away-faster)
   - [Skip special card reward delay](#skip-special-card-reward-delay)
   - [Skip intro logo](#skip-intro-logo)
-- [Experimental](#experimental)
+- [Experimental (disabled by default)](#experimental-disabled-by-default)
   - [Translucent Ethereal card frames](#translucent-ethereal-card-frames)
 
 ### Map
@@ -168,7 +168,7 @@ in the center of the screen for two seconds. This avoids blocking your view and 
 If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
 main menu.
 
-### Experimental
+### Experimental (disabled by default)
 
 Experimental patches are **disabled** by default, but can be enabled via the mod configuration UI.
 
