@@ -25,7 +25,6 @@ public partial class MainFile : Node
         ModConfigRegistry.Register(ModId, config);
         config.ConfigChanged += (_, _) =>
         {
-            EtherealTransparencyManager.RefreshAllCards();
             RelicReadyPulsesManager.RefreshAll();
             PowerReadyPulsesManager.RefreshAll(force: true);
             RandomCharacterExclusionManager.RefreshAll();

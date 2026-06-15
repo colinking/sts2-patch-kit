@@ -44,13 +44,5 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Return the merchant's pointing hand to rest faster after you stop hovering an item, so it stops blocking your view of the wares.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Send returned reward cards straight to deck",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Send returned reward cards straight to deck",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Send special card rewards (Thieving Hopper, Lantern Key) straight to your deck instead of blocking the screen for two seconds.",
-  "COLINSPATCHKIT-SKIP_INTRO_LOGO.title": "Skip intro Mega Crit logo",
-  "COLINSPATCHKIT-SKIP_INTRO_LOGO.hover.title": "Skip intro Mega Crit logo",
-  "COLINSPATCHKIT-SKIP_INTRO_LOGO.hover.desc": "Skip the Mega Crit startup logo and boot straight to the main menu.",
-
-  "COLINSPATCHKIT-EXPERIMENTAL.title": "Experimental",
-  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.title": "Make Ethereal card frames translucent",
-  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.title": "Make Ethereal card frames translucent",
-  "COLINSPATCHKIT-MAKE_ETHEREAL_CARDS_TRANSLUCENT.hover.desc": "Render the colored frame of Ethereal cards slightly transparent so they're easy to spot at a glance; text, art and icons stay opaque. (Quest and Ancient cards excluded.)"
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Send special card rewards (Thieving Hopper, Lantern Key) straight to your deck instead of blocking the screen for two seconds."
 }

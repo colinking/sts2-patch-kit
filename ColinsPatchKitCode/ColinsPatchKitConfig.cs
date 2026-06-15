@@ -54,12 +54,4 @@ public class ColinsPatchKitConfig : SimpleModConfig
 
     [ConfigHoverTip(true)]
     public static bool SkipReturnedCardPreviewDelay { get; set; } = true;
-
-    [ConfigHoverTip(true)]
-    public static bool SkipIntroLogo { get; set; } = true;
-
-    // Experimental; off by default (see README).
-    [ConfigSection("Experimental")]
-    [ConfigHoverTip(true)]
-    public static bool MakeEtherealCardsTranslucent { get; set; } = false;
 }

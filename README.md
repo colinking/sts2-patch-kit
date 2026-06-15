@@ -1,6 +1,6 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
 This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer.
 
@@ -38,9 +38,6 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Skip game over animations](#skip-game-over-animations)
   - [Move shop hand away faster](#move-shop-hand-away-faster)
   - [Skip special card reward delay](#skip-special-card-reward-delay)
-  - [Skip intro logo](#skip-intro-logo)
-- [Experimental (disabled by default)](#experimental-disabled-by-default)
-  - [Translucent Ethereal card frames](#translucent-ethereal-card-frames)
 
 ### Map
 
@@ -162,22 +159,3 @@ stop hovering over a shop item. This helps prevent the merchant's hand from bloc
 
 If enabled, taking a "special card" reward (Thieving Hopper, Lantern Key) will send it straight to your deck instead of floating
 in the center of the screen for two seconds. This avoids blocking your view and mirrors how normal card rewards work.
-
-#### Skip intro logo
-
-If enabled, the Mega Crit logo animation at startup is skipped and the game boots straight to the
-main menu.
-
-### Experimental (disabled by default)
-
-Experimental patches are **disabled** by default, but can be enabled via the mod configuration UI.
-
-#### Translucent Ethereal card frames
-
-If enabled, the colored frame of Ethereal cards is rendered slightly transparent so they are easier
-to spot at a glance. Card text, art and icons stay fully opaque. (Quest and Ancient cards are
-excluded; their frames use a different texture layout.)
-
-This patch is experimental as it's unclear what the best way is to
-indicate Ethereal (and eventually Retain, Sly, and Exhaust) keywords without conflicting with
-enchantments and afflictions. The problem this patch is trying to solve is that keywords are not visible on cards in your hand unless you hover over the card. This is specifically problematic when adding a keyword temporarily to a card (e.g. Sculpting Strike, or powers/relics that add ethereal cards to your hand).
