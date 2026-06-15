@@ -17,6 +17,32 @@ Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list a
   reports a friendly error instead; keep the two in sync. Only raise the pin when we start using
   newer BaseLib APIs.
 
+## Releasing
+
+A release is a git tag plus a GitHub release whose only asset is a zip of the built mod folder.
+Releases are cut by hand (no script); follow the steps below. **Always create the GitHub release
+as a draft (`--draft`) so Colin can review the notes and asset before publishing** — never publish
+directly. Steps:
+
+1. Pick the version (semver, `vMAJOR.MINOR.PATCH`). New patches → minor bump; fixes only → patch.
+   Confirm the number and the "Tested with" game version with Colin if unsure.
+2. Bump `"version"` in `ColinsPatchKit.json` to the new tag (this is the only repo file a release
+   commits). Then `dotnet publish` so the manifest, dll, and pck copied into the game's mods folder
+   all carry the new version.
+3. Assemble `ColinsPatchKit-<version>.zip` from the published mods folder
+   (`.../SlayTheSpire2.app/Contents/MacOS/mods/ColinsPatchKit`). The zip nests the three shipped
+   files — `ColinsPatchKit.json`, `ColinsPatchKit.pck`, `ColinsPatchKit.dll` — under a top-level
+   `ColinsPatchKit/` dir so it extracts straight into `mods/`. **Exclude the `.pdb`** (debug symbols
+   aren't shipped). Verify the manifest version inside the zip. The zip is a release artifact only —
+   do not commit it (it's not gitignored, so `git add` just the manifest, never `-A`).
+4. Commit `Release <version>` (manifest only), then `git tag <version>` and push both `main` and the
+   tag.
+5. `gh release create <version> --draft --title <version> --notes-file <notes> "<zip>#<zip>"`.
+   Notes structure (see prior releases for tone): one-line summary + current patch count, then
+   `## New patches`, `## Changes`, `## Removed` as applicable, a link to the README patch list, and
+   an `## Installation` blurb (BaseLib floor + "extract into mods/" + "Tested with `vX`"). Hand Colin
+   the draft URL to review and publish.
+
 ## Architecture
 
 - `ColinsPatchKitCode/MainFile.cs` — `[ModInitializer]` entry point: `harmony.PatchAll()` plus
