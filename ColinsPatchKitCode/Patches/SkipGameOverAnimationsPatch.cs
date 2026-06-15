@@ -10,19 +10,20 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 // awaited Tweens (NGameOverScreen.AnimateRunSummary -> AnimateScoreLines/AnimateBadges/
 // AnimateScoreBar/AnimateDiscoveries), with fixed Cmd.Wait gaps between phases, then shows the
 // Return-to-Main-Menu button. Vanilla has no way to hurry it along. While the screen is open we
-// poll input each frame; a click/confirm while the summary is animating (a) cranks the speed scale
-// of every running Tween so the current line snaps to its final state within a frame (firing its
-// `finished` signal and advancing the await to the next line), and (b) flips SkipRequested, after
-// which a Cmd.Wait prefix collapses the remaining inter-phase gaps to zero. One click ~ one line;
-// spam-clicking jumps straight to the menu button with no leftover pauses.
+// poll input each frame; the first click/confirm while the summary is animating latches
+// SkipRequested, which (a) flips a Cmd.Wait prefix that collapses the remaining inter-phase gaps to
+// zero, and (b) makes us snap every running reveal Tween to its final state each frame from then on
+// (firing each `finished` signal so the awaited chain advances). With the gaps gone the whole chain
+// resolves within a few frames of that single click — a full resolve, no per-line clicking.
 //
-// We bump speed scale (rather than Kill()) so each line lands fully revealed; we poll Input from
-// the SceneTree's ProcessFrame signal (rather than the screen's _GuiInput) so full-screen backstop
-// ColorRects can't swallow the click, and rather than a mod-defined Node subclass whose runtime
-// Godot bindings don't register cleanly; and we never cancel the screen's CancellationToken, so the
-// save/unlock bookkeeping in AnimateScoreBar still runs (just faster). Gap suppression is gated on
-// both Active (a game-over screen is open) and SkipRequested (the user actually clicked), so a
-// player who never clicks keeps vanilla pacing and nothing outside this screen is affected.
+// We fast-forward via Tween.CustomStep (the game's own TweenHelper.FastForwardToCompletion) rather
+// than Kill() so each line lands fully revealed; we poll Input from the SceneTree's ProcessFrame
+// signal (rather than the screen's _GuiInput) so full-screen backstop ColorRects can't swallow the
+// click, and rather than a mod-defined Node subclass whose runtime Godot bindings don't register
+// cleanly; and we never cancel the screen's CancellationToken, so the save/unlock bookkeeping in
+// AnimateScoreBar still runs (just faster). Both the fast-forward and the gap suppression require
+// SkipRequested and stop once _isAnimatingSummary clears, so a player who never clicks keeps vanilla
+// pacing and nothing outside this screen (the menu button fade, etc.) is touched.
 public static class GameOverSkipManager
 {
     private static readonly System.Reflection.FieldInfo IsAnimatingField =
@@ -72,35 +73,34 @@ public static class GameOverSkipManager
             return;
         }
 
-        // Edge-detect a left click (or controller/keyboard confirm) so a held button is one skip.
-        bool pressed = Input.IsMouseButtonPressed(MouseButton.Left)
-            || (InputMap.HasAction("ui_accept") && Input.IsActionPressed("ui_accept"));
-        bool justPressed = pressed && !_wasPressed;
-        _wasPressed = pressed;
-        if (!justPressed)
+        // Latch the skip on the first click/confirm, but only while the reveal is actually running
+        // (edge-detected so a held button counts once). Until then, do nothing — vanilla pacing.
+        if (!SkipRequested)
         {
-            return;
+            bool pressed = Input.IsMouseButtonPressed(MouseButton.Left)
+                || (InputMap.HasAction("ui_accept") && Input.IsActionPressed("ui_accept"));
+            bool justPressed = pressed && !_wasPressed;
+            _wasPressed = pressed;
+            if (!justPressed || IsAnimatingField.GetValue(_screen) is not true)
+            {
+                return;
+            }
+            SkipRequested = true;
         }
 
-        // Only while the run-summary reveal is actually running.
+        // Once skipping, snap every running reveal tween to its end each frame until the summary
+        // animation finishes — turning that one click into a full resolve. Stop once it's done so
+        // unrelated tweens (e.g. the menu button fade) keep their normal timing.
         if (IsAnimatingField.GetValue(_screen) is not true)
         {
             return;
         }
-
-        SkipStep(_tree);
-    }
-
-    private static void SkipStep(SceneTree tree)
-    {
-        SkipRequested = true;
-        foreach (Tween tween in tree.GetProcessedTweens())
+        foreach (Tween tween in _tree.GetProcessedTweens())
         {
             if (tween.IsValid() && tween.IsRunning())
             {
-                // The game's own fast-forward (TweenHelper.FastForwardToCompletion): jump the
-                // tween to its end, firing `Finished` this frame so the awaited reveal advances
-                // to the next line immediately.
+                // The game's own fast-forward (TweenHelper.FastForwardToCompletion): jump the tween
+                // to its end, firing `Finished` this frame so the awaited reveal advances.
                 tween.CustomStep(999999999.0);
             }
         }
