@@ -114,9 +114,68 @@ public static class RelicReadyPulsesManager
             foreach (RelicModel relic in player.Relics)
             {
                 Refresh(relic);
+                if (relic is RainbowRing rainbowRing)
+                {
+                    RainbowRingReadyPulseManager.Refresh(rainbowRing);
+                }
             }
         }
     }
+}
+
+// Rainbow Ring is the one vanilla relic that already drives its own pulse — but backwards. Its
+// ActivationCountThisTurn setter lights the inventory icon (RelicStatus.Active) once the relic has
+// *already* granted its Strength/Dexterity this turn (count > 0), i.e. exactly when nothing more
+// can happen this turn. We invert it: pulse while the relic can still trigger (no activation yet,
+// combat in progress) and go quiet the instant it fires, matching the "still pending" hint the
+// other ready-pulses give. Unlike the tracked relics above it isn't in _tracked — vanilla owns
+// its Status, we only override the value the setter writes.
+public static class RainbowRingReadyPulseManager
+{
+    private static readonly FieldInfo ActivationCountField =
+        typeof(RainbowRing).GetField("_activationCountThisTurn",
+            BindingFlags.NonPublic | BindingFlags.Instance)
+        ?? throw new MissingFieldException(nameof(RainbowRing), "_activationCountThisTurn");
+
+    // Re-derives Status from the relic's activation count. When the pulse is disabled this
+    // reproduces vanilla's own (post-trigger) logic so toggling the setting off restores the
+    // stock behavior exactly.
+    public static void Apply(RainbowRing relic, int activationCount)
+    {
+        try
+        {
+            if (!relic.IsMutable)
+            {
+                return;
+            }
+            if (!ColinsPatchKitConfig.ShowRelicReadyPulses)
+            {
+                relic.Status = activationCount > 0 ? RelicStatus.Active : RelicStatus.Normal;
+                return;
+            }
+            // CombatManager clears IsInProgress before AfterCombatEnd runs (which resets the count
+            // to 0), so the end-of-combat reset naturally settles on Normal instead of re-arming.
+            bool armed = CombatManager.Instance.IsInProgress && activationCount < 1;
+            relic.Status = armed ? RelicStatus.Active : RelicStatus.Normal;
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to refresh Rainbow Ring ready pulse: {e}");
+        }
+    }
+
+    public static void Refresh(RainbowRing relic) =>
+        Apply(relic, (int)ActivationCountField.GetValue(relic)!);
+}
+
+// The relic routes every state change — the per-turn reset, the post-activation increment, and the
+// end-of-combat reset — through ActivationCountThisTurn, so a single postfix on its setter covers
+// all of them. It runs after vanilla's own (inverted) Status write and overrides it.
+[HarmonyPatch(typeof(RainbowRing), "set_ActivationCountThisTurn")]
+public static class RainbowRingReadyPulseSetterPatch
+{
+    public static void Postfix(RainbowRing __instance, int value) =>
+        RainbowRingReadyPulseManager.Apply(__instance, value);
 }
 
 // Every tracked relic except Lava Lamp consumes its effect exactly when it Flash()es. The
