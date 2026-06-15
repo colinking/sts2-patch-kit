@@ -54,6 +54,13 @@ public static class CurrentNodeTooltipPatch
         {
             return;
         }
+        // While you're actually in this room's combat, the history tooltip's Rewards section is empty
+        // (nothing's been earned yet), so we insert our expected rewards into it below. Once the
+        // combat ends, the section fills with the real rewards and the insertion is skipped.
+        MapPointType? combatType = MapNodeInfoTooltipPatch.InProgressCombatType(runState);
+        Player? combatPlayer = combatType.HasValue
+            ? runState.Players.FirstOrDefault(p => p.NetId == LocalContext.NetId.Value)
+            : null;
         MapPointHistoryEntry? entry = runState.GetHistoryEntryFor(new MapLocation(point.Point.coord, runState.CurrentActIndex));
         if (entry == null)
         {
@@ -94,25 +101,54 @@ public static class CurrentNodeTooltipPatch
         NHoverTipSet.Remove(point);
         NMapPointHistoryHoverTip historyTip = NMapPointHistoryHoverTip.Create(floorNum, LocalContext.NetId.Value, entry);
         NHoverTipSet tip = NHoverTipSet.CreateAndShowMapPointHistory(point, historyTip);
-        // While a combat is in progress here the post-combat potion roll hasn't happened yet, so
-        // show its live chance inside this same tooltip. We append it to one of the history tip's
-        // own labels (rather than a separate hover-tip card, which the set's flow container would
-        // wrap into a second floating box). Done deferred so the history tip's _Ready has already
-        // populated the label and won't overwrite it.
-        string? potionLine = MapNodeInfoTooltipPatch.CurrentRoomPotionLine(runState);
+        // Mid-combat, fill the (otherwise empty) Rewards section with the expected rewards. Runs after
+        // the tooltip's _Ready has populated the section, so it reveals/overrides it.
+        if (combatType.HasValue && combatPlayer != null)
+        {
+            MapNodeInfoTooltipPatch.RenderExpectedRewardsIntoHistory(historyTip, runState, combatPlayer, point.Point, combatType.Value);
+        }
+        // The recorded potion-chance line is appended by CombatPotionChanceHistoryTooltipPatch's
+        // _Ready postfix, which runs for every history tooltip — this current node and the traveled
+        // ones alike (it no-ops on the still-in-progress current combat, whose expected potion chance
+        // is shown by the inserted block above instead). Alignment is deferred so the tip is sized
+        // (including that line) before it's positioned.
         Callable.From(delegate
         {
-            if (potionLine != null && GodotObject.IsInstanceValid(historyTip))
-            {
-                RichTextLabel? label = historyTip.GetNodeOrNull<RichTextLabel>("%CardStats")
-                    ?? historyTip.GetNodeOrNull<RichTextLabel>("%PlayerStats");
-                if (label != null)
-                {
-                    label.Text = string.IsNullOrEmpty(label.Text) ? potionLine : label.Text + "\n" + potionLine;
-                    label.Visible = true;
-                }
-            }
             tip.SetAlignment(point, HoverTip.GetHoverTipAlignment(point));
         }).CallDeferred();
+    }
+}
+
+// Renders the potion outcome onto a previous combat node's run-history tooltip: the chance that
+// applied when its reward rolled (reconstructed by replaying the run's potion pity from history —
+// see MapNodeInfoTooltipPatch.HistoricalPotionInfo), tagged onto the awarded potion or shown as a
+// red "No potion" line. Covers traveled nodes and the just-completed current node alike (both use
+// NMapPointHistoryHoverTip); the still-in-combat current node shows its own expected-rewards
+// tooltip instead, so the live case never reaches here. ____playerId is the tip's player field.
+[HarmonyPatch(typeof(NMapPointHistoryHoverTip), "_Ready")]
+public static class CombatPotionChanceHistoryTooltipPatch
+{
+    public static void Postfix(NMapPointHistoryHoverTip __instance, MapPointHistoryEntry ____entry, ulong ____playerId)
+    {
+        try
+        {
+            if (!ColinsPatchKitConfig.ShowPotionChances)
+            {
+                return;
+            }
+            IRunState? runState = RunManager.Instance.DebugOnlyGetState();
+            if (runState == null)
+            {
+                return;
+            }
+            if (MapNodeInfoTooltipPatch.HistoricalPotionInfo(runState, ____entry, ____playerId) is { } info)
+            {
+                MapNodeInfoTooltipPatch.RenderHistoricalPotion(__instance, info.chance, info.awarded);
+            }
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to add potion chance to history tooltip: {e}");
+        }
     }
 }

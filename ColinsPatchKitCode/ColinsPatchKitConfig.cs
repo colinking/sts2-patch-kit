@@ -7,8 +7,12 @@ namespace ColinsPatchKit.ColinsPatchKitCode;
 // persists them to user://mod_configs/ColinsPatchKit.cfg (named after the root namespace).
 public class ColinsPatchKitConfig : SimpleModConfig
 {
-    // Declaration order drives the order of the toggles in the config UI;
-    // keep in sync with the patch order in README.md.
+    // Declaration order drives the order of the toggles in the config UI, and a
+    // [ConfigSection] on the first property of each group renders a header above it
+    // (loc key COLINSPATCHKIT-<SCREAMING_SNAKE_NAME>.title). Keep the grouping and
+    // order in sync with the patch order in README.md.
+
+    [ConfigSection("Map")]
     [ConfigHoverTip(true)]
     public static bool ShowCurrentNodeTooltip { get; set; } = true;
 
@@ -16,10 +20,11 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool ShowMapNodeInfoTooltips { get; set; } = true;
 
     [ConfigHoverTip(true)]
-    public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
+    public static bool ShowPotionChances { get; set; } = true;
 
+    [ConfigSection("Combat")]
     [ConfigHoverTip(true)]
-    public static bool ExcludeCharactersFromRandom { get; set; } = true;
+    public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
 
     [ConfigHoverTip(true)]
     public static bool SortCursesAndStatusesFirst { get; set; } = true;
@@ -30,25 +35,31 @@ public class ColinsPatchKitConfig : SimpleModConfig
     [ConfigHoverTip(true)]
     public static bool ShowPowerReadyPulses { get; set; } = true;
 
+    [ConfigSection("Menus")]
     [ConfigHoverTip(true)]
-    public static bool SkipIntroLogo { get; set; } = true;
-
-    [ConfigHoverTip(true)]
-    public static bool SkipGameOverAnimations { get; set; } = true;
-
-    [ConfigHoverTip(true)]
-    public static bool MatchCompendiumMultiplayerCardsToRun { get; set; } = true;
-
-    [ConfigHoverTip(true)]
-    public static bool MoveShopHandAwayFaster { get; set; } = true;
+    public static bool ExcludeCharactersFromRandom { get; set; } = true;
 
     [ConfigHoverTip(true)]
     public static bool ShowCardRewardViewUpgradesToggle { get; set; } = true;
 
     [ConfigHoverTip(true)]
+    public static bool MatchCompendiumMultiplayerCardsToRun { get; set; } = true;
+
+    [ConfigSection("SpeedUps")]
+    [ConfigHoverTip(true)]
+    public static bool SkipGameOverAnimations { get; set; } = true;
+
+    [ConfigHoverTip(true)]
+    public static bool MoveShopHandAwayFaster { get; set; } = true;
+
+    [ConfigHoverTip(true)]
     public static bool SkipReturnedCardPreviewDelay { get; set; } = true;
 
+    [ConfigHoverTip(true)]
+    public static bool SkipIntroLogo { get; set; } = true;
+
     // Experimental; off by default (see README).
+    [ConfigSection("Experimental")]
     [ConfigHoverTip(true)]
     public static bool MakeEtherealCardsTranslucent { get; set; } = false;
 }

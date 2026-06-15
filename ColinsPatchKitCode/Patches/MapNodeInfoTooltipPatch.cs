@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -55,12 +56,14 @@ public static class MapNodeInfoTooltipPatch
     // vanilla convention for gold numbers. The Description hover-tip label renders BBCode.
     private const string GoldColorHex = "EFC851";
 
-    // Compendium rarity colors (StsColors.cream / blue / gold) for the merchant price columns, and
-    // a disabled light-gray (StsColors.lightGray) for prices the player can't afford.
-    private const string CommonColorHex = "FFF6E2";
-    private const string UncommonColorHex = "87CEEB";
-    private const string RareColorHex = "EFC851";
+    // Disabled light-gray (StsColors.lightGray) for merchant prices the player can't afford.
     private const string DisabledColorHex = "BFBFBF";
+
+    // Red for the "No potion" history line, plus the potion reward icon (full path for rendering,
+    // bare filename for matching an existing potion row).
+    private const string NoPotionColorHex = "FF5555";
+    private const string PotionIconPath = "res://images/packed/sprite_fonts/potion_icon.png";
+    private const string PotionIconMarker = "potion_icon.png";
 
     // The currently-hovered Unknown/Monster node, tracked so MapNodeInfoModifierPatch can rebuild
     // its tooltip (to add/remove the possible-events / possible-enemies list) when Cmd/Ctrl is
@@ -68,6 +71,9 @@ public static class MapNodeInfoTooltipPatch
     private static NMapPoint? _hoveredExpandable;
     private static IRunState? _hoveredRunState;
     private static NMapScreen? _hoveredScreen;
+    private static Player? _hoveredPlayer;
+    private static MapPointType _hoveredEffectiveType;
+    private static bool _hoveredIsCurrentRoom;
     private static bool _expandedShown;
 
     // Cached reflection handles for the protected ActModel._rooms field (generated room pools)
@@ -119,18 +125,44 @@ public static class MapNodeInfoTooltipPatch
             return;
         }
 
-        (string titleKey, string? description) = BuildTooltip(point, runState, localPlayer);
-        if (description == null)
+        ShowExpectedRewardsTooltip(point, runState, screen, localPlayer, point.Point.PointType, isCurrentRoom: false);
+    }
+
+    // Builds and shows the "Floor N / room type / expected rewards" tooltip for `point`, rendered as
+    // `effectiveType` (so a resolved "?" current node can render as its real combat room). Shared by
+    // the upcoming-node path and CurrentNodeTooltipPatch's current-in-combat path. isCurrentRoom
+    // suppresses the potion-drift asterisk: the chance for the room you're standing in is exact, not
+    // a may-still-change estimate.
+    public static void ShowExpectedRewardsTooltip(NMapPoint point, IRunState runState, NMapScreen screen,
+        Player player, MapPointType effectiveType, bool isCurrentRoom)
+    {
+        bool dependsOnUnresolved = !isCurrentRoom && PotionChanceDrifts(runState, point.Point);
+        (string roomTypeKey, string? body) = BuildTooltipFor(effectiveType, point.Point, runState, player, dependsOnUnresolved);
+        if (body == null)
         {
             // Boss / Ancient / Unassigned: nothing useful to add.
             return;
         }
 
         NHoverTipSet.Remove(point);
-        HoverTip tip = new(new LocString(LocTable, titleKey), description);
-        // The merchant price rows are wide; disable text wrapping so the tooltip grows to fit
-        // them on one line each instead of wrapping at the default 360px width.
-        if (point.Point.PointType == MapPointType.Shop)
+        // Mirror the historical-node tooltip: a "Floor N" header, the room type in normal text below
+        // it, then the expected-reward sections (reusing the same floor-header loc string).
+        LocString header = new("run_history", "MAP_POINT_HISTORY.header");
+        header.Add("FloorNum", FloorNumberFor(runState, point.Point));
+        string roomType = new LocString(LocTable, roomTypeKey).GetFormattedText();
+        // Bosses fold their name into the room-type line ("Boss: Waterfall Giant") rather than
+        // showing it as a separate body line.
+        if (effectiveType == MapPointType.Boss && BossEncounterFor(runState, point.Point) is { } bossEncounter)
+        {
+            roomType = $"{roomType}: {bossEncounter.Title.GetFormattedText()}";
+        }
+        // A single newline keeps the room type tight under the floor header; the body's own section
+        // headers provide the visual spacing.
+        string description = string.IsNullOrEmpty(body) ? roomType : $"{roomType}\n{body}";
+        HoverTip tip = new(header, description);
+        // The merchant price table is wide; disable text wrapping so the tooltip grows to fit it
+        // instead of wrapping at the default 360px width.
+        if (effectiveType == MapPointType.Shop)
         {
             tip.ShouldOverrideTextOverflow = true;
         }
@@ -141,11 +173,14 @@ public static class MapNodeInfoTooltipPatch
         }
         // Track expandable nodes so MapNodeInfoModifierPatch can rebuild the tooltip when Cmd/Ctrl
         // is pressed/released (to expand/collapse the possible events / enemies / elites list).
-        if (point.Point.PointType is MapPointType.Unknown or MapPointType.Monster or MapPointType.Elite)
+        if (effectiveType is MapPointType.Unknown or MapPointType.Monster or MapPointType.Elite)
         {
             _hoveredExpandable = point;
             _hoveredRunState = runState;
             _hoveredScreen = screen;
+            _hoveredPlayer = player;
+            _hoveredEffectiveType = effectiveType;
+            _hoveredIsCurrentRoom = isCurrentRoom;
             _expandedShown = IsModifierHeld();
         }
         // Defer alignment a frame so the tooltip is sized before it's positioned (as in
@@ -156,38 +191,117 @@ public static class MapNodeInfoTooltipPatch
         }).CallDeferred();
     }
 
-    private static (string titleKey, string? description) BuildTooltip(NMapPoint point, IRunState runState, Player player)
+    // If the local player is in an in-progress Monster/Elite combat, the map point type to render
+    // its expected rewards as; null otherwise (the caller then keeps the history tooltip). Boss
+    // combats fall through — there's no expected-rewards block for them.
+    public static MapPointType? InProgressCombatType(IRunState runState)
     {
-        MapPoint mapPoint = point.Point;
-        bool dependsOnUnresolved = PotionChanceDrifts(runState, mapPoint);
-        return mapPoint.PointType switch
+        if (runState.CurrentRoom is not CombatRoom combat || CombatManager.Instance?.IsInProgress != true)
         {
-            MapPointType.Unknown => ("LEGEND_UNKNOWN.title", BuildUnknown(runState)),
-            MapPointType.Elite => ("LEGEND_ELITE.title", BuildElite(runState, player, dependsOnUnresolved)),
+            return null;
+        }
+        return combat.RoomType switch
+        {
+            RoomType.Monster => MapPointType.Monster,
+            RoomType.Elite => MapPointType.Elite,
+            _ => null,
+        };
+    }
+
+    // Inserts the expected rewards into the current room's history tooltip while its combat is still
+    // in progress (CurrentNodeTooltipPatch's in-combat path). Vanilla leaves the Rewards section
+    // empty mid-fight — nothing's been earned yet — so we reveal it, relabel its header "Expected
+    // rewards", and fill the first reward column with the same gold/potion/relic/card lines the
+    // upcoming-node tooltip shows (exact here, since you're standing in the room). No-op if the
+    // combat type grants no rewards or the tooltip's reward nodes can't be found.
+    public static void RenderExpectedRewardsIntoHistory(NMapPointHistoryHoverTip tip, IRunState runState,
+        Player player, MapPoint mapPoint, MapPointType type)
+    {
+        List<string> lines = type switch
+        {
+            // The current room's chance is exact, so dependsOnUnresolved is false (no drift asterisk).
+            MapPointType.Elite => EliteRewardLines(mapPoint, runState, player, dependsOnUnresolved: false),
+            MapPointType.Monster => MonsterRewardLines(mapPoint, runState, player, dependsOnUnresolved: false),
+            _ => new List<string>(),
+        };
+        if (lines.Count == 0)
+        {
+            return;
+        }
+        Control? container = tip.GetNodeOrNull<Control>("%RewardStats");
+        RichTextLabel? row = tip.GetNodeOrNull<Control>("%RewardRows")?.GetChildren().OfType<RichTextLabel>().FirstOrDefault();
+        if (container == null || row == null)
+        {
+            return;
+        }
+        container.Visible = true;
+        if (container.GetNodeOrNull<MegaLabel>("Header") is { } headerLabel)
+        {
+            headerLabel.SetTextAutoSize("Expected rewards");
+        }
+        // Reward rows are tab-indented, one entry per line (matching vanilla's reward formatting).
+        row.Text = string.Join("\n", lines.Select(l => $"\t{l}"));
+    }
+
+    private static (string titleKey, string? description) BuildTooltipFor(MapPointType type, MapPoint mapPoint,
+        IRunState runState, Player player, bool dependsOnUnresolved)
+    {
+        return type switch
+        {
+            MapPointType.Unknown => ("LEGEND_UNKNOWN.title", BuildUnknown(runState, mapPoint)),
+            MapPointType.Elite => ("LEGEND_ELITE.title", BuildElite(mapPoint, runState, player, dependsOnUnresolved)),
             MapPointType.Treasure => ("LEGEND_TREASURE.title", BuildTreasure(mapPoint, runState, player)),
             MapPointType.Monster => ("LEGEND_ENEMY.title", BuildMonster(mapPoint, runState, player, dependsOnUnresolved)),
             MapPointType.Shop => ("LEGEND_MERCHANT.title", BuildMerchant(mapPoint, runState, player)),
             MapPointType.RestSite => ("LEGEND_REST.title", BuildRest(player)),
+            MapPointType.Boss => ("LEGEND_BOSS.title", BuildBoss(mapPoint, runState, player, dependsOnUnresolved)),
             _ => (string.Empty, null),
         };
     }
 
     // "?" node: the live resolution distribution. Elite is disabled by default (base odds -1),
-    // so only show it if a hook has enabled it.
-    private static string BuildUnknown(IRunState runState)
+    // so only show it if a hook has enabled it. Relics and cards that restrict which room types a
+    // "?" can resolve to (Juzu Bracelet drops Monster; Golden Compass / Lantern Key force Event on
+    // their act) work through ModifyUnknownMapPointRoomTypes — a hook Roll() consults but the odds
+    // object itself doesn't bake in. Query it here and drop any removed type, folding its
+    // probability into Event exactly as the roll does (a removed type falls through to Event).
+    private static string BuildUnknown(IRunState runState, MapPoint target)
     {
         UnknownMapPointOdds odds = runState.Odds.UnknownMapPoint;
-        List<string> lines = new()
+        (RoomType Type, string Label, float Value)[] nonEvent =
         {
-            $"Monster: {Pct(odds.MonsterOdds)}",
-            $"Treasure: {Pct(odds.TreasureOdds)}",
-            $"Shop: {Pct(odds.ShopOdds)}",
-            $"Event: {Pct(odds.EventOdds)}",
+            (RoomType.Monster, "Monster", odds.MonsterOdds),
+            (RoomType.Elite, "Elite", odds.EliteOdds),
+            (RoomType.Treasure, "Treasure", odds.TreasureOdds),
+            (RoomType.Shop, "Shop", odds.ShopOdds),
         };
-        if (odds.EliteOdds > 0f)
+        IReadOnlySet<RoomType> allowed = Hook.ModifyUnknownMapPointRoomTypes(
+            runState, nonEvent.Select(o => o.Type).Append(RoomType.Event).ToHashSet());
+
+        // These odds drift each time a "?" room resolves, so if any route here clears another "?"
+        // first the numbers shown can still change — flag them with an asterisk.
+        bool drifts = UnknownOddsDrift(runState, target);
+        string mark = drifts ? "*" : "";
+
+        List<string> oddsLines = new();
+        float nonEventSum = 0f;
+        foreach ((RoomType type, string label, float value) in nonEvent)
         {
-            lines.Insert(1, $"Elite: {Pct(odds.EliteOdds)}");
+            if (value <= 0f || !allowed.Contains(type))
+            {
+                continue;
+            }
+            nonEventSum += value;
+            oddsLines.Add($"{label}: {Pct(value)}{mark}");
         }
+        // Event soaks up the leftover probability, including the mass of any type a hook removed.
+        if (allowed.Contains(RoomType.Event))
+        {
+            oddsLines.Add($"Event: {Pct(Math.Max(0f, 1f - nonEventSum))}{mark}");
+        }
+        // A "?" resolves to one of these rather than handing out rewards, so it's "Possible
+        // outcomes" rather than "Expected rewards".
+        List<string> lines = Section("Possible outcomes", oddsLines);
         AppendExpandableSection(lines, "events", runState, rs => NamedList("Possible events", GetPossibleEventNames(rs)));
         return string.Join("\n", lines);
     }
@@ -204,6 +318,7 @@ public static class MapNodeInfoTooltipPatch
         return pool
             .Where(e => e != null)
             .Where(e => !seen.Contains(e.Id.Entry))
+            .Where(e => IsEventAllowed(e, runState))
             .Select(e => e.Title.GetFormattedText())
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct()
@@ -211,8 +326,29 @@ public static class MapNodeInfoTooltipPatch
             .ToList();
     }
 
+    // Whether an event passes its own spawn requirements, the same gate the game applies before
+    // offering one (RoomSet.EnsureNextEventIsValid → EventModel.IsAllowed). This drops events that
+    // can never roll normally (War Historian Repy, only reached via the Lantern Key) as well as ones
+    // the player doesn't currently qualify for (act / gold / HP / deck requirements). The latter are
+    // evaluated against the live run state, so a gold/HP-gated event reflects your state right now,
+    // not what it'll be when you reach the node. Fails open (keeps the event) if a predicate throws,
+    // so one misbehaving event can't blank out the whole list.
+    private static bool IsEventAllowed(EventModel e, IRunState runState)
+    {
+        try
+        {
+            return e.IsAllowed(runState);
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Error($"Event {e.Id.Entry} IsAllowed check failed: {ex}");
+            return true;
+        }
+    }
+
     // "Hold Cmd/Ctrl to list X" hint, expanding to the full body (built by getBody, which already
-    // includes any headers) while the modifier is held.
+    // includes any headers) while the modifier is held. Separated from the preceding section by a
+    // blank line.
     private static void AppendExpandableSection(List<string> lines, string noun, IRunState runState, Func<IRunState, List<string>> getBody)
     {
         if (IsModifierHeld())
@@ -226,103 +362,205 @@ public static class MapNodeInfoTooltipPatch
         }
         else
         {
+            lines.Add("");
             lines.Add($"[color=#888888]Hold {ModifierName()} to list {noun}[/color]");
         }
     }
 
-    // A "Header:" line followed by "  - item" lines, or nothing when the list is empty.
+    // Section/list headers reuse the history tooltip's "Rewards" label styling: gold (StsColors.gold
+    // #EFC851), bold, and size 22 (the description label's default is smaller), so they read as
+    // native headers above the cream body text.
+    private static string Header(string text)
+    {
+        return $"[font_size=22][color=#{GoldColorHex}][b]{text}[/b][/color][/font_size]";
+    }
+
+    // A gold header followed by indented (bullet-free) item lines, like vanilla; nothing when empty.
     private static List<string> NamedList(string header, IEnumerable<string> items)
     {
         List<string> materialized = items.ToList();
         List<string> result = new();
         if (materialized.Count > 0)
         {
-            result.Add($"{header}:");
-            result.AddRange(materialized.Select(i => $"  - {i}"));
+            result.Add(Header(header));
+            result.AddRange(materialized.Select(i => $"  {i}"));
         }
         return result;
     }
 
+    // A gold header with each entry indented two spaces beneath it, mirroring the history tooltip's
+    // reward block. Empty when there are no entries.
+    private static List<string> Section(string title, IEnumerable<string> entries)
+    {
+        List<string> materialized = entries.ToList();
+        List<string> result = new();
+        if (materialized.Count > 0)
+        {
+            result.Add(Header(title));
+            result.AddRange(materialized.Select(e => $"  {e}"));
+        }
+        return result;
+    }
+
+    // The cumulative floor number of a node: its row within the current act plus the visited-node
+    // counts of all previous acts — the same numbering the history tooltip uses.
+    private static int FloorNumberFor(IRunState runState, MapPoint point)
+    {
+        int floor = point.coord.row + 1;
+        for (int i = 0; i < runState.MapPointHistory.Count - 1; i++)
+        {
+            floor += runState.MapPointHistory[i].Count;
+        }
+        return floor;
+    }
+
     // Elite node: which (not-yet-fought) elites this act can throw at you, the gold range, and the
     // (elite-boosted) potion chance, plus any reward-count relic bonuses.
-    private static string BuildElite(IRunState runState, Player player, bool dependsOnUnresolved)
+    private static string BuildElite(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
-        List<string> lines = new() { GoldText(runState, player, 35, 45, CombatGoldBonus(runState, player)) };
-        float chance = PotionChance(runState, player, RoomType.Elite, out bool forced);
-        bool drifts = dependsOnUnresolved && !forced;
-        lines.Add(PotionLine(chance, drifts));
-        if (player.GetRelic<WhiteStar>() != null)
-        {
-            lines.Add("+1 card reward (White Star)");
-        }
-        if (player.GetRelic<BlackStar>() != null)
-        {
-            lines.Add("+1 relic (Black Star)");
-        }
+        List<string> lines = Section("Expected rewards", EliteRewardLines(mapPoint, runState, player, dependsOnUnresolved));
         // Behind Cmd/Ctrl, like the enemy list, for consistency.
         AppendExpandableSection(lines, "elites", runState, rs => NamedList("Possible elites", GetUnfoughtEliteNames(rs)));
         return string.Join("\n", lines);
+    }
+
+    // The plain elite reward lines (no "Expected rewards" header). Order matches the vanilla
+    // run-history tooltip we insert into: gold, relic, card, then potion last.
+    private static List<string> EliteRewardLines(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
+    {
+        List<string> rewards = new() { GoldText(runState, player, 35, 45, CombatGoldBonus(runState, player)) };
+        rewards.Add(CombatRelicLine(runState, player, mapPoint, isElite: true)!);
+        rewards.Add(CardRewardLine(runState, player, mapPoint));
+        if (player.GetRelic<WhiteStar>() != null)
+        {
+            rewards.Add("+1 card reward (White Star)");
+        }
+        rewards.Add(PotionRewardLine(runState, player, RoomType.Elite, dependsOnUnresolved));
+        return rewards;
     }
 
     // Treasure node: the relic pick, gold range (Poverty + gold relics), and any Spoils Map bonus.
     // Some run states (e.g. the Silver Crucible relic / Neow choice) leave the first chest empty.
     private static string BuildTreasure(MapPoint mapPoint, IRunState runState, Player player)
     {
+        List<string> rewards = new();
         if (!Hook.ShouldGenerateTreasure(runState, player))
         {
-            return "Empty (no relic or gold)";
+            rewards.Add("Empty (no relic or gold)");
         }
-        List<string> lines = new()
+        else
         {
-            "Relic: 1",
-            GoldText(runState, player, 42, 52),
-        };
-        // A Spoils Map quest on this node pays out 600 per Spoils Map still in your deck.
-        if (mapPoint.Quests.Any(q => q is SpoilsMap))
-        {
-            int spoils = player.Deck.Cards.OfType<SpoilsMap>().Count();
-            if (spoils > 0)
+            rewards.Add(GoldText(runState, player, 42, 52));
+            rewards.Add(RelicLine(1));
+            // A Spoils Map quest on this node pays out 600 per Spoils Map still in your deck.
+            if (mapPoint.Quests.Any(q => q is SpoilsMap))
             {
-                lines.Add($"+{Gold($"{600 * spoils}")} gold (Spoils Map)");
+                int spoils = player.Deck.Cards.OfType<SpoilsMap>().Count();
+                if (spoils > 0)
+                {
+                    rewards.Add($"+{Gold($"{600 * spoils}")} gold (Spoils Map)");
+                }
             }
         }
-        return string.Join("\n", lines);
+        return string.Join("\n", Section("Expected rewards", rewards));
     }
 
     // Enemy node: gold range, potion chance, and any reward-count relic bonus.
     private static string BuildMonster(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
-        List<string> lines = new() { GoldText(runState, player, 10, 20, CombatGoldBonus(runState, player)) };
-        float chance = PotionChance(runState, player, RoomType.Monster, out bool forced);
-        bool drifts = dependsOnUnresolved && !forced;
-        lines.Add(PotionLine(chance, drifts));
-        if (player.GetRelic<PrayerWheel>() != null)
-        {
-            lines.Add("+1 card reward (Prayer Wheel)");
-        }
+        List<string> lines = Section("Expected rewards", MonsterRewardLines(mapPoint, runState, player, dependsOnUnresolved));
         AppendExpandableSection(lines, "enemies", runState, rs => GetEnemyBody(rs, mapPoint));
         return string.Join("\n", lines);
     }
 
-    // Merchant node: a rarity-colored column header, then approximate price ranges by rarity
-    // (prices vary ~±5-15%), then the live next card-removal cost. Prices reflect price relics
-    // (Membership Card, The Courier) and ascension, and are greyed when unaffordable.
+    // The plain enemy reward lines (no "Expected rewards" header). Order matches the vanilla
+    // run-history tooltip we insert into: gold, relic, card, then potion last.
+    private static List<string> MonsterRewardLines(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
+    {
+        List<string> rewards = new() { GoldText(runState, player, 10, 20, CombatGoldBonus(runState, player)) };
+        // Monsters give no base relic, but Wongo's Mystery Ticket can drop one here.
+        if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
+        {
+            rewards.Add(relicLine);
+        }
+        rewards.Add(CardRewardLine(runState, player, mapPoint));
+        if (player.GetRelic<PrayerWheel>() != null)
+        {
+            rewards.Add("+1 card reward (Prayer Wheel)");
+        }
+        rewards.Add(PotionRewardLine(runState, player, RoomType.Monster, dependsOnUnresolved));
+        return rewards;
+    }
+
+    // Boss node: (for non-final-act bosses, which still hand out a reward) the gold, potion chance
+    // and card reward. The final act's boss ends the run, so its tooltip is just the "Boss: <name>"
+    // header line (the name is folded into the room-type line by the caller). Dual-boss acts have
+    // two boss nodes; BossEncounterFor maps each to the right encounter.
+    private static string BuildBoss(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
+    {
+        List<string> body = new();
+        if (runState.CurrentActIndex < runState.Acts.Count - 1)
+        {
+            // Boss gold base is 100 (EncounterModel); GoldText applies Poverty + the gold relics.
+            // Order matches the vanilla run-history tooltip: gold, relic, card, then potion last.
+            List<string> rewards = new() { GoldText(runState, player, 100, 100, CombatGoldBonus(runState, player)) };
+            // Bosses give no base relic, but Wongo's Mystery Ticket can drop one here.
+            if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
+            {
+                rewards.Add(relicLine);
+            }
+            rewards.Add(CardRewardLine(runState, player, mapPoint));
+            rewards.Add(PotionRewardLine(runState, player, RoomType.Boss, dependsOnUnresolved));
+            body.AddRange(Section("Expected rewards", rewards));
+        }
+        return string.Join("\n", body);
+    }
+
+    // The encounter at a boss node — the act's second boss for the second boss map point (dual-boss
+    // acts), otherwise the primary boss.
+    private static EncounterModel? BossEncounterFor(IRunState runState, MapPoint mapPoint)
+    {
+        ActModel act = runState.Act;
+        if (runState.Map.SecondBossMapPoint is { } second && mapPoint.coord == second.coord)
+        {
+            return act.SecondBossEncounter ?? act.BossEncounter;
+        }
+        return act.BossEncounter;
+    }
+
+    // Merchant node: approximate price ranges by rarity (prices vary ~±5-15%) laid out as an aligned
+    // table so the Common/Uncommon/Rare columns line up, plus the live next card-removal cost (which
+    // shares the Common column). Prices reflect price relics (Membership Card, The Courier) and
+    // ascension, and are greyed when unaffordable.
     private static string BuildMerchant(MapPoint mapPoint, IRunState runState, Player player)
     {
-        // Project gold forward: what you're guaranteed to have on arrival even on the worst route.
-        int gold = player.Gold + MinGoldGainTo(runState, player, mapPoint);
+        // Project the gold you'll have on arrival as a range; the worst case (min) drives the
+        // price affordability colouring.
+        int goldMin = player.Gold + GoldGainTo(runState, player, mapPoint, max: false);
+        int goldMax = player.Gold + GoldGainTo(runState, player, mapPoint, max: true);
         float discount = MerchantDiscount(player);
         int removalBase = AscensionHelper.GetValueIfAscension(AscensionLevel.Inflation, 100, 75);
         int removalStep = AscensionHelper.GetValueIfAscension(AscensionLevel.Inflation, 50, 25);
         int removalCost = Mathf.RoundToInt((removalBase + removalStep * player.ExtraFields.CardShopRemovalsUsed) * discount);
-        return string.Join("\n", new[]
-        {
-            $"{Colored("Common", CommonColorHex)} / {Colored("Uncommon", UncommonColorHex)} / {Colored("Rare", RareColorHex)}",
-            $"Cards: {PriceCell(50, 0.05f, discount, gold)} / {PriceCell(75, 0.05f, discount, gold)} / {PriceCell(150, 0.05f, discount, gold)}",
-            $"Relics: {PriceCell(175, 0.15f, discount, gold)} / {PriceCell(225, 0.15f, discount, gold)} / {PriceCell(275, 0.15f, discount, gold)}",
-            $"Potions: {PriceCell(50, 0.05f, discount, gold)} / {PriceCell(75, 0.05f, discount, gold)} / {PriceCell(100, 0.05f, discount, gold)}",
-            $"Card removal: {AffordableValue(removalCost, gold)}",
-        });
+        string goldRange = goldMin == goldMax ? goldMin.ToString() : $"{goldMin}-{goldMax}";
+        return MerchantPriceTable(discount, goldMin, removalCost) + $"\n\nExpected gold: {Gold(goldRange)}";
+    }
+
+    // A 4-column BBCode table (row label + Common/Uncommon/Rare) — the description label renders
+    // BBCode, and a table keeps the price columns aligned for skimming where a "/"-joined line
+    // can't. Card removal sits in the Common column.
+    private static string MerchantPriceTable(float discount, int gold, int removalCost)
+    {
+        // Trailing spaces pad the gaps between columns (table cells otherwise butt together).
+        static string Row(string label, string common, string uncommon, string rare) =>
+            $"[cell]{label}   [/cell][cell]{common}   [/cell][cell]{uncommon}   [/cell][cell]{rare}[/cell]";
+        return "[table=4]"
+            + Row(string.Empty, "Common", "Uncommon", "Rare")
+            + Row("Cards", PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(150, 0.05f, discount, gold))
+            + Row("Relics", PriceCell(175, 0.15f, discount, gold), PriceCell(225, 0.15f, discount, gold), PriceCell(275, 0.15f, discount, gold))
+            + Row("Potions", PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(100, 0.05f, discount, gold))
+            + Row("Card removal", AffordableValue(removalCost, gold), string.Empty, string.Empty)
+            + "[/table]";
     }
 
     // Combined merchant price multiplier from price-modifying relics (the only two that do this).
@@ -340,12 +578,14 @@ public static class MapNodeInfoTooltipPatch
         return discount;
     }
 
-    // The least gold the player is guaranteed to pick up before reaching this shop: the minimum,
-    // over every route from the current node, of the gold at the nodes in between. Counts the
-    // Monster/Elite combat gold minimums and chest gold (all run through the gold relics); chests
-    // are assumed to pay out unless Silver Crucible can leave one empty. "?" and event gold isn't
-    // counted (they vary), keeping this a safe lower bound on what you'll have when you arrive.
-    private static int MinGoldGainTo(IRunState runState, Player player, MapPoint target)
+    // The gold the player gains before reaching this shop, as one end of a min/max range over every
+    // route from the current node. Counts Monster/Elite combat gold and chest gold (all run through
+    // the gold relics); chests are assumed to pay out unless Silver Crucible can leave one empty (min
+    // case only). "?" and event gold isn't counted (it varies), keeping the range a safe envelope.
+    // The current node is excluded (its reward is already in player.Gold) unless its combat is still
+    // in progress, in which case its pending reward is counted. `max` picks the best route + high
+    // rolls; otherwise the guaranteed worst route + low rolls.
+    private static int GoldGainTo(IRunState runState, Player player, MapPoint target, bool max)
     {
         MapPoint? current = runState.CurrentMapPoint ?? runState.Map?.StartingMapPoint;
         if (current == null)
@@ -369,16 +609,16 @@ public static class MapNodeInfoTooltipPatch
         {
             return 0;
         }
-        (int monsterMin, _) = GoldRange(10, 20);
-        (int eliteMin, _) = GoldRange(35, 45);
-        (int treasureMin, _) = GoldRange(42, 52);
+        (int monsterMin, int monsterMax) = GoldRange(10, 20);
+        (int eliteMin, int eliteMax) = GoldRange(35, 45);
+        (int treasureMin, int treasureMax) = GoldRange(42, 52);
         int combatBonus = CombatGoldBonus(runState, player);
-        int monsterGold = (int)Hook.ModifyGoldGained(runState, null, monsterMin, player, out _) + combatBonus;
-        int eliteGold = (int)Hook.ModifyGoldGained(runState, null, eliteMin, player, out _) + combatBonus;
-        // Chests reliably pay out unless Silver Crucible can leave one empty.
-        int treasureGold = player.GetRelic<SilverCrucible>() != null
+        int monsterGold = (int)Hook.ModifyGoldGained(runState, null, max ? monsterMax : monsterMin, player, out _) + combatBonus;
+        int eliteGold = (int)Hook.ModifyGoldGained(runState, null, max ? eliteMax : eliteMin, player, out _) + combatBonus;
+        // Chests reliably pay out unless Silver Crucible can leave one empty (worst case only).
+        int treasureGold = !max && player.GetRelic<SilverCrucible>() != null
             ? 0
-            : (int)Hook.ModifyGoldGained(runState, null, treasureMin, player, out _);
+            : (int)Hook.ModifyGoldGained(runState, null, max ? treasureMax : treasureMin, player, out _);
         // Maw Bank pays gold on entering every room until you make a purchase, so it adds to every
         // node on the way (one-time gold relics like Old Coin are already in player.Gold).
         MawBank? mawBank = player.GetRelic<MawBank>();
@@ -390,64 +630,282 @@ public static class MapNodeInfoTooltipPatch
             MapPointType.Treasure => treasureGold,
             _ => 0,
         };
-        // Least gold accumulated from the current node to `node` (node's own gold included, the
-        // current node's excluded), recursed over parents on a route from current. Memoized.
+        // The current node's reward is normally already in player.Gold, so it contributes nothing.
+        // But while its combat is still in progress that gold hasn't been paid out yet, so count the
+        // pending combat reward (Maw Bank already paid on entering, so only the combat gold).
+        int currentPendingGold = InProgressCombatType(runState) switch
+        {
+            MapPointType.Monster => monsterGold,
+            MapPointType.Elite => eliteGold,
+            _ => 0,
+        };
+        // Gold accumulated from the current node to `node` (node's own gold included, the current
+        // node's only its pending in-combat reward), taking the best/worst route over parents.
+        // Memoized.
         Dictionary<MapPoint, int> memo = new();
-        int MinTo(MapPoint node)
+        int BestTo(MapPoint node)
         {
             if (node == current)
             {
-                return 0;
+                return currentPendingGold;
             }
             if (memo.TryGetValue(node, out int cached))
             {
                 return cached;
             }
             memo[node] = 0; // guard against unexpected cycles
-            int best = int.MaxValue;
+            int best = max ? int.MinValue : int.MaxValue;
+            bool any = false;
             foreach (MapPoint parent in node.parents)
             {
                 if (forward.Contains(parent))
                 {
-                    best = Math.Min(best, MinTo(parent));
+                    any = true;
+                    int parentGold = BestTo(parent);
+                    best = max ? Math.Max(best, parentGold) : Math.Min(best, parentGold);
                 }
             }
-            int result = (best == int.MaxValue ? 0 : best) + GoldAt(node);
+            int result = (any ? best : 0) + GoldAt(node);
             memo[node] = result;
             return result;
         }
-        return MinTo(target);
+        return BestTo(target);
     }
 
-    // Rest site: how much the heal option would restore right now (30% of max HP).
+    // Rest site: the full list of options available here, which depends on the player's relics,
+    // quests and party. Built from the game's own RestSiteOption.Generate (Heal + Smith always,
+    // Mend in multiplayer, and Dig/Lift/Cook/Kindle/Clone/Hatch added by their relics or cards via
+    // the ModifyRestSiteOptions hook), so any option the game would offer here appears, each with a
+    // concise value. Generate is side-effect free — the option constructors and every hook listener
+    // only build/filter the list. Options that exist but can't be taken right now (Smith with
+    // nothing upgradable, Cook with fewer than two removable cards) are greyed, like the rest screen.
     private static string BuildRest(Player player)
     {
-        int heal = (int)(player.Creature.MaxHp * 0.3f);
-        return $"{heal} HP (30% of max)";
+        List<string> items = new();
+        foreach (RestSiteOption option in RestSiteOption.Generate(player))
+        {
+            string name = option.Title.GetFormattedText();
+            string detail = RestOptionDetail(option, player);
+            string item = detail.Length > 0 ? $"{name}: {detail}" : name;
+            if (!option.IsEnabled)
+            {
+                item = $"[color=#888888]{item} (unavailable)[/color]";
+            }
+            items.Add(item);
+        }
+        return string.Join("\n", NamedList("Options", items));
     }
 
-    // The current combat's potion chance, for CurrentNodeTooltipPatch to append to the
-    // current-room history tooltip. Only while a Monster/Elite combat is in progress and its
-    // reward (the potion roll) hasn't happened yet; null otherwise. This value is exact, so no
-    // asterisk.
-    public static string? CurrentRoomPotionLine(IRunState runState)
+    // A short, accurate value for each rest-site option. Unknown (e.g. future) options fall back to
+    // just their name, so the list stays complete even if the game adds new ones.
+    private static string RestOptionDetail(RestSiteOption option, Player player)
     {
-        if (!ColinsPatchKitConfig.ShowMapNodeInfoTooltips || LocalContext.NetId == null)
+        switch (option.OptionId)
+        {
+            case "HEAL":
+                // GetHealAmount already folds in heal-amount relics (Regal Pillow). Relics that
+                // grant extras on resting (Tiny Mailbox potions, Dream Catcher card reward, Stone
+                // Humidifier max HP, Night Terrors, ...) all describe themselves through the same
+                // ModifyExtraRestSiteHealText hook the real Heal option uses, so surface that too.
+                string heal = $"{(int)HealRestSiteOption.GetHealAmount(player)} HP";
+                IReadOnlyList<LocString> extra =
+                    Hook.ModifyExtraRestSiteHealText(player.RunState, player, Array.Empty<LocString>());
+                return extra.Count > 0
+                    ? $"{heal}, {string.Join(", ", extra.Select(s => s.GetFormattedText()))}"
+                    : heal;
+            case "MEND":
+                return "Heal an ally";
+            case "SMITH":
+                int smithCount = option is SmithRestSiteOption smith ? smith.SmithCount : 1;
+                return smithCount == 1 ? "Upgrade a card" : $"Upgrade {smithCount} cards";
+            case "COOK":
+                return "Remove 2 cards, +9 Max HP";
+            case "DIG":
+            case "HATCH":
+                return "Gain a relic";
+            case "LIFT":
+                int liftsLeft = player.GetRelic<Girya>() is { } girya ? Girya.maxLifts - girya.TimesLifted : 0;
+                return $"+1 Strength each combat ({liftsLeft} left)";
+            case "CLONE":
+                return "Duplicate enchanted cards";
+            case "KINDLE":
+                return "Rekindle Pumpkin Candle (+5)";
+            default:
+                return string.Empty;
+        }
+    }
+
+    // The potion chance that was in effect at a past combat node, reconstructed for the history
+    // tooltip. The potion pity is a single per-player value that starts at 0.4 and moves ±0.1 each
+    // combat (down on a potion, up otherwise; PotionRewardOdds), so replaying every recorded combat
+    // in order recovers the value before any node's roll. The pity isn't stored per node, but
+    // whether a combat dropped a potion is — a PotionChoices entry on that node — which is exactly
+    // the ±0.1 signal. To guard against anything our model doesn't capture (first-run tutorial
+    // rewards that skip the roll, a future relic that overrides the pity, ...), we replay the whole
+    // run and only trust the result if its end state reproduces the live pity value; otherwise we
+    // show nothing rather than a wrong number. Returns null when `target` isn't a recorded combat
+    // node or the checksum fails.
+    public static (float chance, bool awarded)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
+    {
+        if (!ColinsPatchKitConfig.ShowPotionChances)
         {
             return null;
         }
-        if (!IsCurrentRoomPotionPending(runState))
-        {
-            return null;
-        }
-        Player? player = runState.Players.FirstOrDefault(p => p.NetId == LocalContext.NetId.Value);
+        Player? player = runState.Players.FirstOrDefault(p => p.NetId == playerId);
         if (player == null)
         {
             return null;
         }
-        RoomType roomType = (runState.CurrentRoom as CombatRoom)?.RoomType ?? RoomType.Monster;
-        float chance = PotionChance(runState, player, roomType, out _);
-        return PotionLine(chance, showAsterisk: false);
+        // The current, still-pending combat hasn't rolled yet, so it must not advance the pity.
+        MapPointHistoryEntry? pending = IsCurrentRoomPotionPending(runState)
+            ? runState.GetHistoryEntryFor(runState.MapLocation)
+            : null;
+        // That same pending combat has no outcome to report — its expected potion chance is shown by
+        // the inserted expected-rewards block instead (RenderExpectedRewardsIntoHistory), so don't
+        // also render a (necessarily "No potion") historical line for it.
+        if (pending != null && ReferenceEquals(target, pending))
+        {
+            return null;
+        }
+
+        const float step = 0.1f;
+        const float eliteBonus = PotionRewardOdds.eliteBonus * 0.5f;
+        float pity = 0.4f; // PotionRewardOdds base
+        float? targetChance = null;
+        foreach (IReadOnlyList<MapPointHistoryEntry> act in runState.MapPointHistory)
+        {
+            foreach (MapPointHistoryEntry entry in act)
+            {
+                RoomType? combat = CombatRoomType(entry);
+                if (combat == null)
+                {
+                    continue;
+                }
+                if (entry == target)
+                {
+                    targetChance = pity + (combat == RoomType.Elite ? eliteBonus : 0f);
+                }
+                if (entry == pending)
+                {
+                    continue;
+                }
+                pity += HasPotionChoice(entry, playerId) ? -step : step;
+            }
+        }
+        if (targetChance == null)
+        {
+            return null;
+        }
+        if (Mathf.Abs(pity - player.PlayerOdds.PotionReward.CurrentValue) > 0.001f)
+        {
+            return null; // our replay disagrees with the live pity — don't show a guess
+        }
+        return (targetChance.Value, HasPotionChoice(target, playerId));
+    }
+
+    // The type of the (first) combat room at a node, or null if it isn't a combat node. Monster,
+    // Elite and Boss rooms all roll the potion pity (RewardsSet.RollForPotionAndAddTo).
+    private static RoomType? CombatRoomType(MapPointHistoryEntry entry)
+    {
+        foreach (MapPointRoomHistoryEntry room in entry.Rooms)
+        {
+            if (room.RoomType is RoomType.Monster or RoomType.Elite or RoomType.Boss)
+            {
+                return room.RoomType;
+            }
+        }
+        return null;
+    }
+
+    // Whether a potion was rolled (offered) for the player at this node — recorded whether the
+    // potion was taken or skipped, so its presence means the combat's potion roll succeeded.
+    private static bool HasPotionChoice(MapPointHistoryEntry entry, ulong playerId)
+    {
+        PlayerMapPointHistoryEntry? stats = entry.PlayerStats.FirstOrDefault(s => s.PlayerId == playerId);
+        return stats is { PotionChoices.Count: > 0 };
+    }
+
+    // Renders the historical potion outcome into a combat node's history tooltip: if a potion was
+    // awarded there, tag its reward row with the chance ("... (40% chance)"); otherwise add a red
+    // "No potion (40% chance)" line in the rewards area.
+    public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool awarded)
+    {
+        string suffix = $"({Pct(chance)} chance)";
+        if (awarded)
+        {
+            if (!TryTagPotionRow(tip, $" {suffix}"))
+            {
+                // Defensive: the potion row wasn't found — show a plain line instead.
+                AppendPotionLineToHistoryTip(tip, $"Potion: {Pct(chance)} chance");
+            }
+        }
+        else
+        {
+            AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{NoPotionColorHex}]No potion {suffix}[/color]");
+        }
+    }
+
+    // Appends `suffix` to the potion line in the obtained/skipped reward rows (the row carrying the
+    // potion icon). Returns false if no such row exists.
+    private static bool TryTagPotionRow(NMapPointHistoryHoverTip tip, string suffix)
+    {
+        foreach (string container in new[] { "%RewardRows", "%SkippedRows" })
+        {
+            Control? rows = tip.GetNodeOrNull<Control>(container);
+            if (rows == null)
+            {
+                continue;
+            }
+            foreach (RichTextLabel label in rows.GetChildren().OfType<RichTextLabel>())
+            {
+                if (!label.Text.Contains(PotionIconMarker))
+                {
+                    continue;
+                }
+                string[] lines = label.Text.Split('\n');
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains(PotionIconMarker))
+                    {
+                        lines[i] += suffix;
+                    }
+                }
+                label.Text = string.Join("\n", lines);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Adds a line into the obtained-rewards rows (revealing the section if needed); falls back to the
+    // combat-stats label.
+    private static void AppendRewardRow(NMapPointHistoryHoverTip tip, string text)
+    {
+        RichTextLabel? row = tip.GetNodeOrNull<Control>("%RewardRows")?.GetChildren().OfType<RichTextLabel>().FirstOrDefault();
+        if (row == null)
+        {
+            AppendPotionLineToHistoryTip(tip, text);
+            return;
+        }
+        if (tip.GetNodeOrNull<Control>("%RewardStats") is { } container)
+        {
+            container.Visible = true;
+        }
+        row.Text = string.IsNullOrEmpty(row.Text) ? $"\t{text}" : $"{row.Text}\n\t{text}";
+    }
+
+    // Appends a plain line to the history tooltip's combat-stats label (falling back to the player-
+    // stats label), making it visible. Used as a defensive fallback by the potion renderer.
+    public static void AppendPotionLineToHistoryTip(NMapPointHistoryHoverTip tip, string potionLine)
+    {
+        RichTextLabel? label = tip.GetNodeOrNull<RichTextLabel>("%CardStats")
+            ?? tip.GetNodeOrNull<RichTextLabel>("%PlayerStats");
+        if (label == null)
+        {
+            return;
+        }
+        label.Text = string.IsNullOrEmpty(label.Text) ? potionLine : label.Text + "\n" + potionLine;
+        label.Visible = true;
     }
 
     // Reachable iff there's a forward path (via Children) from the current node to the target.
@@ -480,8 +938,10 @@ public static class MapNodeInfoTooltipPatch
         return false;
     }
 
-    // The act's elite encounters minus the ones already fought this act (map gen never repeats an
-    // elite, so a fought elite can't appear again).
+    // The act's elite encounters minus the ones already fought this act. The act's generated elite
+    // sequence cycles once exhausted (RoomSet.NextEliteEncounter indexes by visited % count), so
+    // EncounterNames re-shows the whole pool when every elite has been fought — e.g. after three
+    // elites a reachable fourth can be any of them again.
     private static List<string> GetUnfoughtEliteNames(IRunState runState)
     {
         return EncounterNames(
@@ -522,11 +982,11 @@ public static class MapNodeInfoTooltipPatch
         List<string> body = new();
         if (showEasy)
         {
-            body.AddRange(NamedList("Easy", easy));
+            body.AddRange(NamedList("Easy pool", easy));
         }
         if (showHard)
         {
-            body.AddRange(NamedList("Hard", hard));
+            body.AddRange(NamedList("Hard pool", hard));
         }
         return body;
     }
@@ -616,10 +1076,100 @@ public static class MapNodeInfoTooltipPatch
         return (Bound(target, wantMax: false, memoMin), Bound(target, wantMax: true, memoMax));
     }
 
+    // The combat card-reward line. Lasting Candy appends an extra Power-card option to the reward
+    // every other combat (when its CombatsSeen counter lands even), so when it will fire for this
+    // node's combat we show "+ Power". If the parity isn't fixed — the number of combats you clear
+    // before this node varies by route or includes an unresolved "?" — the Power gets an asterisk
+    // (it may or may not fire).
+    private static string CardRewardLine(IRunState runState, Player player, MapPoint target)
+    {
+        LastingCandy? candy = player.GetRelic<LastingCandy>();
+        if (candy == null)
+        {
+            return "Card reward";
+        }
+        if (CombatsBeforeBounds(runState, target) is not { } before || before.min != before.max)
+        {
+            return "Card reward + Power*";
+        }
+        // Lasting Candy fires when the combat's 1-based index (CombatsSeen after it) is even.
+        bool fires = (candy.CombatsSeen + before.min + 1) % 2 == 0;
+        return fires ? "Card reward + Power" : "Card reward";
+    }
+
+    // (min, max) number of combats (Monster / Elite / Boss; "?" counts 0..1) strictly before
+    // `target` on any forward route. (0, 0) when standing on it; null if it isn't forward-reachable.
+    private static (int min, int max)? CombatsBeforeBounds(IRunState runState, MapPoint target)
+    {
+        MapPoint? current = runState.CurrentMapPoint ?? runState.Map?.StartingMapPoint;
+        if (current == null)
+        {
+            return null;
+        }
+        if (target.coord == current.coord)
+        {
+            return (0, 0); // standing on this combat — nothing precedes it
+        }
+        HashSet<MapPoint> reachable = new() { current };
+        Queue<MapPoint> queue = new();
+        queue.Enqueue(current);
+        while (queue.Count > 0)
+        {
+            foreach (MapPoint child in queue.Dequeue().Children)
+            {
+                if (reachable.Add(child))
+                {
+                    queue.Enqueue(child);
+                }
+            }
+        }
+        if (!reachable.Contains(target))
+        {
+            return null;
+        }
+        static int Combats(MapPoint node, bool wantMax) =>
+            node.PointType is MapPointType.Monster or MapPointType.Elite or MapPointType.Boss ? 1
+            : wantMax && node.PointType == MapPointType.Unknown ? 1
+            : 0;
+        Dictionary<MapPoint, int> memoMin = new();
+        Dictionary<MapPoint, int> memoMax = new();
+        int Bound(MapPoint node, bool wantMax, Dictionary<MapPoint, int> memo)
+        {
+            if (node == current)
+            {
+                return 0;
+            }
+            if (memo.TryGetValue(node, out int cached))
+            {
+                return cached;
+            }
+            memo[node] = wantMax ? int.MinValue : int.MaxValue; // cycle guard
+            int best = wantMax ? int.MinValue : int.MaxValue;
+            bool any = false;
+            foreach (MapPoint parent in node.parents)
+            {
+                if (reachable.Contains(parent))
+                {
+                    any = true;
+                    int parentBound = Bound(parent, wantMax, memo);
+                    best = wantMax ? Math.Max(best, parentBound) : Math.Min(best, parentBound);
+                }
+            }
+            return memo[node] = (any ? best : 0) + Combats(node, wantMax);
+        }
+        // Subtract the target's own combat so only what precedes it is counted.
+        return (Bound(target, false, memoMin) - Combats(target, false),
+            Bound(target, true, memoMax) - Combats(target, true));
+    }
+
+    // Names in `pool` minus those already fought (`exclude`). The act's encounter lists cycle once
+    // every entry has been used, so when excluding the fought ones empties the pool we fall back to
+    // the full pool — the next combat starts repeating the rotation from the top.
     private static List<string> EncounterNames(IEnumerable<EncounterModel> pool, HashSet<string> exclude)
     {
-        return pool
-            .Where(e => e != null && !exclude.Contains(e.Id.Entry))
+        List<EncounterModel> all = pool.Where(e => e != null).ToList();
+        List<EncounterModel> remaining = all.Where(e => !exclude.Contains(e.Id.Entry)).ToList();
+        return (remaining.Count > 0 ? remaining : all)
             .Select(e => e.Title.GetFormattedText())
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct()
@@ -706,10 +1256,27 @@ public static class MapNodeInfoTooltipPatch
         {
             return true;
         }
+        return NodesStrictlyBetween(runState, target)
+            .Any(node => node.PointType is MapPointType.Monster or MapPointType.Elite or MapPointType.Unknown);
+    }
+
+    // The "?" resolution distribution drifts only when a "?" room is resolved (each roll nudges the
+    // pity odds), so the numbers shown can still change if any route to this node clears another
+    // "?" strictly before it.
+    private static bool UnknownOddsDrift(IRunState runState, MapPoint target)
+    {
+        return NodesStrictlyBetween(runState, target).Any(node => node.PointType == MapPointType.Unknown);
+    }
+
+    // Nodes that lie strictly between the current node and `target` on some forward route (both the
+    // current node and the target excluded). Empty when the target isn't forward-reachable.
+    private static HashSet<MapPoint> NodesStrictlyBetween(IRunState runState, MapPoint target)
+    {
+        HashSet<MapPoint> between = new();
         MapPoint? current = runState.CurrentMapPoint ?? runState.Map?.StartingMapPoint;
         if (current == null)
         {
-            return false;
+            return between;
         }
         // Forward-reachable set from the current node (includes current).
         HashSet<MapPoint> forward = new() { current };
@@ -725,23 +1292,21 @@ public static class MapNodeInfoTooltipPatch
                 }
             }
         }
-        // Walk back from the target through parents that are reachable from the current node:
-        // every node reached (other than current itself) lies strictly between them on some route.
-        HashSet<MapPoint> between = new();
+        // Walk back from the target through parents reachable from the current node; every node
+        // reached (other than current itself) lies strictly between them on some route.
         Queue<MapPoint> back = new();
         back.Enqueue(target);
         while (back.Count > 0)
         {
             foreach (MapPoint parent in back.Dequeue().parents)
             {
-                if (forward.Contains(parent) && between.Add(parent))
+                if (forward.Contains(parent) && parent != current && between.Add(parent))
                 {
                     back.Enqueue(parent);
                 }
             }
         }
-        return between.Any(node => node != current
-            && node.PointType is MapPointType.Monster or MapPointType.Elite or MapPointType.Unknown);
+        return between;
     }
 
     private static bool IsCurrentRoomPotionPending(IRunState runState)
@@ -772,7 +1337,68 @@ public static class MapNodeInfoTooltipPatch
 
     private static string PotionLine(float chance, bool showAsterisk)
     {
-        return $"Potion chance: {Pct(chance)}{(showAsterisk ? "*" : "")}";
+        return $"Potion: {Pct(chance)} chance{(showAsterisk ? "*" : "")}";
+    }
+
+    // The potion reward line for a combat node. With the potion-chances toggle off we still note the
+    // potion as a possible reward, just without a number — "Potion" when a relic guarantees it
+    // (White Beast Statue), "Potion (possibly)" otherwise.
+    private static string PotionRewardLine(IRunState runState, Player player, RoomType roomType, bool dependsOnUnresolved)
+    {
+        if (!ColinsPatchKitConfig.ShowPotionChances)
+        {
+            return Hook.ShouldForcePotionReward(runState, player, roomType) ? "Potion" : "Potion (possibly)";
+        }
+        float chance = PotionChance(runState, player, roomType, out bool forced);
+        return PotionLine(chance, dependsOnUnresolved && !forced);
+    }
+
+    // "Relic" for a single relic, "N Relics" when more than one can drop (Black Star at elites,
+    // Wongo's Mystery Ticket on any combat). An asterisk marks an uncertain count.
+    private static string RelicLine(int count, bool uncertain = false)
+    {
+        string text = count == 1 ? "Relic" : $"{count} Relics";
+        return uncertain ? text + "*" : text;
+    }
+
+    // The relic-reward line for a combat node, or null when it grants none. Base is 1 at elites (0
+    // at monster/boss); Black Star adds 1 at elites; Wongo's Mystery Ticket adds its relics once, on
+    // the first combat after five fights.
+    private static string? CombatRelicLine(IRunState runState, Player player, MapPoint target, bool isElite)
+    {
+        int relics = isElite ? 1 : 0;
+        if (isElite && player.GetRelic<BlackStar>() != null)
+        {
+            relics++;
+        }
+        (int wongos, bool uncertain) = WongosRelics(runState, player, target);
+        relics += wongos;
+        return relics > 0 ? RelicLine(relics, uncertain) : null;
+    }
+
+    // Relics Wongo's Mystery Ticket would add at `target` (and whether that's uncertain). It fires
+    // once, on the combat that reaches its five-fight threshold — i.e. the combat with
+    // max(1, 5 - CombatsFinished) - 1 combats before it. Uncertain when the route's combat count
+    // straddles that point (so this node may or may not be the one).
+    private static (int relics, bool uncertain) WongosRelics(IRunState runState, Player player, MapPoint target)
+    {
+        WongosMysteryTicket? wongos = player.GetRelic<WongosMysteryTicket>();
+        if (wongos == null || wongos.GaveRelic)
+        {
+            return (0, false);
+        }
+        if (CombatsBeforeBounds(runState, target) is not { } before)
+        {
+            return (0, false);
+        }
+        int trigger = Math.Max(1, WongosMysteryTicket.combatsToActivate - wongos.CombatsFinished) - 1;
+        if (before.min == before.max)
+        {
+            return before.min == trigger ? (WongosMysteryTicket.relicCount, false) : (0, false);
+        }
+        return before.min <= trigger && trigger <= before.max
+            ? (WongosMysteryTicket.relicCount, true)
+            : (0, false);
     }
 
     // Gold range with Poverty applied, run through the gold relics (Bowler Hat, Ectoplasm, ...),
@@ -825,7 +1451,7 @@ public static class MapNodeInfoTooltipPatch
     // each frame from MapNodeInfoModifierPatch), expanding/collapsing the possible-list.
     public static void RefreshHoveredExpandableIfModifierChanged()
     {
-        if (_hoveredExpandable == null || _hoveredRunState == null || _hoveredScreen == null)
+        if (_hoveredExpandable == null || _hoveredRunState == null || _hoveredScreen == null || _hoveredPlayer == null)
         {
             return;
         }
@@ -835,7 +1461,10 @@ public static class MapNodeInfoTooltipPatch
             return;
         }
         _expandedShown = held;
-        ShowMapNodeInfoTooltip(_hoveredExpandable, _hoveredRunState, _hoveredScreen);
+        // Rebuild via the shared path (not ShowMapNodeInfoTooltip, whose upcoming-only guards would
+        // skip a current-in-combat node) so Cmd-expand works for both upcoming and current nodes.
+        ShowExpectedRewardsTooltip(_hoveredExpandable, _hoveredRunState, _hoveredScreen, _hoveredPlayer,
+            _hoveredEffectiveType, _hoveredIsCurrentRoom);
     }
 
     public static void ClearHoverIf(NMapPoint point)
@@ -845,6 +1474,7 @@ public static class MapNodeInfoTooltipPatch
             _hoveredExpandable = null;
             _hoveredRunState = null;
             _hoveredScreen = null;
+            _hoveredPlayer = null;
         }
     }
 
