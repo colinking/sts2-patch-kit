@@ -1,0 +1,6 @@
+{
+  // Markdown All in One auto-updates the README TOC on save. Restrict it to the patch
+  // headings (### categories and #### patches) so the TOC stays a list of patches and
+  // doesn't re-add the title / Installation / Patches headings.
+  "markdown.extension.toc.levels": "3..4"
+}

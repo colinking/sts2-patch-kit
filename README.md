@@ -1,6 +1,6 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **13 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
 This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer.
 
@@ -27,7 +27,7 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Potion chances](#potion-chances)
 - [Combat](#combat)
   - [Well Laid Plans retain slots](#well-laid-plans-retain-slots)
-  - [Curses & statuses first when exhausting/transforming](#curses--statuses-first-when-exhaustingtransforming)
+  - [Curses \& statuses first when exhausting/transforming](#curses--statuses-first-when-exhaustingtransforming)
   - [More active relic pulses](#more-active-relic-pulses)
   - [Active buff/debuff pulses](#active-buffdebuff-pulses)
 - [Menus](#menus)
