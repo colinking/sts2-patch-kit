@@ -42,6 +42,16 @@ directly. Steps:
    `## New patches`, `## Changes`, `## Removed` as applicable, a link to the README patch list, and
    an `## Installation` blurb (BaseLib floor + "extract into mods/" + "Tested with `vX`"). Hand Colin
    the draft URL to review and publish.
+6. Generate the [Nexus Mods](https://www.nexusmods.com) page description by porting `README.md`
+   into Nexus BBCode, for Colin to paste in. Port the content faithfully (don't condense), but:
+   - **Omit the top-level title heading** and the **table-of-contents list** — Nexus shows its own
+     title and the page has no in-page anchors, so neither carries over.
+   - Headings → `[size=N][b]...[/b][/size]` (h2→5, h3→4, h4→3); inline code → `[font=Courier New]`;
+     bullet lists → `[list][*]...[/list]` (nest for sub-lists); the install table → a `[list]` of
+     "OS: path" entries.
+   - Images → `[img]` tags pointing at GitHub raw URLs
+     (`https://raw.githubusercontent.com/colinking/sts2-patch-kit/main/docs/images/<file>`), placed
+     where the README embeds them. Animated GIFs serve fine from raw.
 
 ## Architecture
 
