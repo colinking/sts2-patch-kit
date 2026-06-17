@@ -2,6 +2,8 @@
 
 A mod for Slay the Spire 2 with **13 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
+The mod is localized into every language Slay the Spire 2 supports, so its settings and in-game text follow your chosen language.
+
 This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
