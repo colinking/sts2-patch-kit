@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
@@ -120,6 +124,100 @@ public static class RelicReadyPulsesManager
                 }
             }
         }
+        // Rest-site relics live on the same toggle; re-evaluate them against the current rest site
+        // (or clear them when not at one) so the config change takes effect immediately.
+        RestSiteReadyPulsesManager.RefreshAll(NRestSiteRoom.Instance?.Options);
+    }
+}
+
+// Vanilla already pulses some rest-site relics while their benefit is pending: Regal Pillow lights
+// up on entering a rest site and goes quiet once you rest, and the Venerable Tea Sets pulse from the
+// campfire through their next-combat energy. Several other relics that grant or modify a rest-site
+// action never touch Status, so there's no hint their campfire effect is still unspent. This drives
+// Status for them the same way — Active while you're at a rest site and the relic's action is still
+// takeable, Normal once it's used or you leave — under the same ShowRelicReadyPulses toggle.
+//
+// Deliberately not covered: Regal Pillow and the Venerable Tea Sets (vanilla already pulses them),
+// Eternal Feather (its heal fires instantly on entry, so nothing is left pending), and Pumpkin
+// Candle (it already drives its own Status — a charge counter that grays out when empty — which a
+// pulse would clobber).
+public static class RestSiteReadyPulsesManager
+{
+    // Each tracked relic and the rest-site option whose presence means "still takeable". A null
+    // option type is Miniature Tent: its benefit is the extra action itself, so it pulses while any
+    // option is still selectable. The three heal-reward relics key off Heal, the option that
+    // triggers them.
+    private static readonly Dictionary<Type, Type?> _tracked = new()
+    {
+        [typeof(Shovel)] = typeof(DigRestSiteOption),
+        [typeof(Girya)] = typeof(LiftRestSiteOption),
+        [typeof(MeatCleaver)] = typeof(CookRestSiteOption),
+        [typeof(PaelsGrowth)] = typeof(CloneRestSiteOption),
+        [typeof(DreamCatcher)] = typeof(HealRestSiteOption),
+        [typeof(TinyMailbox)] = typeof(HealRestSiteOption),
+        [typeof(StoneHumidifier)] = typeof(HealRestSiteOption),
+        [typeof(MiniatureTent)] = null,
+    };
+
+    // Recomputes Status for every tracked relic the local player owns. Pass the rest site's current
+    // options while at a campfire, or null when leaving (every tracked relic settles on Normal).
+    // Scoped to the local player because the options list (and the relic icons we light up) are the
+    // local client's; a relic only ever adds its option to its own owner's list.
+    public static void RefreshAll(IReadOnlyList<RestSiteOption>? options)
+    {
+        try
+        {
+            RunState? runState = RunManager.Instance.DebugOnlyGetState();
+            Player? me = runState == null ? null : LocalContext.GetMe(runState.Players);
+            if (me == null)
+            {
+                return;
+            }
+            foreach (RelicModel relic in me.Relics)
+            {
+                Refresh(relic, options);
+            }
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to refresh rest-site relic pulses: {e}");
+        }
+    }
+
+    private static void Refresh(RelicModel relic, IReadOnlyList<RestSiteOption>? options)
+    {
+        if (!_tracked.TryGetValue(relic.GetType(), out Type? optionType) || !relic.IsMutable)
+        {
+            return;
+        }
+        bool armed = options != null
+            && ColinsPatchKitConfig.ShowRelicReadyPulses
+            && (optionType == null
+                ? options.Any(o => o.IsEnabled)
+                : options.Any(o => o.GetType() == optionType && o.IsEnabled));
+        relic.Status = armed ? RelicStatus.Active : RelicStatus.Normal;
+    }
+}
+
+// NRestSiteRoom rebuilds its options at mount and again after each choice (UpdateRestSiteOptions),
+// so this single postfix re-evaluates the pulses every time the takeable set changes — arming on
+// arrival and clearing each relic the moment its option is spent.
+[HarmonyPatch(typeof(NRestSiteRoom), "UpdateRestSiteOptions")]
+public static class RestSiteReadyPulsesUpdatePatch
+{
+    public static void Postfix(NRestSiteRoom __instance)
+    {
+        RestSiteReadyPulsesManager.RefreshAll(__instance.Options);
+    }
+}
+
+// Leaving the rest site clears every rest-site pulse so nothing keeps pulsing on the map.
+[HarmonyPatch(typeof(NRestSiteRoom), "_ExitTree")]
+public static class RestSiteReadyPulsesCleanupPatch
+{
+    public static void Postfix()
+    {
+        RestSiteReadyPulsesManager.RefreshAll(null);
     }
 }
 

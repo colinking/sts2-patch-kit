@@ -160,6 +160,15 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
     reveal. Same scratch-profile warning as above; quit to menu and switch back to your own
     profile when done. Verify the setup via the `gameover-skip-sandbox:` log lines, not a
     "complete" line.
+  - `"./Slay the Spire 2" --restsitehold-sandbox=<profile>` — manual playtest setup (not an
+    automated assertion harness) for the rest-site hold-to-confirm patch: starts a throwaway run,
+    grants Miniature Tent, jumps to a rest site, and **stops and hands control to you** — it does
+    NOT restore the profile or quit. Pick an option (e.g. heal); with Tent the other stays
+    selectable, so leaving via proceed now requires a hold (a quick click is a no-op, a gold bar
+    fills as you hold ~0.5s, releasing early cancels); use the second option and proceed reverts to
+    an instant click. Same scratch-profile warning as above; quit to menu and switch back to your
+    own profile when done. Verify the setup via the `restsitehold-sandbox:` log lines, not a
+    "complete" line.
 - Window placement: whenever any of the above launch flags is present, `TestWindowPatch`
   (`E2ETests/TestWindowTool.cs`) wraps `NGame.ApplyDisplaySettings` so the game boots **windowed**
   (1280x800, top-left of the target display) instead of fullscreen — it must *prevent* fullscreen,

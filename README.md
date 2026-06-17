@@ -33,6 +33,7 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
 - [Menus](#menus)
   - [Random character bans](#random-character-bans)
   - [Shop affordability preview](#shop-affordability-preview)
+  - [Hold to confirm leaving a rest site with Tent](#hold-to-confirm-leaving-a-rest-site-with-tent)
   - [View Upgrades toggle](#view-upgrades-toggle)
   - [Multiplayer cards Compendium toggle](#multiplayer-cards-compendium-toggle)
 - [Speed-ups](#speed-ups)
@@ -103,6 +104,14 @@ If enabled, this patch enables pulsing for a handful of additional relics that b
 - **Demon Tongue** — once per turn, the first unblocked damage taken during your turn heals you.
 - **Mini Regent** — once per turn, the first time you spend stars you gain Strength.
 - **Music Box** — once per turn, your first Attack is duplicated.
+- **Miniature Tent** — at a rest site, while you can still select another option (it lets you take more than one).
+- **Shovel** — at a rest site, while its Dig option is unused.
+- **Girya** — at a rest site, while its Lift option is unused.
+- **Meat Cleaver** — at a rest site, while its Cook option is unused.
+- **Pael's Growth** — at a rest site, while its Clone option is unused.
+- **Dream Catcher** — at a rest site, while you can still rest for its bonus card reward.
+- **Tiny Mailbox** — at a rest site, while you can still rest for its bonus potions.
+- **Stone Humidifier** — at a rest site, while you can still rest for its bonus Max HP.
 
 ![Relic pulses](docs/images/relic-pulses.gif)
 
@@ -137,11 +146,18 @@ In multiplayer, only your own random pick is affected. Due to how random charact
 
 #### Shop affordability preview
 
-If enabled, hovering over a shop item turns every other item's price red — the same red the game already uses for items you can't afford — whenever you couldn't also afford that item after buying the one you're hovering. This makes it easy to see at a glance which two purchases you can still make together. Hovering away restores the normal colors.
+If enabled, hovering over a shop item will turn other item price's red if you can't afford both.
 
 ![Shop prices](docs/images/shop-prices.png)
 
 *Inspired by [Minty Spire](https://steamcommunity.com/sharedfiles/filedetails/?id=1812723899) from Slay the Spire 1*
+
+#### Hold to confirm leaving a rest site with Tent
+
+If enabled and you have Miniature Tent, proceeding from a rest site requires a long-press to confirm. This serves as a reminder
+that you can use all options at a rest site instead of reflexively proceeding after using one option.
+
+![Tent reminder](docs/images/tent.png)
 
 #### View Upgrades toggle
 
