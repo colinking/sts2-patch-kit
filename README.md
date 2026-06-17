@@ -1,6 +1,6 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
 This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer. This mod is localized into every language Slay the Spire 2 supports.
 
