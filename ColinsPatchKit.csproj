@@ -47,6 +47,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The standalone test project lives under the repo root; keep its sources out of the
+             mod build (the Godot SDK otherwise globs every .cs beneath the project dir). -->
+        <Compile Remove="ColinsPatchKit.Tests/**" />
         <Compile Remove="ColinsPatchKit/**" />
         <Compile Remove="materials/**" />
         <Compile Remove="shaders/**" />

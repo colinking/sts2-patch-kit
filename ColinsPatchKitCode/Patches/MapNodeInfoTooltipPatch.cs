@@ -151,22 +151,19 @@ public static class MapNodeInfoTooltipPatch
         // showing it as a separate body line.
         if (type == MapPointType.Boss && BossEncounterFor(runState, point.Point) is { } bossEncounter)
         {
-            roomType = $"{roomType}: {bossEncounter.Title.GetFormattedText()}";
+            roomType = LabelValue(roomType, bossEncounter.Title.GetFormattedText());
         }
         // A single newline keeps the room type tight under the floor header; the body's own section
         // headers provide the visual spacing.
         string description = string.IsNullOrEmpty(body) ? roomType : $"{roomType}\n{body}";
         HoverTip tip = new(header, description);
-        // Disable text wrapping so the tooltip grows to fit its content instead of wrapping at the
-        // default 360px width. Needed for the wide merchant price table, and for the expandable
-        // enemy/elite/event lists when shown — long names like "Two Gremlins in a Trenchcoat"
-        // otherwise wrap onto a second line.
-        bool expandedListShown = type is MapPointType.Unknown or MapPointType.Monster or MapPointType.Elite
-            && IsModifierHeld();
-        if (type == MapPointType.Shop || expandedListShown)
-        {
-            tip.ShouldOverrideTextOverflow = true;
-        }
+        // These tooltips are lists of short labels (plus the merchant price table), never wrapped
+        // prose, so disable wrapping and let the tooltip grow to fit its widest line rather than
+        // wrap at the hover tip's hardcoded 360px width. English labels mostly fit; localized ones
+        // overflow and break mid-phrase. The wide-tooltip positioning this relies on is already
+        // exercised by the Shop price table and the Cmd/Ctrl-expanded enemy/elite/event lists, so
+        // it's a proven path — long encounter names like "Two Gremlins in a Trenchcoat" included.
+        tip.ShouldOverrideTextOverflow = true;
         NHoverTipSet? set = NHoverTipSet.CreateAndShow(point, tip, HoverTipAlignment.None);
         if (set == null)
         {
@@ -244,7 +241,7 @@ public static class MapNodeInfoTooltipPatch
         container.Visible = true;
         if (container.GetNodeOrNull<MegaLabel>("Header") is { } headerLabel)
         {
-            headerLabel.SetTextAutoSize("Expected rewards");
+            headerLabel.SetTextAutoSize(Loc("EXPECTED_REWARDS"));
         }
         // Reward rows are tab-indented, one entry per line (matching vanilla's reward formatting).
         row.Text = string.Join("\n", lines.Select(l => $"\t{l}"));
@@ -303,13 +300,16 @@ public static class MapNodeInfoTooltipPatch
         if (runState.UnlockState.NumberOfRuns == 0 && ForcedFirstRunOutcomes(runState, target) is { } forced)
         {
             // A fixed index is a certainty (100%); a route-straddling "?" is one of two outcomes
-            // ("Event or Monster"), shown without a misleading per-outcome percentage.
-            string outcomeLine = forced.Count == 1 ? $"{forced[0]}: {Pct(1f)}" : string.Join(" or ", forced);
-            List<string> forcedLines = Section("Possible outcomes", new[] { outcomeLine });
+            // ("Event or Monster"), shown without a misleading per-outcome percentage. The forced
+            // list holds stable logic tokens ("Event"/"Monster"); map them to localized labels here.
+            string outcomeLine = forced.Count == 1
+                ? LabelValue(ForcedOutcomeLabel(forced[0]), Pct(1f))
+                : string.Join(Loc("OUTCOME_SEPARATOR"), forced.Select(ForcedOutcomeLabel));
+            List<string> forcedLines = Section(Loc("POSSIBLE_OUTCOMES"), new[] { outcomeLine });
             // Event is a possible outcome, so keep the "list events" expansion the other "?" tooltips offer.
             if (forced.Contains("Event"))
             {
-                AppendExpandableSection(forcedLines, "events", runState, rs => Section("Possible events", GetPossibleEventNames(rs)));
+                AppendExpandableSection(forcedLines, Loc("NOUN_EVENTS"), runState, rs => Section(Loc("POSSIBLE_EVENTS"), GetPossibleEventNames(rs)));
             }
             return string.Join("\n", forcedLines);
         }
@@ -317,10 +317,10 @@ public static class MapNodeInfoTooltipPatch
         UnknownMapPointOdds odds = runState.Odds.UnknownMapPoint;
         (RoomType Type, string Label, float Value)[] nonEvent =
         {
-            (RoomType.Monster, "Monster", odds.MonsterOdds),
-            (RoomType.Elite, "Elite", odds.EliteOdds),
-            (RoomType.Treasure, "Treasure", odds.TreasureOdds),
-            (RoomType.Shop, "Shop", odds.ShopOdds),
+            (RoomType.Monster, Loc("ROOM_MONSTER"), odds.MonsterOdds),
+            (RoomType.Elite, Loc("ROOM_ELITE"), odds.EliteOdds),
+            (RoomType.Treasure, Loc("ROOM_TREASURE"), odds.TreasureOdds),
+            (RoomType.Shop, Loc("ROOM_SHOP"), odds.ShopOdds),
         };
         IReadOnlySet<RoomType> allowed = Hook.ModifyUnknownMapPointRoomTypes(
             runState, nonEvent.Select(o => o.Type).Append(RoomType.Event).ToHashSet());
@@ -361,17 +361,17 @@ public static class MapNodeInfoTooltipPatch
             nonEventSum += value;
             // Case A: the Shop line is route-dependent even when nothing else drifts.
             string lineMark = type == RoomType.Shop && shopRouteDependent ? "*" : mark;
-            oddsLines.Add($"{label}: {Pct(value)}{lineMark}");
+            oddsLines.Add(LabelValue(label, Pct(value)) + lineMark);
         }
         // Event soaks up the leftover probability, including the mass of any type a hook removed.
         if (allowed.Contains(RoomType.Event))
         {
-            oddsLines.Add($"Event: {Pct(Math.Max(0f, 1f - nonEventSum))}{mark}");
+            oddsLines.Add(LabelValue(Loc("ROOM_EVENT"), Pct(Math.Max(0f, 1f - nonEventSum))) + mark);
         }
         // A "?" resolves to one of these rather than handing out rewards, so it's "Possible
         // outcomes" rather than "Expected rewards".
-        List<string> lines = Section("Possible outcomes", oddsLines);
-        AppendExpandableSection(lines, "events", runState, rs => Section("Possible events", GetPossibleEventNames(rs)));
+        List<string> lines = Section(Loc("POSSIBLE_OUTCOMES"), oddsLines);
+        AppendExpandableSection(lines, Loc("NOUN_EVENTS"), runState, rs => Section(Loc("POSSIBLE_EVENTS"), GetPossibleEventNames(rs)));
         return string.Join("\n", lines);
     }
 
@@ -469,7 +469,7 @@ public static class MapNodeInfoTooltipPatch
         else
         {
             lines.Add("");
-            lines.Add($"[color=#888888]Hold {ModifierName()} to list {noun}[/color]");
+            lines.Add($"[color=#888888]{Loc("HOLD_TO_LIST", ("Modifier", ModifierName()), ("Noun", noun))}[/color]");
         }
     }
 
@@ -512,9 +512,9 @@ public static class MapNodeInfoTooltipPatch
     // (elite-boosted) potion chance, plus any reward-count relic bonuses.
     private static string BuildElite(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
-        List<string> lines = Section("Expected rewards", EliteRewardLines(mapPoint, runState, player, dependsOnUnresolved));
+        List<string> lines = Section(Loc("EXPECTED_REWARDS"), EliteRewardLines(mapPoint, runState, player, dependsOnUnresolved));
         // Behind Cmd/Ctrl, like the enemy list, for consistency.
-        AppendExpandableSection(lines, "elites", runState, rs => Section("Possible elites", GetUnfoughtEliteNames(rs)));
+        AppendExpandableSection(lines, Loc("NOUN_ELITES"), runState, rs => Section(Loc("POSSIBLE_ELITES"), GetUnfoughtEliteNames(rs)));
         return string.Join("\n", lines);
     }
 
@@ -525,9 +525,9 @@ public static class MapNodeInfoTooltipPatch
         List<string> rewards = new() { GoldText(runState, player, RoomType.Elite, CombatGoldBonus(runState, player)) };
         rewards.Add(CombatRelicLine(runState, player, mapPoint, isElite: true)!);
         rewards.Add(CardRewardLine(runState, player, mapPoint));
-        if (player.GetRelic<WhiteStar>() != null)
+        if (player.GetRelic<WhiteStar>() is { } whiteStar)
         {
-            rewards.Add("+1 card reward (White Star)");
+            rewards.Add(Loc("EXTRA_CARD_REWARD", ("Source", whiteStar.Title.GetFormattedText())));
         }
         rewards.Add(PotionRewardLine(runState, player, RoomType.Elite, dependsOnUnresolved));
         return rewards;
@@ -540,7 +540,7 @@ public static class MapNodeInfoTooltipPatch
         List<string> rewards = new();
         if (!Hook.ShouldGenerateTreasure(runState, player))
         {
-            rewards.Add("Empty (no relic or gold)");
+            rewards.Add(Loc("EMPTY_CHEST"));
         }
         else
         {
@@ -549,21 +549,23 @@ public static class MapNodeInfoTooltipPatch
             // A Spoils Map quest on this node pays out 600 per Spoils Map still in your deck.
             if (mapPoint.Quests.Any(q => q is SpoilsMap))
             {
-                int spoils = player.Deck.Cards.OfType<SpoilsMap>().Count();
-                if (spoils > 0)
+                List<SpoilsMap> spoilsCards = player.Deck.Cards.OfType<SpoilsMap>().ToList();
+                if (spoilsCards.Count > 0)
                 {
-                    rewards.Add($"+{Gold($"{600 * spoils}")} gold (Spoils Map)");
+                    rewards.Add(Loc("SPOILS_MAP_GOLD",
+                        ("Amount", Gold($"{600 * spoilsCards.Count}")),
+                        ("Source", spoilsCards[0].TitleLocString.GetFormattedText())));
                 }
             }
         }
-        return string.Join("\n", Section("Expected rewards", rewards));
+        return string.Join("\n", Section(Loc("EXPECTED_REWARDS"), rewards));
     }
 
     // Enemy node: gold range, potion chance, and any reward-count relic bonus.
     private static string BuildMonster(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
-        List<string> lines = Section("Expected rewards", MonsterRewardLines(mapPoint, runState, player, dependsOnUnresolved));
-        AppendExpandableSection(lines, "enemies", runState, rs => GetEnemyBody(rs, mapPoint));
+        List<string> lines = Section(Loc("EXPECTED_REWARDS"), MonsterRewardLines(mapPoint, runState, player, dependsOnUnresolved));
+        AppendExpandableSection(lines, Loc("NOUN_ENEMIES"), runState, rs => GetEnemyBody(rs, mapPoint));
         return string.Join("\n", lines);
     }
 
@@ -578,9 +580,9 @@ public static class MapNodeInfoTooltipPatch
             rewards.Add(relicLine);
         }
         rewards.Add(CardRewardLine(runState, player, mapPoint));
-        if (player.GetRelic<PrayerWheel>() != null)
+        if (player.GetRelic<PrayerWheel>() is { } prayerWheel)
         {
-            rewards.Add("+1 card reward (Prayer Wheel)");
+            rewards.Add(Loc("EXTRA_CARD_REWARD", ("Source", prayerWheel.Title.GetFormattedText())));
         }
         rewards.Add(PotionRewardLine(runState, player, RoomType.Monster, dependsOnUnresolved));
         return rewards;
@@ -592,7 +594,7 @@ public static class MapNodeInfoTooltipPatch
     // two boss nodes; BossEncounterFor maps each to the right encounter.
     private static string BuildBoss(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
-        return string.Join("\n", Section("Expected rewards", BossRewardLines(mapPoint, runState, player, dependsOnUnresolved)));
+        return string.Join("\n", Section(Loc("EXPECTED_REWARDS"), BossRewardLines(mapPoint, runState, player, dependsOnUnresolved)));
     }
 
     // The plain boss reward lines (no "Expected rewards" header). Empty for the final act's boss,
@@ -642,7 +644,7 @@ public static class MapNodeInfoTooltipPatch
         int removalStep = AscensionHelper.GetValueIfAscension(AscensionLevel.Inflation, 50, 25);
         int removalCost = Mathf.RoundToInt((removalBase + removalStep * player.ExtraFields.CardShopRemovalsUsed) * discount);
         string goldRange = goldMin == goldMax ? goldMin.ToString() : $"{goldMin}-{goldMax}";
-        return MerchantPriceTable(discount, goldMin, removalCost) + $"\n\nExpected gold: {Gold(goldRange)}";
+        return MerchantPriceTable(discount, goldMin, removalCost) + "\n\n" + Loc("EXPECTED_GOLD", ("Amount", Gold(goldRange)));
     }
 
     // A 4-column BBCode table (row label + Common/Uncommon/Rare) — the description label renders
@@ -654,11 +656,11 @@ public static class MapNodeInfoTooltipPatch
         static string Row(string label, string common, string uncommon, string rare) =>
             $"[cell]{label}   [/cell][cell]{common}   [/cell][cell]{uncommon}   [/cell][cell]{rare}[/cell]";
         return "[table=4]"
-            + Row(string.Empty, "Common", "Uncommon", "Rare")
-            + Row("Cards", PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(150, 0.05f, discount, gold))
-            + Row("Relics", PriceCell(175, 0.15f, discount, gold), PriceCell(225, 0.15f, discount, gold), PriceCell(275, 0.15f, discount, gold))
-            + Row("Potions", PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(100, 0.05f, discount, gold))
-            + Row("Card removal", AffordableValue(removalCost, gold), string.Empty, string.Empty)
+            + Row(string.Empty, Loc("MERCHANT_COMMON"), Loc("MERCHANT_UNCOMMON"), Loc("MERCHANT_RARE"))
+            + Row(Loc("MERCHANT_CARDS"), PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(150, 0.05f, discount, gold))
+            + Row(Loc("MERCHANT_RELICS"), PriceCell(175, 0.15f, discount, gold), PriceCell(225, 0.15f, discount, gold), PriceCell(275, 0.15f, discount, gold))
+            + Row(Loc("MERCHANT_POTIONS"), PriceCell(50, 0.05f, discount, gold), PriceCell(75, 0.05f, discount, gold), PriceCell(100, 0.05f, discount, gold))
+            + Row(Loc("MERCHANT_CARD_REMOVAL"), AffordableValue(removalCost, gold), string.Empty, string.Empty)
             + "[/table]";
     }
 
@@ -802,14 +804,14 @@ public static class MapNodeInfoTooltipPatch
         {
             string name = option.Title.GetFormattedText();
             string detail = RestOptionDetail(option, player);
-            string item = detail.Length > 0 ? $"{name}: {detail}" : name;
+            string item = detail.Length > 0 ? LabelValue(name, detail) : name;
             if (!option.IsEnabled)
             {
-                item = $"[color=#888888]{item} (unavailable)[/color]";
+                item = $"[color=#888888]{Loc("OPTION_UNAVAILABLE", ("Item", item))}[/color]";
             }
             items.Add(item);
         }
-        return string.Join("\n", Section("Options", items));
+        return string.Join("\n", Section(Loc("OPTIONS"), items));
     }
 
     // A short, accurate value for each rest-site option. Unknown (e.g. future) options fall back to
@@ -823,29 +825,29 @@ public static class MapNodeInfoTooltipPatch
                 // grant extras on resting (Tiny Mailbox potions, Dream Catcher card reward, Stone
                 // Humidifier max HP, Night Terrors, ...) all describe themselves through the same
                 // ModifyExtraRestSiteHealText hook the real Heal option uses, so surface that too.
-                string heal = $"{(int)HealRestSiteOption.GetHealAmount(player)} HP";
+                string heal = Loc("REST_HEAL_DETAIL", ("Hp", (int)HealRestSiteOption.GetHealAmount(player)));
                 IReadOnlyList<LocString> extra =
                     Hook.ModifyExtraRestSiteHealText(player.RunState, player, Array.Empty<LocString>());
                 return extra.Count > 0
                     ? $"{heal}, {string.Join(", ", extra.Select(s => s.GetFormattedText()))}"
                     : heal;
             case "MEND":
-                return "Heal an ally";
+                return Loc("REST_MEND");
             case "SMITH":
                 int smithCount = option is SmithRestSiteOption smith ? smith.SmithCount : 1;
-                return smithCount == 1 ? "Upgrade a card" : $"Upgrade {smithCount} cards";
+                return smithCount == 1 ? Loc("REST_SMITH_ONE") : Loc("REST_SMITH_MANY", ("Count", smithCount));
             case "COOK":
-                return "Remove 2 cards, +9 Max HP";
+                return Loc("REST_COOK");
             case "DIG":
             case "HATCH":
-                return "Gain a relic";
+                return Loc("REST_GAIN_RELIC");
             case "LIFT":
                 int liftsLeft = player.GetRelic<Girya>() is { } girya ? Girya.maxLifts - girya.TimesLifted : 0;
-                return $"+1 Strength each combat ({liftsLeft} left)";
+                return Loc("REST_LIFT", ("Left", liftsLeft));
             case "CLONE":
-                return "Duplicate enchanted cards";
+                return Loc("REST_CLONE");
             case "KINDLE":
-                return "Rekindle Pumpkin Candle (+5)";
+                return Loc("REST_KINDLE");
             default:
                 return string.Empty;
         }
@@ -948,18 +950,18 @@ public static class MapNodeInfoTooltipPatch
     // "No potion (40% chance)" line in the rewards area.
     public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool awarded)
     {
-        string suffix = $"({Pct(chance)} chance)";
+        string chancePct = Pct(chance);
         if (awarded)
         {
-            if (!TryTagPotionRow(tip, $" {suffix}"))
+            if (!TryTagPotionRow(tip, " " + Loc("POTION_CHANCE_SUFFIX", ("Chance", chancePct))))
             {
                 // Defensive: the potion row wasn't found — show a plain line instead.
-                AppendPotionLineToHistoryTip(tip, $"Potion: {Pct(chance)} chance");
+                AppendPotionLineToHistoryTip(tip, Loc("POTION_CHANCE", ("Chance", chancePct)));
             }
         }
         else
         {
-            AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{NoPotionColorHex}]No potion {suffix}[/color]");
+            AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{NoPotionColorHex}]{Loc("NO_POTION", ("Chance", chancePct))}[/color]");
         }
     }
 
@@ -1082,11 +1084,11 @@ public static class MapNodeInfoTooltipPatch
         List<string> body = new();
         if (showEasy)
         {
-            body.AddRange(Section("Easy pool", easy));
+            body.AddRange(Section(Loc("EASY_POOL"), easy));
         }
         if (showHard)
         {
-            body.AddRange(Section("Hard pool", hard));
+            body.AddRange(Section(Loc("HARD_POOL"), hard));
         }
         return body;
     }
@@ -1142,15 +1144,15 @@ public static class MapNodeInfoTooltipPatch
         LastingCandy? candy = player.GetRelic<LastingCandy>();
         if (candy == null)
         {
-            return "Card reward";
+            return Loc("CARD_REWARD");
         }
         if (CombatsBeforeBounds(runState, target) is not { } before || before.min != before.max)
         {
-            return "Card reward + Power*";
+            return Loc("CARD_REWARD_POWER") + "*";
         }
         // Lasting Candy fires when the combat's 1-based index (CombatsSeen after it) is even.
         bool fires = (candy.CombatsSeen + before.min + 1) % 2 == 0;
-        return fires ? "Card reward + Power" : "Card reward";
+        return fires ? Loc("CARD_REWARD_POWER") : Loc("CARD_REWARD");
     }
 
     // (min, max) number of combats (Monster / Elite / Boss; "?" counts 0..1) strictly before
@@ -1337,7 +1339,7 @@ public static class MapNodeInfoTooltipPatch
 
     private static string PotionLine(float chance, bool showAsterisk)
     {
-        return $"Potion: {Pct(chance)} chance{(showAsterisk ? "*" : "")}";
+        return Loc("POTION_CHANCE", ("Chance", Pct(chance))) + (showAsterisk ? "*" : "");
     }
 
     // The potion reward line for a combat node. With the potion-chances toggle off we still note the
@@ -1347,7 +1349,7 @@ public static class MapNodeInfoTooltipPatch
     {
         if (!ColinsPatchKitConfig.ShowPotionChances)
         {
-            return Hook.ShouldForcePotionReward(runState, player, roomType) ? "Potion" : "Potion (possibly)";
+            return Hook.ShouldForcePotionReward(runState, player, roomType) ? Loc("POTION") : Loc("POTION_POSSIBLY");
         }
         float chance = PotionChance(runState, player, roomType, out bool forced);
         return PotionLine(chance, dependsOnUnresolved && !forced);
@@ -1357,7 +1359,7 @@ public static class MapNodeInfoTooltipPatch
     // Wongo's Mystery Ticket on any combat). An asterisk marks an uncertain count.
     private static string RelicLine(int count, bool uncertain = false)
     {
-        string text = count == 1 ? "Relic" : $"{count} Relics";
+        string text = count == 1 ? Loc("RELIC_ONE") : Loc("RELIC_MANY", ("Count", count));
         return uncertain ? text + "*" : text;
     }
 
@@ -1438,7 +1440,7 @@ public static class MapNodeInfoTooltipPatch
         (int min, int max) = GoldRange(baseMin, baseMax);
         min = (int)Hook.ModifyGoldGained(runState, null, min, player, out _) + flatBonus;
         max = (int)Hook.ModifyGoldGained(runState, null, max, player, out _) + flatBonus;
-        return $"Gold: {Gold(min == max ? min.ToString() : $"{min}-{max}")}";
+        return Loc("GOLD_REWARD", ("Amount", Gold(min == max ? min.ToString() : $"{min}-{max}")));
     }
 
     // Extra flat gold added to every combat reward by reward-adding relics (Amethyst Aubergine
@@ -1533,6 +1535,45 @@ public static class MapNodeInfoTooltipPatch
     private static string Pct(float value)
     {
         return $"{Mathf.Clamp(value, 0f, 1f) * 100f:0}%";
+    }
+
+    // This patch's own display strings live in the game's `map` loc table under a COLINSPATCHKIT-
+    // MAPINFO- prefix. The mod's localization/<lang>/map.json files are merged into that table by
+    // the game's mod loader (ModManager.GetModdedLocTables), so these read like native map strings
+    // and translate alongside the game. The English source is localization/eng/map.json; every
+    // shipped language file must carry the full key set (a missing key has no eng fallback once a
+    // non-eng locale is active). Reusing LocTable ("map") keeps these next to the legend keys the
+    // tooltip already pulls from the same table.
+    private const string CpkLocPrefix = "COLINSPATCHKIT-MAPINFO-";
+
+    private static string Loc(string key)
+    {
+        return new LocString(LocTable, CpkLocPrefix + key).GetFormattedText();
+    }
+
+    // SmartFormat lookup with {Name} placeholders filled from the passed (name, value) pairs.
+    private static string Loc(string key, params (string name, object value)[] vars)
+    {
+        LocString locString = new(LocTable, CpkLocPrefix + key);
+        foreach ((string name, object value) in vars)
+        {
+            locString.AddObj(name, value);
+        }
+        return locString.GetFormattedText();
+    }
+
+    // "Label: Value" line (e.g. "Monster: 30%", "Boss: Waterfall Giant"), routed through a loc key
+    // so locales that punctuate differently (French's space-before-colon, etc.) can adjust it.
+    private static string LabelValue(string label, string value)
+    {
+        return Loc("LABEL_VALUE", ("Label", label), ("Value", value));
+    }
+
+    // Localized label for a first-run forced-outcome token ("Event"/"Monster" — kept as stable
+    // strings for the logic in ForcedFirstRunOutcomes, mapped to display text only here).
+    private static string ForcedOutcomeLabel(string token)
+    {
+        return Loc(token == "Event" ? "ROOM_EVENT" : "ROOM_MONSTER");
     }
 }
 

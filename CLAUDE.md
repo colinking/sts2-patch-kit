@@ -99,6 +99,15 @@ A decompiled copy of the game's `sts2.dll` is expected at `../../elliotttate/sts
 
 ## Verification
 
+- Localization is guarded by a standalone xUnit project, `ColinsPatchKit.Tests/` — run with
+  `dotnet test ColinsPatchKit.Tests`. It needs **no game install** (it reads the loc JSON and source
+  text directly), is deliberately kept **out of `ColinsPatchKit.sln`** so the mod build/publish flow
+  never drags it in, and is excluded from the mod's own compile via `<Compile Remove="ColinsPatchKit.Tests/**"/>`.
+  It asserts: every supported locale is present with both loc files (and nothing extra); every
+  locale's file shares the English key set exactly; no value is blank; every `Loc("X")` key referenced
+  in code exists in `map.json` and vice-versa (no dead keys); and the `settings_ui.json` keys match
+  exactly what `ColinsPatchKitConfig`'s toggles/sections imply. Update the `SupportedLocales` list in
+  the test only when the *game* adds/removes a shipped locale.
 - Launch-flag harnesses (`ColinsPatchKitCode/E2ETests/`) verify patches without manual play;
   shared plumbing (scratch-profile switch, throwaway-run bootstrap) is in `E2ETests/E2EHelpers.cs`.
   Launch the game binary directly from
