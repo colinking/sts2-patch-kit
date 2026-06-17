@@ -139,6 +139,10 @@ In multiplayer, only your own random pick is affected. Due to how random charact
 
 If enabled, hovering over a shop item turns every other item's price red — the same red the game already uses for items you can't afford — whenever you couldn't also afford that item after buying the one you're hovering. This makes it easy to see at a glance which two purchases you can still make together. Hovering away restores the normal colors.
 
+![Shop prices](docs/images/shop-prices.png)
+
+*Inspired by [Minty Spire](https://steamcommunity.com/sharedfiles/filedetails/?id=1812723899) from Slay the Spire 1*
+
 #### View Upgrades toggle
 
 If enabled, the card reward screen gets the same "View Upgrades" toggle as the deck view. Also works with Scroll Boxes.
