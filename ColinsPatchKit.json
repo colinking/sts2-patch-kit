@@ -3,7 +3,7 @@
   "name": "Colin's Patch Kit",
   "author": "colinking",
   "description": "Slay the Spire 2 quality-of-life patches",
-  "version": "v1.2.0",
+  "version": "v1.3.0",
   "has_pck": true,
   "has_dll": true,
   "dependencies": [{ "id": "BaseLib", "min_version": "v3.0.0" }],
