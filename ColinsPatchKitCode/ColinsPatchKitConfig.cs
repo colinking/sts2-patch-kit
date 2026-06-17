@@ -40,6 +40,9 @@ public class ColinsPatchKitConfig : SimpleModConfig
     public static bool ExcludeCharactersFromRandom { get; set; } = true;
 
     [ConfigHoverTip(true)]
+    public static bool ShowShopAffordabilityPreview { get; set; } = true;
+
+    [ConfigHoverTip(true)]
     public static bool ShowCardRewardViewUpgradesToggle { get; set; } = true;
 
     [ConfigHoverTip(true)]

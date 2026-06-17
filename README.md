@@ -1,10 +1,8 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **13 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-The mod is localized into every language Slay the Spire 2 supports, so its settings and in-game text follow your chosen language.
-
-This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer.
+This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer. This mod is localized into every language Slay the Spire 2 supports.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
@@ -34,6 +32,7 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Active buff/debuff pulses](#active-buffdebuff-pulses)
 - [Menus](#menus)
   - [Random character bans](#random-character-bans)
+  - [Shop affordability preview](#shop-affordability-preview)
   - [View Upgrades toggle](#view-upgrades-toggle)
   - [Multiplayer cards Compendium toggle](#multiplayer-cards-compendium-toggle)
 - [Speed-ups](#speed-ups)
@@ -135,6 +134,10 @@ First select "Random", then right-click a character to ban it (right-click again
 In multiplayer, only your own random pick is affected. Due to how random character selection is implemented in multiplayer, readying up with at least one ban will immediately resolve the random character.
 
 ![Random character bans](docs/images/random-ban.png)
+
+#### Shop affordability preview
+
+If enabled, hovering over a shop item turns every other item's price red — the same red the game already uses for items you can't afford — whenever you couldn't also afford that item after buying the one you're hovering. This makes it easy to see at a glance which two purchases you can still make together. Hovering away restores the normal colors.
 
 #### View Upgrades toggle
 
