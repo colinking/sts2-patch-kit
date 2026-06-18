@@ -45,6 +45,7 @@ public static class TestWindowPatch
         ("relicpulse-e2e", false),
         ("powerpulse-e2e", false),
         ("retainslots-e2e", false),
+        ("retainslots-sizecheck", false),
         ("retainslots", false),
         ("pulsegif", false),
     ];
@@ -67,6 +68,21 @@ public static class TestWindowPatch
         }
         grabFocus = false;
         return false;
+    }
+
+    private static Vector2I ResolveWindowSize()
+    {
+        if (CommandLineHelper.TryGetValue("test-window-size", out string? sizeArg) && !string.IsNullOrEmpty(sizeArg))
+        {
+            string[] parts = sizeArg.Split('x');
+            if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h)
+                && w >= 640 && h >= 400)
+            {
+                return new Vector2I(w, h);
+            }
+            MainFile.Logger.Warn($"test-window: ignoring malformed --test-window-size='{sizeArg}' (want WxH, e.g. 2560x1600).");
+        }
+        return new Vector2I(1280, 800);
     }
 
     private static int ResolveTargetScreen()
@@ -101,10 +117,13 @@ public static class TestWindowPatch
 
         // Force the windowed branch: a 1280x800 window parked in the top-left corner of
         // the target display. (8, 48) clears the macOS menu bar; (-1, -1) would tell the
-        // original method to center it instead.
+        // original method to center it instead. `--test-window-size=WxH` overrides the
+        // dimensions for higher-resolution captures (the viewport — and thus the saved
+        // screenshot — renders at the window size; a window larger than the display still
+        // renders at full resolution, it just extends off-screen).
         s.Fullscreen = false;
         s.TargetDisplay = ResolveTargetScreen();
-        s.WindowSize = new Vector2I(1280, 800);
+        s.WindowSize = ResolveWindowSize();
         s.WindowPosition = new Vector2I(8, 48);
     }
 

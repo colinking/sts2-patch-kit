@@ -26,9 +26,19 @@ public static class RetainSlotsManager
     // card.tscn), and selected-card holders render at NCardHolder.smallScale.
     private static readonly Vector2 _cardFrameSize = new(300f, 422f);
     private const float CornerRadius = 16f;
-    private const float OutlineWidth = 3f;
+    private const float OutlineWidth = 2.25f;
+    // Pixels trimmed from each edge of the full card-frame footprint, so a
+    // settled card (rendered at full size) covers the outline instead of
+    // leaving dashes peeking around the edges. Tunable; 0 = exact card-frame
+    // size. Measured in UI-space pixels (same units the outline is drawn in).
+    private const float SlotInset = 4f;
     private const float DashLength = 12f;
-    private static readonly Color _outlineColor = new(1f, 1f, 1f, 0.45f);
+    // Opaque, NOT translucent: a dash that wraps a corner is one antialiased
+    // polyline, and Godot overdraws its own anti-aliasing at the internal corner
+    // joints — with a translucent color those two layers add up to bright-white
+    // specks at the corners. An opaque gray (matched to how the old 45%-white
+    // read over the dark slot) can't stack, so the corners stay clean.
+    private static readonly Color _outlineColor = new(0.6f, 0.6f, 0.62f, 1f);
     private static readonly Color _fillColor = new(0f, 0f, 0f, 0.25f);
 
     // _selectedHandCardContainer is the private NPlayerHand node that holds the
@@ -203,7 +213,13 @@ public static class RetainSlotsManager
 
     private static void DrawSlots(Control overlay)
     {
-        DrawSlots(overlay, _slotCount, _slotSpacing, _slotByHolder.Values.ToHashSet());
+        // Draw every slot's outline, including ones already assigned a card. The
+        // overlay sits behind the card holders, so a settled card covers its
+        // (slightly smaller) slot, while a card still animating in from the hand
+        // leaves the outline visible underneath until it arrives — without this
+        // the outline vanished the instant a card was picked, before it had slid
+        // into the slot.
+        DrawSlots(overlay, _slotCount, _slotSpacing, new HashSet<int>());
     }
 
     // Also the dev hook for the retain-slots preview tooling: draws the slot
@@ -211,7 +227,7 @@ public static class RetainSlotsManager
     // selection.
     internal static void DrawSlots(Control overlay, int slotCount, float spacing, HashSet<int> filled)
     {
-        Vector2 slotSize = _cardFrameSize * NCardHolder.smallScale.X;
+        Vector2 slotSize = _cardFrameSize * NCardHolder.smallScale.X - new Vector2(SlotInset * 2f, SlotInset * 2f);
         for (int i = 0; i < slotCount; i++)
         {
             if (!filled.Contains(i))
@@ -224,27 +240,118 @@ public static class RetainSlotsManager
     private static void DrawSlotOutline(Control overlay, Vector2 center, Vector2 size)
     {
         Rect2 rect = new(center - size * 0.5f, size);
-        float r = CornerRadius;
         _fillStyle ??= CreateFillStyle();
         _fillStyle.Draw(overlay.GetCanvasItem(), rect);
-        Vector2 topLeft = rect.Position;
-        Vector2 bottomRight = rect.End;
-        overlay.DrawDashedLine(new Vector2(topLeft.X + r, topLeft.Y), new Vector2(bottomRight.X - r, topLeft.Y),
-            _outlineColor, OutlineWidth, DashLength);
-        overlay.DrawDashedLine(new Vector2(bottomRight.X, topLeft.Y + r), new Vector2(bottomRight.X, bottomRight.Y - r),
-            _outlineColor, OutlineWidth, DashLength);
-        overlay.DrawDashedLine(new Vector2(bottomRight.X - r, bottomRight.Y), new Vector2(topLeft.X + r, bottomRight.Y),
-            _outlineColor, OutlineWidth, DashLength);
-        overlay.DrawDashedLine(new Vector2(topLeft.X, bottomRight.Y - r), new Vector2(topLeft.X, topLeft.Y + r),
-            _outlineColor, OutlineWidth, DashLength);
-        overlay.DrawArc(new Vector2(topLeft.X + r, topLeft.Y + r), r, Mathf.Pi, 1.5f * Mathf.Pi, 8,
-            _outlineColor, OutlineWidth, antialiased: true);
-        overlay.DrawArc(new Vector2(bottomRight.X - r, topLeft.Y + r), r, 1.5f * Mathf.Pi, 2f * Mathf.Pi, 8,
-            _outlineColor, OutlineWidth, antialiased: true);
-        overlay.DrawArc(new Vector2(bottomRight.X - r, bottomRight.Y - r), r, 0f, 0.5f * Mathf.Pi, 8,
-            _outlineColor, OutlineWidth, antialiased: true);
-        overlay.DrawArc(new Vector2(topLeft.X + r, bottomRight.Y - r), r, 0.5f * Mathf.Pi, Mathf.Pi, 8,
-            _outlineColor, OutlineWidth, antialiased: true);
+        // One continuous dashed loop traced clockwise around the rounded-rect
+        // perimeter, so the dash pattern flows evenly through the corners
+        // instead of restarting (and doubling up) at each side/arc seam.
+        DrawDashedRoundedRect(overlay, rect, CornerRadius, _outlineColor, OutlineWidth, DashLength);
+    }
+
+    private static void DrawDashedRoundedRect(Control overlay, Rect2 rect, float radius, Color color,
+        float width, float dashLength)
+    {
+        Vector2 tl = rect.Position;
+        Vector2 br = rect.End;
+        float r = Mathf.Min(radius, Mathf.Min(rect.Size.X, rect.Size.Y) * 0.5f);
+        const int cornerSegments = 6;
+        List<Vector2> path = new();
+        // Top edge, then each corner arc (Godot angles: 0 = +X, +PI/2 = +Y/down).
+        path.Add(new Vector2(tl.X + r, tl.Y));
+        path.Add(new Vector2(br.X - r, tl.Y));
+        AppendArc(path, new Vector2(br.X - r, tl.Y + r), r, -Mathf.Pi / 2f, 0f, cornerSegments);
+        path.Add(new Vector2(br.X, br.Y - r));
+        AppendArc(path, new Vector2(br.X - r, br.Y - r), r, 0f, Mathf.Pi / 2f, cornerSegments);
+        path.Add(new Vector2(tl.X + r, br.Y));
+        AppendArc(path, new Vector2(tl.X + r, br.Y - r), r, Mathf.Pi / 2f, Mathf.Pi, cornerSegments);
+        path.Add(new Vector2(tl.X, tl.Y + r));
+        AppendArc(path, new Vector2(tl.X + r, tl.Y + r), r, Mathf.Pi, Mathf.Pi * 1.5f, cornerSegments);
+
+        // Snap the dash period to a whole number of equal dash+gap cycles around
+        // the perimeter so the pattern closes seamlessly at the loop's start and
+        // the corners always land on the same phase — otherwise a leftover
+        // partial dash makes the seam and corners look uneven. dashLength is the
+        // target; the actual dash is nudged to the nearest evenly-dividing size.
+        float perimeter = ClosedPathLength(path);
+        int cycles = Mathf.Max(1, Mathf.RoundToInt(perimeter / (dashLength * 2f)));
+        float evenDash = perimeter / cycles / 2f;
+        DrawDashedLoop(overlay, path, color, width, evenDash);
+    }
+
+    private static float ClosedPathLength(List<Vector2> path)
+    {
+        float length = 0f;
+        for (int i = 0; i < path.Count; i++)
+        {
+            length += path[i].DistanceTo(path[(i + 1) % path.Count]);
+        }
+        return length;
+    }
+
+    private static void AppendArc(List<Vector2> path, Vector2 center, float r, float startAngle,
+        float endAngle, int segments)
+    {
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = Mathf.Lerp(startAngle, endAngle, (float)i / segments);
+            path.Add(center + new Vector2(Mathf.Cos(t), Mathf.Sin(t)) * r);
+        }
+    }
+
+    // Walks a closed polyline at a constant arc-length dash period (dash on for
+    // dashLength, off for dashLength), splitting each segment so dashes stay
+    // uniform across vertices — the bit DrawDashedLine can't do around corners.
+    // Each "on" dash is accumulated and drawn as a single antialiased polyline
+    // (including any corner vertices it spans); drawing the corner facets as
+    // separate DrawLine calls would overlap their antialiased caps at each
+    // joint and stack the translucent color into bright specks.
+    private static void DrawDashedLoop(Control overlay, List<Vector2> path, Color color, float width,
+        float dashLength)
+    {
+        float period = dashLength * 2f;
+        float phase = 0f;
+        List<Vector2> dash = new();
+        void FlushDash()
+        {
+            if (dash.Count >= 2)
+            {
+                overlay.DrawPolyline(dash.ToArray(), color, width, antialiased: true);
+            }
+            dash.Clear();
+        }
+        for (int i = 0; i < path.Count; i++)
+        {
+            Vector2 a = path[i];
+            Vector2 b = path[(i + 1) % path.Count];
+            float segLen = a.DistanceTo(b);
+            if (segLen <= 0.001f)
+            {
+                continue;
+            }
+            Vector2 dir = (b - a) / segLen;
+            float pos = 0f;
+            while (pos < segLen)
+            {
+                bool on = phase < dashLength;
+                float remainingInPhase = (on ? dashLength : period) - phase;
+                float step = Mathf.Min(remainingInPhase, segLen - pos);
+                if (on)
+                {
+                    if (dash.Count == 0)
+                    {
+                        dash.Add(a + dir * pos);
+                    }
+                    dash.Add(a + dir * (pos + step));
+                }
+                else
+                {
+                    FlushDash();
+                }
+                pos += step;
+                phase = (phase + step) % period;
+            }
+        }
+        FlushDash();
     }
 
     private static StyleBoxFlat CreateFillStyle()

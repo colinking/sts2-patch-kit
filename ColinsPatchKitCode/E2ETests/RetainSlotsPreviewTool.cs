@@ -116,6 +116,93 @@ public static class RetainSlotsPreviewPatch
     }
 }
 
+// Dev harness: side-by-side sizing calibration. Renders three columns at the
+// main menu — an empty slot, a card sitting OVER its slot (slot behind, the live
+// look), and a card sitting UNDER its slot (slot drawn on top, so the outline is
+// fully visible against the card edges) — so the SlotScale can be eyeballed and
+// tweaked. Pair with --test-window-size for a high-res capture:
+//
+//   "Slay the Spire 2" --retainslots-sizecheck=/tmp/sizecheck.png \
+//       --test-window-size=2560x1600
+//
+[HarmonyPatch(typeof(NMainMenu), "_Ready")]
+public static class RetainSlotsSizeCheckPatch
+{
+    private static bool _ran;
+
+    public static void Postfix(NMainMenu __instance)
+    {
+        if (_ran || !CommandLineHelper.TryGetValue("retainslots-sizecheck", out string? shotPath)
+            || string.IsNullOrEmpty(shotPath))
+        {
+            return;
+        }
+        _ran = true;
+        SceneTree tree = __instance.GetTree();
+        tree.CreateTimer(1.0).Timeout += () => Run(shotPath, tree);
+    }
+
+    private static void Run(string shotPath, SceneTree tree)
+    {
+        try
+        {
+            CanvasLayer layer = new() { Layer = 90 };
+            ColorRect backdrop = new() { Color = new Color(0.13f, 0.14f, 0.16f) };
+            backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            layer.AddChild(backdrop);
+            Control center = new() { MouseFilter = Control.MouseFilterEnum.Ignore };
+            center.SetAnchorsPreset(Control.LayoutPreset.Center);
+            backdrop.AddChild(center);
+            NGame.Instance!.AddChildSafely(layer);
+
+            CardModel? model = ModelDb.AllCards.FirstOrDefault(c => c.Id.Entry == "DEFILE");
+
+            // Columns: 0 = empty slot, 1 = card over slot (live look), 2 = slot over card.
+            float colSpacing = 360f;
+            for (int col = 0; col < 3; col++)
+            {
+                var colPos = new Vector2(colSpacing * (col - 1), 0f);
+
+                Control outline = new() { Position = colPos, MouseFilter = Control.MouseFilterEnum.Ignore };
+                outline.Draw += () => RetainSlotsManager.DrawSlots(outline, 1, 0f, new HashSet<int>());
+
+                NCard? card = (col == 0 || model == null) ? null : NCard.Create(model);
+                if (card != null)
+                {
+                    card.Position = colPos;
+                    card.Scale = NCardHolder.smallScale;
+                }
+
+                // Child order sets z-order: later child renders on top.
+                if (col == 2)
+                {
+                    if (card != null) { center.AddChildSafely(card); card.UpdateVisuals(PileType.None, CardPreviewMode.Normal); }
+                    center.AddChildSafely(outline);   // slot OVER card
+                }
+                else
+                {
+                    center.AddChildSafely(outline);   // slot UNDER card (or empty)
+                    if (card != null) { center.AddChildSafely(card); card.UpdateVisuals(PileType.None, CardPreviewMode.Normal); }
+                }
+                outline.QueueRedraw();
+            }
+
+            tree.CreateTimer(1.5).Timeout += () =>
+            {
+                Image image = tree.Root.GetTexture().GetImage();
+                Error err = image.SavePng(shotPath);
+                MainFile.Logger.Info($"retainslots-sizecheck: screenshot to '{shotPath}' ({err}).");
+                tree.Quit();
+            };
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"retainslots-sizecheck: failed: {e}");
+            tree.Quit();
+        }
+    }
+}
+
 // Dev harness: full end-to-end verification of the retain slots in a real
 // combat. Switches to the scratch save profile, starts a throwaway run, jumps
 // to a weak fight, grants Well Laid Plans x2, ends the turn, and then walks
