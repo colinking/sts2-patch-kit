@@ -24,6 +24,11 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 // that are still enabled. Only applies on the standard character select screen — the custom-run
 // screen reuses the same button but has no Random option, so the ban semantics are skipped there.
 //
+// Right-clicking a character when Random is *not* the current selection jumps the selection to
+// Random and bans that character in one gesture (it never toggles in this case — an already-banned
+// character stays banned), so you can ban straight from a concrete character without first clicking
+// Random. Once Random is selected, right-click reverts to the toggle behavior above.
+//
 // The ban UI is only live while Random is selected: clicking onto a specific character hides the
 // red tint (the bans are remembered, and reappear when you click back onto Random). The bans are
 // also forgotten each time you re-enter the character select screen — they never persist.
@@ -220,7 +225,13 @@ public static class RandomCharacterExclusionManager
 
     // Programmatically select the first live button matching the predicate. Select() routes through
     // the screen's SelectCharacter (updating the lobby character, info panel and ban marks).
-    private static bool SelectButton(Func<NCharacterSelectButton, bool> predicate)
+    //
+    // grabFocus moves OS keyboard focus onto the chosen button. The screen wires selection to each
+    // button's FocusEntered signal, so a real click selects only because clicking moves focus. When
+    // we switch selection programmatically the previously-clicked button keeps OS focus, and a later
+    // click back onto it fires no FocusEntered (it is already focused) — so it would not re-select.
+    // Grabbing focus here mirrors what a click would do and keeps the previous button re-selectable.
+    private static bool SelectButton(Func<NCharacterSelectButton, bool> predicate, bool grabFocus = false)
     {
         NCharacterSelectButton? button = _buttons.FirstOrDefault(b => GodotObject.IsInstanceValid(b) && predicate(b));
         if (button == null)
@@ -228,6 +239,10 @@ public static class RandomCharacterExclusionManager
             return false;
         }
         button.Select();
+        if (grabFocus)
+        {
+            button.GrabFocus();
+        }
         return true;
     }
 
@@ -261,8 +276,7 @@ public static class RandomCharacterExclusionManager
 
     private static void OnButtonMousePressed(NCharacterSelectButton button, InputEvent inputEvent)
     {
-        // Right-click only bans while Random is the active selection.
-        if (!ColinsPatchKitConfig.ExcludeCharactersFromRandom || !_randomSelected)
+        if (!ColinsPatchKitConfig.ExcludeCharactersFromRandom)
         {
             return;
         }
@@ -278,7 +292,16 @@ public static class RandomCharacterExclusionManager
             return;
         }
         string id = button.Character.Id.Entry;
-        if (!_excluded.Remove(id))
+        if (!_randomSelected)
+        {
+            // Random isn't the current selection: right-clicking a character jumps to Random and
+            // bans it, rather than toggling. A character that was already banned stays banned. Add
+            // the ban first, then select Random so its RefreshAll paints this mark together with any
+            // previously-banned characters reappearing.
+            _excluded.Add(id);
+            SelectButton(b => b.IsRandom, grabFocus: true);
+        }
+        else if (!_excluded.Remove(id))
         {
             _excluded.Add(id);
         }
