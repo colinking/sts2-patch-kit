@@ -821,16 +821,19 @@ public static class MapNodeInfoTooltipPatch
         switch (option.OptionId)
         {
             case "HEAL":
-                // GetHealAmount already folds in heal-amount relics (Regal Pillow). Relics that
-                // grant extras on resting (Tiny Mailbox potions, Dream Catcher card reward, Stone
-                // Humidifier max HP, Night Terrors, ...) all describe themselves through the same
-                // ModifyExtraRestSiteHealText hook the real Heal option uses, so surface that too.
+                // The heal number already folds in heal-amount relics/modifiers (Regal Pillow,
+                // Night Terrors) through ModifyRestSiteHealAmount, so we surface only what each rest
+                // EXTRA adds on top — potions, a card, max HP. We still ask the game's own
+                // ModifyExtraRestSiteHealText hook which contributors are active (so future/modded
+                // ones aren't lost), but render each as a short label via ConciseHealExtra instead of
+                // the game's full sentence (which repeats the relic name and ends in a period).
                 string heal = Loc("REST_HEAL_DETAIL", ("Hp", (int)HealRestSiteOption.GetHealAmount(player)));
-                IReadOnlyList<LocString> extra =
-                    Hook.ModifyExtraRestSiteHealText(player.RunState, player, Array.Empty<LocString>());
-                return extra.Count > 0
-                    ? $"{heal}, {string.Join(", ", extra.Select(s => s.GetFormattedText()))}"
-                    : heal;
+                List<string> healExtras = Hook
+                    .ModifyExtraRestSiteHealText(player.RunState, player, Array.Empty<LocString>())
+                    .Select(ConciseHealExtra)
+                    .Where(s => s.Length > 0)
+                    .ToList();
+                return healExtras.Count > 0 ? $"{heal}, {string.Join(", ", healExtras)}" : heal;
             case "MEND":
                 return Loc("REST_MEND");
             case "SMITH":
@@ -850,6 +853,33 @@ public static class MapNodeInfoTooltipPatch
                 return Loc("REST_KINDLE");
             default:
                 return string.Empty;
+        }
+    }
+
+    // A concise label for one heal extra reported by ModifyExtraRestSiteHealText, keyed off the
+    // contributing relic/modifier (LocEntryKey is "<ID>.additionalRestSiteHealText"). The game's own
+    // text is a full sentence that names the relic and ends in a period; we swap in a short noun
+    // phrase matching the other rest-option details. Returns "" to drop an extra already reflected in
+    // the heal number: Regal Pillow's bonus heal, and Night Terrors (which heals to full — only its
+    // max-HP cost is worth a line). An unrecognized contributor (a future or modded relic) falls back
+    // to the game's text so it still shows rather than silently vanishing.
+    private static string ConciseHealExtra(LocString extra)
+    {
+        // LocEntryKey is "<ID>.additionalRestSiteHealText".
+        switch (extra.LocEntryKey.Split('.')[0])
+        {
+            case "REGAL_PILLOW":
+                return string.Empty; // bonus heal already in the heal number
+            case "TINY_MAILBOX":
+                return Loc("REST_HEAL_POTIONS");
+            case "DREAM_CATCHER":
+                return Loc("REST_HEAL_CARD");
+            case "STONE_HUMIDIFIER":
+                return Loc("REST_HEAL_MAX_HP");
+            case "NIGHT_TERRORS":
+                return Loc("REST_HEAL_NIGHT_TERRORS");
+            default:
+                return extra.GetFormattedText(); // unknown contributor — keep the game's text
         }
     }
 
