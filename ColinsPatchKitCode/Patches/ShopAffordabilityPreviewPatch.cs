@@ -4,6 +4,7 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.addons.mega_text;
 
@@ -33,6 +34,11 @@ internal static class ShopAffordabilityPreview
     // _hoveredSlot is non-null.
     private static int _goldAfterPurchase;
 
+    // The price multiplier the OTHER items take on once the hovered item is bought. 1 normally, but
+    // buying a price-discount relic re-prices the whole shop, so hovering Membership Card previews the
+    // rest at half off. Only meaningful while _hoveredSlot is non-null.
+    private static decimal _postPurchaseDiscount = 1m;
+
     // True only while RepaintAll is driving UpdateVisual, so the postfix knows to fade rather than snap.
     private static bool _animating;
 
@@ -59,7 +65,18 @@ internal static class ShopAffordabilityPreview
 
         _hoveredSlot = slot;
         _goldAfterPurchase = player.Gold - entry.Cost;
+        _postPurchaseDiscount = PostPurchaseDiscount(entry);
         RepaintAll(rug);
+    }
+
+    // The price multiplier the rest of the shop takes on once `entry` is bought. Membership Card is
+    // the only shop-buyable relic that discounts prices (it halves them; its ModifyMerchantPrice hook
+    // re-prices every other entry the moment it's owned), so hovering it should preview the others at
+    // half off. The Courier (−20%) can't appear in shops (IsAllowedInShops == false), and a discount
+    // relic you ALREADY own is folded into every Cost already — neither needs handling here.
+    private static decimal PostPurchaseDiscount(MerchantEntry entry)
+    {
+        return entry is MerchantRelicEntry { Model: MembershipCard } ? 0.5m : 1m;
     }
 
     public static void OnUnhover(NMerchantSlot slot, NMerchantInventory? rug)
@@ -70,6 +87,7 @@ internal static class ShopAffordabilityPreview
         }
 
         _hoveredSlot = null;
+        _postPurchaseDiscount = 1m;
         RepaintAll(rug);
     }
 
@@ -124,10 +142,13 @@ internal static class ShopAffordabilityPreview
             return;
         }
 
+        // Compare each other item's POST-purchase price against the gold left. The price is normally
+        // unchanged, but buying a discount relic (Membership Card) re-prices the shop, so apply that
+        // discount — truncating to int the same way MerchantEntry.Cost does — before the comparison.
         bool wantRed = _hoveredSlot is not null
                        && slot != _hoveredSlot
                        && slot.Entry is { IsStocked: true } entry
-                       && entry.Cost > _goldAfterPurchase;
+                       && (int)(entry.Cost * _postPurchaseDiscount) > _goldAfterPurchase;
 
         if (!_animating)
         {

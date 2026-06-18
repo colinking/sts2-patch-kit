@@ -525,9 +525,9 @@ public static class MapNodeInfoTooltipPatch
         List<string> rewards = new() { GoldText(runState, player, RoomType.Elite, CombatGoldBonus(runState, player)) };
         rewards.Add(CombatRelicLine(runState, player, mapPoint, isElite: true)!);
         rewards.Add(CardRewardLine(runState, player, mapPoint));
-        if (player.GetRelic<WhiteStar>() is { } whiteStar)
+        if (player.GetRelic<WhiteStar>() != null)
         {
-            rewards.Add(Loc("EXTRA_CARD_REWARD", ("Source", whiteStar.Title.GetFormattedText())));
+            rewards.Add(Loc("EXTRA_CARD_REWARD"));
         }
         rewards.Add(PotionRewardLine(runState, player, RoomType.Elite, dependsOnUnresolved));
         return rewards;
@@ -580,9 +580,9 @@ public static class MapNodeInfoTooltipPatch
             rewards.Add(relicLine);
         }
         rewards.Add(CardRewardLine(runState, player, mapPoint));
-        if (player.GetRelic<PrayerWheel>() is { } prayerWheel)
+        if (player.GetRelic<PrayerWheel>() != null)
         {
-            rewards.Add(Loc("EXTRA_CARD_REWARD", ("Source", prayerWheel.Title.GetFormattedText())));
+            rewards.Add(Loc("EXTRA_CARD_REWARD"));
         }
         rewards.Add(PotionRewardLine(runState, player, RoomType.Monster, dependsOnUnresolved));
         return rewards;
