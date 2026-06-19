@@ -101,6 +101,12 @@ void fragment() {
     private const float OverlayIdleValue = 1.0f;
     private const float OverlayHoverValue = 1.2f;
 
+    // Hover-out ease, matching the portrait: NCharacterSelectButton snaps its hsv on OnFocus but eases
+    // it back over 0.5s (Expo/Out) on OnUnfocus (AnimateSaturationToCurrentState), so the X follows the
+    // same asymmetric in/out as the portrait under it instead of popping back instantly.
+    private const float OverlayUnhoverDuration = 0.5f;
+    private const string OverlayTweenMeta = "CpkMarkHoverTween";
+
     private static Shader? _overlayShader;
 
     // Called from the Init postfix once per character button, every time the screen is built.
@@ -400,14 +406,39 @@ void fragment() {
 
     // Lift the mark's brightness on the focused/hovered button (and drop it back on unfocus), so the
     // banned X brightens on the character the cursor is over — matching the portrait's hover brighten.
+    // The portrait snaps its hsv up on focus and eases it back down on unfocus, so we do the same: a
+    // hard set on hover-in, a 0.5s Expo/Out tween on hover-out (only v moves — s is fixed at 1).
     // No-op when the button has no mark (not banned), so it's safe to call for every button.
     public static void SetMarkFocused(NCharacterSelectButton button, bool focused)
     {
         TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
-        if (icon?.GetNodeOrNull<TextureRect>(MarkName)?.Material is ShaderMaterial sm)
+        if (icon?.GetNodeOrNull<TextureRect>(MarkName) is not { Material: ShaderMaterial sm } mark)
         {
-            sm.SetShaderParameter("v", focused ? OverlayHoverValue : OverlayIdleValue);
+            return;
         }
+
+        // Always kill the in-flight hover tween first, so a quick re-hover doesn't fight a fade-out.
+        if (mark.HasMeta(OverlayTweenMeta)
+            && mark.GetMeta(OverlayTweenMeta).As<Tween>() is { } running
+            && GodotObject.IsInstanceValid(running))
+        {
+            running.Kill();
+        }
+        mark.RemoveMeta(OverlayTweenMeta);
+
+        if (focused)
+        {
+            // Hover-in: snap, mirroring the portrait's instant lift on OnFocus.
+            sm.SetShaderParameter("v", OverlayHoverValue);
+            return;
+        }
+
+        // Hover-out: ease from wherever v currently sits back to idle (matches AnimateSaturationToCurrentState).
+        Tween tween = mark.CreateTween();
+        tween.TweenProperty(sm, "shader_parameter/v", OverlayIdleValue, OverlayUnhoverDuration)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Expo);
+        mark.SetMeta(OverlayTweenMeta, tween);
     }
 
     // Repaint every live button (e.g. on selection change or config toggle).
