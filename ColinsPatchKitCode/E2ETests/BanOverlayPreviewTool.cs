@@ -31,6 +31,7 @@ namespace ColinsPatchKit.ColinsPatchKitCode.E2ETests;
 public static class BanOverlayPreviewPatch
 {
     private const string AssetsDir = "res://ColinsPatchKit/assets";
+    private const string ButtonMaskPath = "res://images/packed/character_select/char_select_button_mask.png";
 
     // Portrait cell + layout metrics (logical px in the composite).
     private const float PortraitHeight = 240f;
@@ -80,7 +81,20 @@ public static class BanOverlayPreviewPatch
                     Error dumpErr = character.CharacterSelectIcon.GetImage().SavePng(outPath);
                     MainFile.Logger.Info($"banoverlay: dumped portrait '{outPath}' ({dumpErr}).");
                 }
+                // Also dump the game's ragged-edge button mask so the MegaDot preview can replicate
+                // the clip the game applies to every portrait (ClipChildren over this texture).
+                var maskDumpTex = ResourceLoader.Load<Texture2D>(ButtonMaskPath);
+                if (maskDumpTex != null)
+                {
+                    string maskOut = $"{dumpDir}/_button_mask.png";
+                    Error maskErr = maskDumpTex.GetImage().SavePng(maskOut);
+                    MainFile.Logger.Info($"banoverlay: dumped mask '{maskOut}' ({maskErr}).");
+                }
             }
+
+            // The ragged-edge mask the game clips every portrait to; we clip preview cells the same
+            // way so the overlay shows the same torn edge it gets in-game.
+            var maskTex = ResourceLoader.Load<Texture2D>(ButtonMaskPath);
 
             // Size the cell to the first portrait's aspect so portraits aren't distorted; the
             // overlay then stretches to that same rect, mirroring the live mark.Size = icon.Size.
@@ -135,12 +149,25 @@ public static class BanOverlayPreviewPatch
                     var cellPos = new Vector2(x, y);
                     var cellSize = new Vector2(cellW, cellH);
 
-                    subViewport.AddChild(MakeCell(characters[c].CharacterSelectIcon, cellPos, cellSize));
+                    // Mirror the game: nest portrait + overlay under a Mask node (ClipChildren=Only
+                    // over the ragged button mask) so the overlay inherits the same torn edge as the
+                    // portrait — the whole point of this test.
+                    var maskNode = new TextureRect
+                    {
+                        Texture = maskTex,
+                        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                        StretchMode = TextureRect.StretchModeEnum.Scale,
+                        ClipChildren = maskTex != null ? CanvasItem.ClipChildrenMode.Only : CanvasItem.ClipChildrenMode.Disabled,
+                        Position = cellPos,
+                        Size = cellSize,
+                    };
+                    subViewport.AddChild(maskNode);
+                    maskNode.AddChild(MakeCell(characters[c].CharacterSelectIcon, Vector2.Zero, cellSize));
 
                     if (overlayTex != null)
                     {
                         // Mirror the live exclusion mark exactly: stretched over the icon rect.
-                        subViewport.AddChild(MakeCell(overlayTex, cellPos, cellSize));
+                        maskNode.AddChild(MakeCell(overlayTex, Vector2.Zero, cellSize));
                     }
                 }
             }

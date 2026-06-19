@@ -72,30 +72,36 @@ public static class RandomCharacterExclusionManager
     // no run seed until the run begins, so this stands in for it (a real lobby.Seed wins if present).
     private static string? _sessionSeed;
 
-    // Red "banned" frame + X overlaid on excluded characters.
+    // Red "banned" X overlaid on excluded characters. The soft dark drop shadow that lets the X read
+    // over busy portraits is baked into this image (a blurred dark halo behind the X), so no shader is
+    // needed for it.
     private const string MarkName = "CpkExclusionMark";
-    private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char_v2.png";
+    private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char.png";
     private static Texture2D? _markTexture;
 
-    // Rounds the corners of whatever it's applied to by zeroing alpha outside a rounded rectangle.
-    // rect_px is the control's pixel size and radius_px the corner radius in those same pixels; the
-    // mask is computed from a rounded-rect signed distance so it stays circular regardless of aspect.
-    private const string RoundedMaskShaderCode = @"
+    // Shader on the mark: just an hsv tweak (s/v). It's an identity no-op at the idle params and only
+    // does work on hover, where v lifts so the X brightens on the character the cursor is over,
+    // matching the portrait's brighten. Tuned in the MegaDot tester (tools/ban_overlay_preview.gd).
+    private const string OverlayShaderCode = @"
 shader_type canvas_item;
-uniform vec2 rect_px = vec2(100.0, 150.0);
-uniform float radius_px = 10.0;
+uniform float s = 1.0;
+uniform float v = 1.0;
 void fragment() {
-    vec2 p = UV * rect_px;
-    vec2 hs = rect_px * 0.5;
-    vec2 d = abs(p - hs) - (hs - vec2(radius_px));
-    float dist = length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - radius_px;
-    COLOR.a *= 1.0 - smoothstep(-1.0, 1.0, dist);
+    vec4 col = texture(TEXTURE, UV);
+    mat3 R = mat3(vec3(0.2989,0.5959,0.2115), vec3(0.5870,-0.2774,-0.5229), vec3(0.1140,-0.3216,0.3114));
+    vec3 y = R * col.rgb;
+    y.y *= s; y.z *= s;
+    y = mix(vec3(0.0), y, v);
+    col.rgb = inverse(R) * y;
+    COLOR = col;
 }";
 
-    // Corner radius as a fraction of the icon width, eyeballed to match the game's rounded icons.
-    private const float CornerRadiusFraction = 0.08f;
+    // Overlay hsv params (mirror the tester defaults). v lifts on hover; s stays 1 (no desaturation).
+    private const float OverlaySaturation = 1.0f;
+    private const float OverlayIdleValue = 1.0f;
+    private const float OverlayHoverValue = 1.2f;
 
-    private static Shader? _roundedMaskShader;
+    private static Shader? _overlayShader;
 
     // Called from the Init postfix once per character button, every time the screen is built.
     public static void OnButtonInitialized(NCharacterSelectButton button)
@@ -346,12 +352,11 @@ void fragment() {
     // nothing). Sizing to the icon means it follows the button's hover scale and stretches the frame
     // to the portrait edges.
     //
-    // The portrait texture is a full opaque rectangle; the icon's rounded-corner look comes from its
-    // own shader. An overlay whose background is dark/feathered would otherwise poke square corners
-    // out past that rounding, so the mark carries a rounded-rect alpha mask of its own (sized to the
-    // icon each refresh). The mask only touches alpha, so the frame stays bright red even while the
-    // icon shader desaturates an unselected character. (Clipping via the icon's ClipChildren was
-    // tried first but renders nothing in-game — it conflicts with the icon's own ShaderMaterial.)
+    // The game gives every portrait its ragged edge by nesting the icon under a "Mask" node whose
+    // ClipChildren=Only clips the whole subtree to char_select_button_mask.png. Our mark lives inside
+    // that subtree (it's a child of %Icon), so it inherits the same ragged clip for free — as long as
+    // it does NOT set a ZIndex. A z override would draw the mark in a separate pass that escapes the
+    // mask, which is what left the overlay with clean rectangular edges poking past the torn portrait.
     private static void SetExclusionMark(NCharacterSelectButton button, bool show)
     {
         TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
@@ -372,7 +377,10 @@ void fragment() {
                 MainFile.Logger.Error($"Random-character exclusion overlay missing at {MarkTexturePath}");
                 return;
             }
-            _roundedMaskShader ??= new Shader { Code = RoundedMaskShaderCode };
+            _overlayShader ??= new Shader { Code = OverlayShaderCode };
+            var material = new ShaderMaterial { Shader = _overlayShader };
+            material.SetShaderParameter("s", OverlaySaturation);
+            material.SetShaderParameter("v", OverlayIdleValue);
             mark = new TextureRect
             {
                 Name = MarkName,
@@ -380,8 +388,7 @@ void fragment() {
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.Scale,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
-                ZIndex = 2,
-                Material = new ShaderMaterial { Shader = _roundedMaskShader },
+                Material = material,
             };
             icon.AddChildSafely(mark);
         }
@@ -389,10 +396,17 @@ void fragment() {
         mark.Position = Vector2.Zero;
         mark.Size = icon.Size;
         mark.Visible = show;
-        if (mark.Material is ShaderMaterial sm)
+    }
+
+    // Lift the mark's brightness on the focused/hovered button (and drop it back on unfocus), so the
+    // banned X brightens on the character the cursor is over — matching the portrait's hover brighten.
+    // No-op when the button has no mark (not banned), so it's safe to call for every button.
+    public static void SetMarkFocused(NCharacterSelectButton button, bool focused)
+    {
+        TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
+        if (icon?.GetNodeOrNull<TextureRect>(MarkName)?.Material is ShaderMaterial sm)
         {
-            sm.SetShaderParameter("rect_px", mark.Size);
-            sm.SetShaderParameter("radius_px", mark.Size.X * CornerRadiusFraction);
+            sm.SetShaderParameter("v", focused ? OverlayHoverValue : OverlayIdleValue);
         }
     }
 
@@ -424,6 +438,41 @@ public static class RandomCharacterExclusionButtonPatch
         catch (Exception e)
         {
             MainFile.Logger.Error($"Failed to wire up random-character exclusion on button: {e}");
+        }
+    }
+}
+
+// Brighten the ban mark on the focused/hovered button and restore it on unfocus, so the X lifts on
+// the character the cursor is over (mirroring the game's portrait brighten). Harmless on un-banned
+// buttons (no mark to update).
+[HarmonyPatch(typeof(NCharacterSelectButton), "OnFocus")]
+public static class RandomCharacterExclusionFocusPatch
+{
+    public static void Postfix(NCharacterSelectButton __instance)
+    {
+        try
+        {
+            RandomCharacterExclusionManager.SetMarkFocused(__instance, true);
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to brighten random-character exclusion mark on focus: {e}");
+        }
+    }
+}
+
+[HarmonyPatch(typeof(NCharacterSelectButton), "OnUnfocus")]
+public static class RandomCharacterExclusionUnfocusPatch
+{
+    public static void Postfix(NCharacterSelectButton __instance)
+    {
+        try
+        {
+            RandomCharacterExclusionManager.SetMarkFocused(__instance, false);
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to restore random-character exclusion mark on unfocus: {e}");
         }
     }
 }
