@@ -74,8 +74,28 @@ public static class RandomCharacterExclusionManager
 
     // Red "banned" frame + X overlaid on excluded characters.
     private const string MarkName = "CpkExclusionMark";
-    private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char.png";
+    private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char_v2.png";
     private static Texture2D? _markTexture;
+
+    // Rounds the corners of whatever it's applied to by zeroing alpha outside a rounded rectangle.
+    // rect_px is the control's pixel size and radius_px the corner radius in those same pixels; the
+    // mask is computed from a rounded-rect signed distance so it stays circular regardless of aspect.
+    private const string RoundedMaskShaderCode = @"
+shader_type canvas_item;
+uniform vec2 rect_px = vec2(100.0, 150.0);
+uniform float radius_px = 10.0;
+void fragment() {
+    vec2 p = UV * rect_px;
+    vec2 hs = rect_px * 0.5;
+    vec2 d = abs(p - hs) - (hs - vec2(radius_px));
+    float dist = length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - radius_px;
+    COLOR.a *= 1.0 - smoothstep(-1.0, 1.0, dist);
+}";
+
+    // Corner radius as a fraction of the icon width, eyeballed to match the game's rounded icons.
+    private const float CornerRadiusFraction = 0.08f;
+
+    private static Shader? _roundedMaskShader;
 
     // Called from the Init postfix once per character button, every time the screen is built.
     public static void OnButtonInitialized(NCharacterSelectButton button)
@@ -324,8 +344,14 @@ public static class RandomCharacterExclusionManager
     // parented to the icon and explicitly sized to the icon's rect each refresh (anchors alone on a
     // freshly-created node with IgnoreSize don't reliably produce a non-zero rect, so it would draw
     // nothing). Sizing to the icon means it follows the button's hover scale and stretches the frame
-    // to the portrait edges; its own (absent) material keeps it bright red even while the icon shader
-    // desaturates an unselected character.
+    // to the portrait edges.
+    //
+    // The portrait texture is a full opaque rectangle; the icon's rounded-corner look comes from its
+    // own shader. An overlay whose background is dark/feathered would otherwise poke square corners
+    // out past that rounding, so the mark carries a rounded-rect alpha mask of its own (sized to the
+    // icon each refresh). The mask only touches alpha, so the frame stays bright red even while the
+    // icon shader desaturates an unselected character. (Clipping via the icon's ClipChildren was
+    // tried first but renders nothing in-game — it conflicts with the icon's own ShaderMaterial.)
     private static void SetExclusionMark(NCharacterSelectButton button, bool show)
     {
         TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
@@ -346,6 +372,7 @@ public static class RandomCharacterExclusionManager
                 MainFile.Logger.Error($"Random-character exclusion overlay missing at {MarkTexturePath}");
                 return;
             }
+            _roundedMaskShader ??= new Shader { Code = RoundedMaskShaderCode };
             mark = new TextureRect
             {
                 Name = MarkName,
@@ -354,6 +381,7 @@ public static class RandomCharacterExclusionManager
                 StretchMode = TextureRect.StretchModeEnum.Scale,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
                 ZIndex = 2,
+                Material = new ShaderMaterial { Shader = _roundedMaskShader },
             };
             icon.AddChildSafely(mark);
         }
@@ -361,6 +389,11 @@ public static class RandomCharacterExclusionManager
         mark.Position = Vector2.Zero;
         mark.Size = icon.Size;
         mark.Visible = show;
+        if (mark.Material is ShaderMaterial sm)
+        {
+            sm.SetShaderParameter("rect_px", mark.Size);
+            sm.SetShaderParameter("radius_px", mark.Size.X * CornerRadiusFraction);
+        }
     }
 
     // Repaint every live button (e.g. on selection change or config toggle).
