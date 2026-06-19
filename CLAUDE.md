@@ -89,9 +89,13 @@ directly. Steps:
   Each needs localization keys `COLINSPATCHKIT-<SCREAMING_SNAKE_PROPERTY>.{title,hover.title,hover.desc}`
   in `ColinsPatchKit/localization/eng/settings_ui.json` (packed into the .pck — publish after editing).
 - README-only assets (patch screenshots etc.) go in `docs/images/`, which contains a `.gdignore`.
-  The repo root is a Godot project exporting with `all_resources`, so images anywhere visible to
-  Godot get `.import` sidecars and are baked into the shipped .pck; `.gdignore` keeps docs assets
-  out of both. Never put README assets under `ColinsPatchKit/` — that folder ships with the mod.
+  The repo root is a Godot project exporting with `all_resources`, so files anywhere visible to
+  Godot get baked into the shipped .pck (images also get `.import` sidecars); a `.gdignore` keeps a
+  folder out of both. `docs/images/` and `release/` each have one — the latter keeps the Steam
+  Workshop upload payload (`workshop.json`, the duplicate `image.png`, `content/`) out of the
+  shipped mod. Never put README assets under `ColinsPatchKit/` — that folder ships with the mod.
+  Note `ColinsPatchKit/mod_image.png` *is* under the shipped folder (it's the in-game mod image),
+  so its `.import` sidecar is committed and it is intentionally baked into the .pck.
 
 ## Decompiled game source
 
