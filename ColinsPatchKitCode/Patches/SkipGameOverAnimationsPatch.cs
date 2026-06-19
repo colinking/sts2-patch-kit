@@ -29,6 +29,16 @@ public static class GameOverSkipManager
     private static readonly System.Reflection.FieldInfo IsAnimatingField =
         AccessTools.Field(typeof(NGameOverScreen), "_isAnimatingSummary");
 
+    // How far to step each reveal tween when skipping. Must comfortably exceed the longest one-shot
+    // reveal (a few seconds) so it snaps to its end and fires `Finished`, but must NOT be the
+    // game's own ~1e9 (TweenHelper.FastForwardToCompletion): that helper is only ever called on known
+    // one-shot tweens, whereas we step every processed tween in the tree — and stepping an
+    // *infinitely looping* tween (e.g. Neow's Ancient-dialogue option arrow, whose room stays alive
+    // behind this overlay when you abandon at Neow) by 1e9s makes Godot iterate ~billions of loop
+    // cycles in one synchronous call and hangs the game. 100s completes every reveal here while
+    // advancing a loop tween only ~100 cheap cycles.
+    private const double FastForwardSeconds = 100.0;
+
     // Active while an NGameOverScreen is open; SkipRequested latches once the user clicks to skip.
     public static bool Active;
     public static bool SkipRequested;
@@ -99,9 +109,9 @@ public static class GameOverSkipManager
         {
             if (tween.IsValid() && tween.IsRunning())
             {
-                // The game's own fast-forward (TweenHelper.FastForwardToCompletion): jump the tween
-                // to its end, firing `Finished` this frame so the awaited reveal advances.
-                tween.CustomStep(999999999.0);
+                // Snap the tween to its end (bounded — see FastForwardSeconds), firing `Finished`
+                // this frame so the awaited reveal advances.
+                tween.CustomStep(FastForwardSeconds);
             }
         }
     }
