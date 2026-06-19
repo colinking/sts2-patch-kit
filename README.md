@@ -2,19 +2,13 @@
 
 A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-This mod has been tested with the latest beta branch (`v0.107.0`). All patches are purely QOL and do not impact gameplay, nor competitive integrity. They are safe to use in multiplayer. This mod is localized into every language Slay the Spire 2 supports.
+All patches do not impact gameplay, nor competitive integrity. This mod has been tested with the latest version (`v0.107.1`) and is safe for use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
 ## Installation
 
-Download the latest version of `ColinsPatchKit-vX.zip` from the [Releases](https://github.com/colinking/sts2-patch-kit/releases) page. Unzip it and move the `ColinsPatchKit` folder into your mods folder:
-
-| OS | Location |
-| --- | --- |
-| macOS | `~/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/mods/ColinsPatchKit` |
-| Windows | `C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\mods\ColinsPatchKit` |
-| Linux | `~/.local/share/Steam/steamapps/common/Slay the Spire 2/mods/ColinsPatchKit` |
+Install this mod from [Steam Workshop here](https://steamcommunity.com/sharedfiles/filedetails/?id=3747530432) by clicking `Subscribe`.
 
 ## Patches
 
@@ -48,7 +42,7 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
 If enabled, hovering over the current floor on the map will show a tooltip indicating the game state. The vanilla game
 only shows this tooltip for previously visited floors.
 
-![Map tooltip](docs/images/map-tooltip.png)
+![Map tooltip](/docs/images/map-tooltip.png)
 
 #### Upcoming floor tooltips
 
@@ -67,13 +61,13 @@ never the actual pre-rolled outcome of that specific floor:
 - **Elite** — the expected rewards. Hold Cmd / Ctrl to list the elites that could spawn.
 - **Boss** — the expected rewards.
 
-![Upcoming floor](docs/images/upcoming-floor.png)
+![Upcoming floor](/docs/images/upcoming-floor.png)
 
 #### Potion chances
 
 If enabled, combat map tooltips show the chance of receiving a potion (on previous, current, and upcoming tooltips).
 
-![Potion chances](docs/images/potion-chance.png)
+![Potion chances](/docs/images/potion-chance.png)
 
 ### Combat
 
@@ -81,7 +75,7 @@ If enabled, combat map tooltips show the chance of receiving a potion (on previo
 
 If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card outline ("slot") per card you can retain.
 
-![Retain slots](docs/images/retain-slots.png)
+![Retain slots](/docs/images/retain-slots.png)
 
 #### Curses & statuses first when exhausting/transforming
 
@@ -90,7 +84,7 @@ card (Charge, Séance).
 
 In vanilla, these are sorted to the bottom even though they are usually the cards you want to get rid of. Order is otherwise not affected. This mirrors the vanilla behavior when removing cards.
 
-![Curses first](docs/images/curse-exhaust.png)
+![Curses first](/docs/images/curse-exhaust.png)
 
 #### More active relic pulses
 
@@ -113,7 +107,7 @@ If enabled, this patch enables pulsing for a handful of additional relics that b
 - **Tiny Mailbox** — at a rest site, while you can still rest for its bonus potions.
 - **Stone Humidifier** — at a rest site, while you can still rest for its bonus Max HP.
 
-![Relic pulses](docs/images/relic-pulses.gif)
+![Relic pulses](/docs/images/relic-pulses.gif)
 
 #### Active buff/debuff pulses
 
@@ -128,7 +122,7 @@ If enabled, buff/debuff icons will also pulse if they have a limited-time effect
 - **End-of-turn damage debuffs** pulse the whole time as a "don't forget to block" reminder:
   Constrict and Disintegration.
 
-![Power pulses](docs/images/power-pulses.gif)
+![Power pulses](/docs/images/power-pulses.gif)
 
 *Juggling pulsing after the second Attack this turn — the next Attack triggers it.*
 
@@ -142,13 +136,13 @@ First select "Random", then right-click a character to ban it (right-click again
 
 In multiplayer, only your own random pick is affected. Due to how random character selection is implemented in multiplayer, readying up with at least one ban will immediately resolve the random character.
 
-![Random character bans](docs/images/random-ban.png)
+![Random character bans](/docs/images/random-ban.png)
 
 #### Shop affordability preview
 
 If enabled, hovering over a shop item will turn other item price's red if you can't afford both.
 
-![Shop prices](docs/images/shop-prices.png)
+![Shop prices](/docs/images/shop-prices.png)
 
 *Inspired by [Minty Spire](https://steamcommunity.com/sharedfiles/filedetails/?id=1812723899) from Slay the Spire 1*
 
@@ -157,13 +151,13 @@ If enabled, hovering over a shop item will turn other item price's red if you ca
 If enabled and you have Miniature Tent, proceeding from a rest site requires a long-press to confirm. This serves as a reminder
 that you can use all options at a rest site instead of reflexively proceeding after using one option.
 
-![Tent reminder](docs/images/tent.png)
+![Tent reminder](/docs/images/tent.png)
 
 #### View Upgrades toggle
 
 If enabled, the card reward screen gets the same "View Upgrades" toggle as the deck view. Also works with Scroll Boxes.
 
-![Card reward upgrades](docs/images/card-reward-upgrades.png)
+![Card reward upgrades](/docs/images/card-reward-upgrades.png)
 
 #### Multiplayer cards Compendium toggle
 

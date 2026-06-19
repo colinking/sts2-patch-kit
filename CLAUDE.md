@@ -8,7 +8,9 @@ Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list a
 - `dotnet build ColinsPatchKit.csproj` — compiles and copies the dll/pdb/manifest into the game's
   mods folder (game path auto-discovered via `Sts2PathDiscovery.props`).
 - `dotnet publish ColinsPatchKit.csproj` — additionally exports `ColinsPatchKit.pck` (assets and
-  localization) via Godot. Required after any change under `ColinsPatchKit/` (assets, localization).
+  localization) via Godot, and stages the three shipped files (dll, manifest, pck — no `.pdb`) into
+  `release/ColinsPatchKit/content/` for both the Steam Workshop upload and the GitHub release zip.
+  Required after any change under `ColinsPatchKit/` (assets, localization).
 - The `Alchyr.Sts2.BaseLib` NuGet version is **pinned** in the csproj to the oldest version that
   exposes the config APIs we use (the compile-time reference is the runtime *floor*: installed
   BaseLib >= the pin binds fine; older fails to load the mod with `FileNotFoundException`). Never
@@ -19,22 +21,34 @@ Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list a
 
 ## Releasing
 
-A release is a git tag plus a GitHub release whose only asset is a zip of the built mod folder.
-Releases are cut by hand (no script); follow the steps below. **Always create the GitHub release
+A release is a git tag, a GitHub release whose only asset is a zip of the built mod folder, and a
+Steam Workshop update. Releases are cut by hand (helper scripts assist, but there's no one-shot
+release script); follow the steps below. **Always create the GitHub release
 as a draft (`--draft`) so Colin can review the notes and asset before publishing** — never publish
 directly. Steps:
 
 1. Pick the version (semver, `vMAJOR.MINOR.PATCH`). New patches → minor bump; fixes only → patch.
    Confirm the number and the "Tested with" game version with Colin if unsure.
 2. Bump `"version"` in `ColinsPatchKit.json` to the new tag (this is the only repo file a release
-   commits). Then `dotnet publish` so the manifest, dll, and pck copied into the game's mods folder
-   all carry the new version.
-3. Assemble `ColinsPatchKit-<version>.zip` from the published mods folder
-   (`.../SlayTheSpire2.app/Contents/MacOS/mods/ColinsPatchKit`). The zip nests the three shipped
-   files — `ColinsPatchKit.json`, `ColinsPatchKit.pck`, `ColinsPatchKit.dll` — under a top-level
-   `ColinsPatchKit/` dir so it extracts straight into `mods/`. **Exclude the `.pdb`** (debug symbols
-   aren't shipped). Verify the manifest version inside the zip. The zip is a release artifact only —
-   do not commit it (it's not gitignored, so `git add` just the manifest, never `-A`).
+   commits). Then `dotnet publish` so the manifest, dll, and pck carry the new version — publish
+   stages them into both the game's mods folder and `release/ColinsPatchKit/content/`.
+3. Build the GitHub asset from the staged `release/ColinsPatchKit/content/` (dll, manifest, pck —
+   the shipped `README.md` is **not** included in the zip). Stage a copy renamed to `ColinsPatchKit/`
+   so it nests under a top-level dir and extracts straight into `mods/`, then zip it. From the repo
+   root:
+
+   ```sh
+   ROOT=$PWD
+   VERSION=$(grep -o '"version": "[^"]*"' ColinsPatchKit.json | cut -d'"' -f4)
+   rm -rf /tmp/ColinsPatchKit && cp -R release/ColinsPatchKit/content /tmp/ColinsPatchKit
+   rm -f /tmp/ColinsPatchKit/README.md
+   rm -f "release/ColinsPatchKit-$VERSION.zip"
+   ( cd /tmp && zip -rX "$ROOT/release/ColinsPatchKit-$VERSION.zip" ColinsPatchKit -x '*.pdb' '*.DS_Store' )
+   rm -rf /tmp/ColinsPatchKit
+   ```
+
+   The zip is gitignored (`release/*.zip`); verify its contents (`unzip -l`) and the manifest version
+   inside it.
 4. Commit `Release <version>` (manifest only), then `git tag <version>` and push both `main` and the
    tag.
 5. `gh release create <version> --draft --title <version> --notes-file <notes> "<zip>#<zip>"`.
@@ -42,16 +56,26 @@ directly. Steps:
    `## New patches`, `## Changes`, `## Removed` as applicable, a link to the README patch list, and
    an `## Installation` blurb (BaseLib floor + "extract into mods/" + "Tested with `vX`"). Hand Colin
    the draft URL to review and publish.
-6. Generate the [Nexus Mods](https://www.nexusmods.com) page description by porting `README.md`
-   into Nexus BBCode, for Colin to paste in. Port the content faithfully (don't condense), but:
-   - **Omit the top-level title heading** and the **table-of-contents list** — Nexus shows its own
-     title and the page has no in-page anchors, so neither carries over.
-   - Headings → `[size=N][b]...[/b][/size]` (h2→5, h3→4, h4→3); inline code → `[font=Courier New]`;
-     bullet lists → `[list][*]...[/list]` (nest for sub-lists); the install table → a `[list]` of
-     "OS: path" entries.
-   - Images → `[img]` tags pointing at GitHub raw URLs
-     (`https://raw.githubusercontent.com/colinking/sts2-patch-kit/main/docs/images/<file>`), placed
-     where the README embeds them. Animated GIFs serve fine from raw.
+6. Publish the Steam Workshop update. `release/ColinsPatchKit/` is the upload payload — `dotnet
+   publish` (step 2) already staged the binaries into `content/` and synced `image.png` from its
+   system of record `ColinsPatchKit/mod_image.png`. Then:
+   1. Refresh `release/ColinsPatchKit/content/README.md`, the concise Workshop-facing patch list. It
+      renders as the Workshop description and ships inside `content/` (it is excluded only from the
+      GitHub zip).
+   2. Update `release/ColinsPatchKit/workshop.json`: bump `changeNote` for the new release. `title`,
+      `visibility`, `tags`, and `dependencies` (BaseLib = `3737335127`) rarely change. Leave
+      `description` alone — it is generated next.
+   3. Render the description: `python3 release/update_workshop_json.py`. It converts
+      `content/README.md` to Steam BBCode and writes it into `workshop.json`'s `description`, aborting
+      if the result exceeds Steam's 8000-character limit. Re-run whenever `content/README.md` changes.
+   4. Instruct Colin to perform the final release by:
+      1. Building the uploader: in the `megacrit/sts2-mod-uploader` checkout, `git pull`, then
+      `dotnet publish -c Release -r osx-arm64 -p:PublishTrimmed=true --artifacts-path osx-arm64`.
+      2. Performing the upload (the Steam client must be running and logged in): from
+      `megacrit/sts2-mod-uploader/osx-arm64/publish/ModUploader/release_osx-arm64`, run
+      `./ModUploader upload -w /Users/colin/dev/github.com/colinking/sts2-patch-kit/release/ColinsPatchKit`.
+      The uploader reads `workshop.json`, pushes `content/` and `image.png`, and updates the existing
+      item identified by `mod_id.txt` (published mod `3747530432`).
 
 ## Architecture
 

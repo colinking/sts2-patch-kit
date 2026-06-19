@@ -104,4 +104,21 @@
         <Message Text="Exporting Godot .pck to mods folder" Importance="high" />
         <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;BasicExport&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;" EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1" ContinueOnError="WarnAndContinue" />
     </Target>
+
+    <!-- On publish, also stage the three shipped files into the release content folder. This is
+         both the Steam Workshop upload payload and the source for the GitHub release zip (see the
+         Releasing section in CLAUDE.md). The .pdb is deliberately not copied (debug symbols aren't
+         shipped); content/README.md is left untouched. -->
+    <PropertyGroup>
+        <ReleaseContentDir>$(MSBuildProjectDirectory)/release/$(MSBuildProjectName)/content/</ReleaseContentDir>
+    </PropertyGroup>
+
+    <Target Name="CopyToReleaseContent" AfterTargets="GodotPublish">
+        <Message Text="Staging shipped files (dll, manifest, pck) to $(ReleaseContentDir)" Importance="high" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ReleaseContentDir)" />
+        <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ReleaseContentDir)" />
+        <Copy SourceFiles="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck" DestinationFolder="$(ReleaseContentDir)" Condition="Exists('$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck')" />
+        <!-- Sync the Workshop page image from its system of record, ColinsPatchKit/mod_image.png. -->
+        <Copy SourceFiles="$(MSBuildProjectDirectory)/$(MSBuildProjectName)/mod_image.png" DestinationFiles="$(MSBuildProjectDirectory)/release/$(MSBuildProjectName)/image.png" Condition="Exists('$(MSBuildProjectDirectory)/$(MSBuildProjectName)/mod_image.png')" />
+    </Target>
 </Project>

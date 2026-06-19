@@ -9,3 +9,6 @@ riderModule.iml
 tmp
 ColinsPatchKit.sln.DotSettings.user
 __pycache__
+release/ColinsPatchKit/content/*
+!release/ColinsPatchKit/content/README.md
+release/*.zip
