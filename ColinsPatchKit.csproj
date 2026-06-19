@@ -82,7 +82,7 @@
     </Target>
 
     <!-- Remove the locally installed mod from the game's mods/ folder. Run on its own with
-         `dotnet build ColinsPatchKit.csproj -t:UninstallMod`; it also runs as part of
+         `dotnet publish ColinsPatchKit.csproj -t:UninstallMod`; it also runs as part of
          `dotnet clean` so a clean fully un-stages the mod. Handy when testing the Steam Workshop
          copy, which the local install otherwise always shadows (local mods/ wins over Steam). -->
     <Target Name="UninstallMod" AfterTargets="Clean">

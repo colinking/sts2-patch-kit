@@ -6,7 +6,7 @@
     over the loc JSON and source text, so they run anywhere, including CI without the game.
 
     Run with:  dotnet test ColinsPatchKit.Tests
-    It is intentionally kept out of ColinsPatchKit.sln so a bare `dotnet test` / `dotnet build`
+    It is intentionally kept out of ColinsPatchKit.sln so a bare `dotnet test` / `dotnet publish`
     of the mod is unaffected and never drags the game-coupled main project into a test run.
   -->
 

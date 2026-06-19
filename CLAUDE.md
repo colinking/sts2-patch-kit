@@ -3,15 +3,18 @@
 Slay the Spire 2 quality-of-life mod: Harmony patches on the game's C# assembly, built as a
 Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list and dev-tool usage.
 
-## Build & publish
+## Publishing
 
-- `dotnet build ColinsPatchKit.csproj` — compiles and copies the dll/pdb/manifest into the game's
-  mods folder (game path auto-discovered via `Sts2PathDiscovery.props`).
-- `dotnet publish ColinsPatchKit.csproj` — additionally exports `ColinsPatchKit.pck` (assets and
-  localization) via Godot, and stages the three shipped files (dll, manifest, pck — no `.pdb`) into
-  `release/ColinsPatchKit/content/` for both the Steam Workshop upload and the GitHub release zip.
-  Required after any change under `ColinsPatchKit/` (assets, localization).
-- `dotnet build ColinsPatchKit.csproj -t:UninstallMod` — removes the locally installed mod folder
+- `dotnet publish ColinsPatchKit.csproj` — the one command for every change. It compiles, copies the
+  dll/pdb/manifest into the game's mods folder (game path auto-discovered via `Sts2PathDiscovery.props`),
+  exports `ColinsPatchKit.pck` (assets and localization) via Godot, and stages the three shipped
+  files (dll, manifest, pck — no `.pdb`) into `release/ColinsPatchKit/content/` for both the Steam
+  Workshop upload and the GitHub release zip. **Always publish, never a bare compile** — otherwise
+  the installed `.pck` goes stale or missing and in-game text falls back to raw `COLINSPATCHKIT-*`
+  loc keys (and assets vanish). It's cheap to always publish: the Godot export is skipped
+  automatically when nothing under `ColinsPatchKit/` changed, so a code-only publish costs about the
+  same as a plain compile.
+- `dotnet publish ColinsPatchKit.csproj -t:UninstallMod` — removes the locally installed mod folder
   (`<game>/mods/ColinsPatchKit/`). Also runs automatically as part of `dotnet clean`. Use it to test
   the Steam Workshop copy, which the local install otherwise always shadows (the game's mod loader
   hardcodes local `mods/` to win over Steam for the same id).
