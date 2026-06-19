@@ -36,9 +36,22 @@ directly. Steps:
 
 1. Pick the version (semver, `vMAJOR.MINOR.PATCH`). New patches → minor bump; fixes only → patch.
    Confirm the number and the "Tested with" game version with Colin if unsure.
-2. Bump `"version"` in `ColinsPatchKit.json` to the new tag (this is the only repo file a release
-   commits). Then `dotnet publish` so the manifest, dll, and pck carry the new version — publish
-   stages them into both the game's mods folder and `release/ColinsPatchKit/content/`.
+2. Bump the version and finalize the Workshop metadata (all of it lands in one commit, step 4), then
+   `dotnet publish`:
+   - `"version"` in `ColinsPatchKit.json` → the new tag.
+   - `changeNote` in `release/ColinsPatchKit/workshop.json` → the new release URL
+     (`https://github.com/colinking/sts2-patch-kit/releases/tag/<version>`; keep the file's UTF-8
+     BOM). `title`, `visibility`, `tags`, and `dependencies` (BaseLib = `3737335127`) rarely change.
+   - Only if patches changed: refresh `release/ColinsPatchKit/content/README.md` (the concise
+     Workshop-facing patch list — it renders as the Workshop description and ships inside `content/`,
+     excluded only from the GitHub zip), then re-render the description with
+     `python3 release/update_workshop_json.py` (converts `content/README.md` to Steam BBCode into
+     `workshop.json`'s `description`, aborting past Steam's 8000-char limit). Otherwise leave
+     `description` alone.
+
+   `dotnet publish` then stages the manifest, dll, and pck (carrying the new version) into both the
+   game's mods folder and `release/ColinsPatchKit/content/`, and syncs `image.png` from its system of
+   record `ColinsPatchKit/mod_image.png`.
 3. Build the GitHub asset from the staged `release/ColinsPatchKit/content/` (dll, manifest, pck —
    the shipped `README.md` is **not** included in the zip). Stage a copy renamed to `ColinsPatchKit/`
    so it nests under a top-level dir and extracts straight into `mods/`, then zip it. From the repo
@@ -56,33 +69,25 @@ directly. Steps:
 
    The zip is gitignored (`release/*.zip`); verify its contents (`unzip -l`) and the manifest version
    inside it.
-4. Commit `Release <version>` (manifest only), then `git tag <version>` and push both `main` and the
-   tag.
+4. Commit `Release <version>` — the manifest version bump and the Workshop metadata from step 2
+   (`workshop.json`, plus `content/README.md` if patches changed) in a single commit. Then
+   `git tag <version>` and push both `main` and the tag.
 5. `gh release create <version> --draft --title <version> --notes-file <notes> "<zip>#<zip>"`.
    Notes structure (see prior releases for tone): one-line summary + current patch count, then
    `## New patches`, `## Changes`, `## Removed` as applicable, a link to the README patch list, and
    an `## Installation` blurb (BaseLib floor + "extract into mods/" + "Tested with `vX`"). Hand Colin
    the draft URL to review and publish.
-6. Publish the Steam Workshop update. `release/ColinsPatchKit/` is the upload payload — `dotnet
-   publish` (step 2) already staged the binaries into `content/` and synced `image.png` from its
-   system of record `ColinsPatchKit/mod_image.png`. Then:
-   1. Refresh `release/ColinsPatchKit/content/README.md`, the concise Workshop-facing patch list. It
-      renders as the Workshop description and ships inside `content/` (it is excluded only from the
-      GitHub zip).
-   2. Update `release/ColinsPatchKit/workshop.json`: bump `changeNote` for the new release. `title`,
-      `visibility`, `tags`, and `dependencies` (BaseLib = `3737335127`) rarely change. Leave
-      `description` alone — it is generated next.
-   3. Render the description: `python3 release/update_workshop_json.py`. It converts
-      `content/README.md` to Steam BBCode and writes it into `workshop.json`'s `description`, aborting
-      if the result exceeds Steam's 8000-character limit. Re-run whenever `content/README.md` changes.
-   4. Instruct Colin to perform the final release by:
-      1. Building the uploader: in the `megacrit/sts2-mod-uploader` checkout, `git pull`, then
-      `dotnet publish -c Release -r osx-arm64 -p:PublishTrimmed=true --artifacts-path osx-arm64`.
-      2. Performing the upload (the Steam client must be running and logged in): from
-      `megacrit/sts2-mod-uploader/osx-arm64/publish/ModUploader/release_osx-arm64`, run
-      `./ModUploader upload -w /Users/colin/dev/github.com/colinking/sts2-patch-kit/release/ColinsPatchKit`.
-      The uploader reads `workshop.json`, pushes `content/` and `image.png`, and updates the existing
-      item identified by `mod_id.txt` (published mod `3747530432`).
+6. Publish the Steam Workshop update. `release/ColinsPatchKit/` is the upload payload — step 2 already
+   staged the binaries into `content/`, synced `image.png` from its system of record
+   `ColinsPatchKit/mod_image.png`, and finalized `workshop.json`, so nothing more is edited here.
+   Instruct Colin to perform the final release by:
+   1. Building the uploader: in the `megacrit/sts2-mod-uploader` checkout, `git pull`, then
+   `dotnet publish -c Release -r osx-arm64 -p:PublishTrimmed=true --artifacts-path osx-arm64`.
+   2. Performing the upload (the Steam client must be running and logged in): from
+   `megacrit/sts2-mod-uploader/osx-arm64/publish/ModUploader/release_osx-arm64`, run
+   `./ModUploader upload -w /Users/colin/dev/github.com/colinking/sts2-patch-kit/release/ColinsPatchKit`.
+   The uploader reads `workshop.json`, pushes `content/` and `image.png`, and updates the existing
+   item identified by `mod_id.txt` (published mod `3747530432`).
 
 ## Architecture
 
