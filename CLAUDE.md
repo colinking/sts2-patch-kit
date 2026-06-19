@@ -11,6 +11,10 @@ Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list a
   localization) via Godot, and stages the three shipped files (dll, manifest, pck — no `.pdb`) into
   `release/ColinsPatchKit/content/` for both the Steam Workshop upload and the GitHub release zip.
   Required after any change under `ColinsPatchKit/` (assets, localization).
+- `dotnet build ColinsPatchKit.csproj -t:UninstallMod` — removes the locally installed mod folder
+  (`<game>/mods/ColinsPatchKit/`). Also runs automatically as part of `dotnet clean`. Use it to test
+  the Steam Workshop copy, which the local install otherwise always shadows (the game's mod loader
+  hardcodes local `mods/` to win over Steam for the same id).
 - The `Alchyr.Sts2.BaseLib` NuGet version is **pinned** in the csproj to the oldest version that
   exposes the config APIs we use (the compile-time reference is the runtime *floor*: installed
   BaseLib >= the pin binds fine; older fails to load the mod with `FileNotFoundException`). Never
