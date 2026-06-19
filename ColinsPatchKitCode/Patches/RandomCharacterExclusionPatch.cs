@@ -72,10 +72,55 @@ public static class RandomCharacterExclusionManager
     // no run seed until the run begins, so this stands in for it (a real lobby.Seed wins if present).
     private static string? _sessionSeed;
 
-    // Red "banned" frame + X overlaid on excluded characters.
+    // Red "banned" X overlaid on excluded characters. A soft dark drop shadow hugging the X strokes
+    // plus a uniform 20% black scrim (dimming the portrait behind the X) are baked into this image, so
+    // no shader is needed for them.
     private const string MarkName = "CpkExclusionMark";
     private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char.png";
     private static Texture2D? _markTexture;
+
+    // Shader on the mark: just an hsv tweak (s/v). It's an identity no-op at the idle params and only
+    // does work on hover, where v lifts so the X brightens on the character the cursor is over,
+    // matching the portrait's brighten. Tuned in the MegaDot tester (tools/ban_overlay_preview.gd).
+    private const string OverlayShaderCode = @"
+shader_type canvas_item;
+uniform float s = 1.0;
+uniform float v = 1.0;
+void fragment() {
+    vec4 col = texture(TEXTURE, UV);
+    mat3 R = mat3(vec3(0.2989,0.5959,0.2115), vec3(0.5870,-0.2774,-0.5229), vec3(0.1140,-0.3216,0.3114));
+    vec3 y = R * col.rgb;
+    y.y *= s; y.z *= s;
+    y = mix(vec3(0.0), y, v);
+    col.rgb = inverse(R) * y;
+    // Multiply by MODULATE so the node's modulate (alpha) is honored — the vanilla-style animate-out
+    // fades modulate:a to 0. The default canvas_item fragment applies modulate implicitly, but this
+    // shader overwrites COLOR, so we have to fold it back in by hand.
+    COLOR = col * MODULATE;
+}";
+
+    // Overlay hsv params (mirror the tester defaults). v lifts on hover; s stays 1 (no desaturation).
+    private const float OverlaySaturation = 1.0f;
+    private const float OverlayIdleValue = 1.0f;
+    private const float OverlayHoverValue = 1.2f;
+
+    // Hover-out ease, matching the portrait: NCharacterSelectButton snaps its hsv on OnFocus but eases
+    // it back over 0.5s (Expo/Out) on OnUnfocus (AnimateSaturationToCurrentState), so the X follows the
+    // same asymmetric in/out as the portrait under it instead of popping back instantly.
+    private const float OverlayUnhoverDuration = 0.5f;
+    private const string OverlayTweenMeta = "CpkMarkHoverTween";
+
+    // Resting zoom: scale the mark up 10% (centered) so the X arms reach slightly farther toward the
+    // portrait edges; the ragged icon mask clips the overage. The mark sits at MarkIdleScale whenever
+    // it's shown — the animate-out fades it without touching scale.
+    private static readonly Vector2 MarkIdleScale = Vector2.One * 1.1f;
+
+    // Animate-out: a straight 100ms modulate:a fade to 0 (no scale pop), so an un-banned X fades out
+    // instead of vanishing instantly. The shader honors MODULATE so the alpha fade lands.
+    private const float MarkAnimOutDuration = 0.1f;
+    private const string MarkAnimMeta = "CpkMarkAnimTween";
+
+    private static Shader? _overlayShader;
 
     // Called from the Init postfix once per character button, every time the screen is built.
     public static void OnButtonInitialized(NCharacterSelectButton button)
@@ -324,8 +369,13 @@ public static class RandomCharacterExclusionManager
     // parented to the icon and explicitly sized to the icon's rect each refresh (anchors alone on a
     // freshly-created node with IgnoreSize don't reliably produce a non-zero rect, so it would draw
     // nothing). Sizing to the icon means it follows the button's hover scale and stretches the frame
-    // to the portrait edges; its own (absent) material keeps it bright red even while the icon shader
-    // desaturates an unselected character.
+    // to the portrait edges.
+    //
+    // The game gives every portrait its ragged edge by nesting the icon under a "Mask" node whose
+    // ClipChildren=Only clips the whole subtree to char_select_button_mask.png. Our mark lives inside
+    // that subtree (it's a child of %Icon), so it inherits the same ragged clip for free — as long as
+    // it does NOT set a ZIndex. A z override would draw the mark in a separate pass that escapes the
+    // mask, which is what left the overlay with clean rectangular edges poking past the torn portrait.
     private static void SetExclusionMark(NCharacterSelectButton button, bool show)
     {
         TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
@@ -346,6 +396,10 @@ public static class RandomCharacterExclusionManager
                 MainFile.Logger.Error($"Random-character exclusion overlay missing at {MarkTexturePath}");
                 return;
             }
+            _overlayShader ??= new Shader { Code = OverlayShaderCode };
+            var material = new ShaderMaterial { Shader = _overlayShader };
+            material.SetShaderParameter("s", OverlaySaturation);
+            material.SetShaderParameter("v", OverlayIdleValue);
             mark = new TextureRect
             {
                 Name = MarkName,
@@ -353,14 +407,93 @@ public static class RandomCharacterExclusionManager
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.Scale,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
-                ZIndex = 2,
+                Material = material,
             };
             icon.AddChildSafely(mark);
         }
         // Layout is settled by the time a ban can exist (the set is empty on every screen open).
         mark.Position = Vector2.Zero;
         mark.Size = icon.Size;
-        mark.Visible = show;
+        mark.PivotOffset = icon.Size / 2f; // scale (resting zoom + animate-out) pivots on the center
+
+        if (show)
+        {
+            // Snap in — vanilla animates the dismiss, not the appear. A re-ban while a previous
+            // fade-out is still running must win over it, so kill it and reset the fade/scale state.
+            KillTween(mark, MarkAnimMeta);
+            mark.Scale = MarkIdleScale;
+            mark.Modulate = Colors.White;
+            mark.Visible = true;
+            return;
+        }
+
+        // Hiding. Already gone, or a fade-out already running (let it finish) — nothing to start.
+        if (!mark.Visible || mark.HasMeta(MarkAnimMeta))
+        {
+            return;
+        }
+
+        // Fade out: a straight modulate:a fade to 0, then hide and reset modulate so the next show
+        // starts clean (scale stays at MarkIdleScale throughout). Stop the hover-v tween too so it
+        // can't keep re-driving brightness underneath the fade.
+        KillTween(mark, OverlayTweenMeta);
+        TextureRect closeMark = mark;
+        Tween anim = mark.CreateTween();
+        anim.TweenProperty(mark, "modulate:a", 0f, MarkAnimOutDuration);
+        anim.TweenCallback(Callable.From(() =>
+        {
+            if (!GodotObject.IsInstanceValid(closeMark))
+            {
+                return;
+            }
+            closeMark.Visible = false;
+            closeMark.Modulate = Colors.White;
+            closeMark.RemoveMeta(MarkAnimMeta);
+        }));
+        mark.SetMeta(MarkAnimMeta, anim);
+    }
+
+    // Kill and forget a tween parked in a node meta slot (hover-v or animate-out), if still live.
+    private static void KillTween(Node node, string metaKey)
+    {
+        if (node.HasMeta(metaKey)
+            && node.GetMeta(metaKey).As<Tween>() is { } running
+            && GodotObject.IsInstanceValid(running))
+        {
+            running.Kill();
+        }
+        node.RemoveMeta(metaKey);
+    }
+
+    // Lift the mark's brightness on the focused/hovered button (and drop it back on unfocus), so the
+    // banned X brightens on the character the cursor is over — matching the portrait's hover brighten.
+    // The portrait snaps its hsv up on focus and eases it back down on unfocus, so we do the same: a
+    // hard set on hover-in, a 0.5s Expo/Out tween on hover-out (only v moves — s is fixed at 1).
+    // No-op when the button has no mark (not banned), so it's safe to call for every button.
+    public static void SetMarkFocused(NCharacterSelectButton button, bool focused)
+    {
+        TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
+        if (icon?.GetNodeOrNull<TextureRect>(MarkName) is not { Material: ShaderMaterial sm } mark)
+        {
+            return;
+        }
+
+        // Always kill the in-flight hover tween first, so a quick re-hover doesn't fight a fade-out.
+        KillTween(mark, OverlayTweenMeta);
+
+        if (focused)
+        {
+            // Hover-in: snap, mirroring the portrait's instant lift on OnFocus.
+            sm.SetShaderParameter("v", OverlayHoverValue);
+            return;
+        }
+
+        // Hover-out: ease from wherever v currently sits back to idle (matches AnimateSaturationToCurrentState).
+        Tween tween = mark.CreateTween();
+        tween.TweenProperty(sm, "shader_parameter/v", OverlayIdleValue, OverlayUnhoverDuration)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Expo);
+        mark.SetMeta(OverlayTweenMeta, tween);
     }
 
     // Repaint every live button (e.g. on selection change or config toggle).
@@ -391,6 +524,41 @@ public static class RandomCharacterExclusionButtonPatch
         catch (Exception e)
         {
             MainFile.Logger.Error($"Failed to wire up random-character exclusion on button: {e}");
+        }
+    }
+}
+
+// Brighten the ban mark on the focused/hovered button and restore it on unfocus, so the X lifts on
+// the character the cursor is over (mirroring the game's portrait brighten). Harmless on un-banned
+// buttons (no mark to update).
+[HarmonyPatch(typeof(NCharacterSelectButton), "OnFocus")]
+public static class RandomCharacterExclusionFocusPatch
+{
+    public static void Postfix(NCharacterSelectButton __instance)
+    {
+        try
+        {
+            RandomCharacterExclusionManager.SetMarkFocused(__instance, true);
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to brighten random-character exclusion mark on focus: {e}");
+        }
+    }
+}
+
+[HarmonyPatch(typeof(NCharacterSelectButton), "OnUnfocus")]
+public static class RandomCharacterExclusionUnfocusPatch
+{
+    public static void Postfix(NCharacterSelectButton __instance)
+    {
+        try
+        {
+            RandomCharacterExclusionManager.SetMarkFocused(__instance, false);
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to restore random-character exclusion mark on unfocus: {e}");
         }
     }
 }
