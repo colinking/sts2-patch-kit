@@ -72,9 +72,9 @@ public static class RandomCharacterExclusionManager
     // no run seed until the run begins, so this stands in for it (a real lobby.Seed wins if present).
     private static string? _sessionSeed;
 
-    // Red "banned" X overlaid on excluded characters. The soft dark drop shadow that lets the X read
-    // over busy portraits is baked into this image (a blurred dark halo behind the X), so no shader is
-    // needed for it.
+    // Red "banned" X overlaid on excluded characters. A soft dark drop shadow hugging the X strokes
+    // plus a uniform 20% black scrim (dimming the portrait behind the X) are baked into this image, so
+    // no shader is needed for them.
     private const string MarkName = "CpkExclusionMark";
     private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char.png";
     private static Texture2D? _markTexture;
@@ -93,7 +93,10 @@ void fragment() {
     y.y *= s; y.z *= s;
     y = mix(vec3(0.0), y, v);
     col.rgb = inverse(R) * y;
-    COLOR = col;
+    // Multiply by MODULATE so the node's modulate (alpha) is honored — the vanilla-style animate-out
+    // fades modulate:a to 0. The default canvas_item fragment applies modulate implicitly, but this
+    // shader overwrites COLOR, so we have to fold it back in by hand.
+    COLOR = col * MODULATE;
 }";
 
     // Overlay hsv params (mirror the tester defaults). v lifts on hover; s stays 1 (no desaturation).
@@ -106,6 +109,16 @@ void fragment() {
     // same asymmetric in/out as the portrait under it instead of popping back instantly.
     private const float OverlayUnhoverDuration = 0.5f;
     private const string OverlayTweenMeta = "CpkMarkHoverTween";
+
+    // Resting zoom: scale the mark up 10% (centered) so the X arms reach slightly farther toward the
+    // portrait edges; the ragged icon mask clips the overage. The mark sits at MarkIdleScale whenever
+    // it's shown — the animate-out fades it without touching scale.
+    private static readonly Vector2 MarkIdleScale = Vector2.One * 1.1f;
+
+    // Animate-out: a straight 100ms modulate:a fade to 0 (no scale pop), so an un-banned X fades out
+    // instead of vanishing instantly. The shader honors MODULATE so the alpha fade lands.
+    private const float MarkAnimOutDuration = 0.1f;
+    private const string MarkAnimMeta = "CpkMarkAnimTween";
 
     private static Shader? _overlayShader;
 
@@ -401,7 +414,55 @@ void fragment() {
         // Layout is settled by the time a ban can exist (the set is empty on every screen open).
         mark.Position = Vector2.Zero;
         mark.Size = icon.Size;
-        mark.Visible = show;
+        mark.PivotOffset = icon.Size / 2f; // scale (resting zoom + animate-out) pivots on the center
+
+        if (show)
+        {
+            // Snap in — vanilla animates the dismiss, not the appear. A re-ban while a previous
+            // fade-out is still running must win over it, so kill it and reset the fade/scale state.
+            KillTween(mark, MarkAnimMeta);
+            mark.Scale = MarkIdleScale;
+            mark.Modulate = Colors.White;
+            mark.Visible = true;
+            return;
+        }
+
+        // Hiding. Already gone, or a fade-out already running (let it finish) — nothing to start.
+        if (!mark.Visible || mark.HasMeta(MarkAnimMeta))
+        {
+            return;
+        }
+
+        // Fade out: a straight modulate:a fade to 0, then hide and reset modulate so the next show
+        // starts clean (scale stays at MarkIdleScale throughout). Stop the hover-v tween too so it
+        // can't keep re-driving brightness underneath the fade.
+        KillTween(mark, OverlayTweenMeta);
+        TextureRect closeMark = mark;
+        Tween anim = mark.CreateTween();
+        anim.TweenProperty(mark, "modulate:a", 0f, MarkAnimOutDuration);
+        anim.TweenCallback(Callable.From(() =>
+        {
+            if (!GodotObject.IsInstanceValid(closeMark))
+            {
+                return;
+            }
+            closeMark.Visible = false;
+            closeMark.Modulate = Colors.White;
+            closeMark.RemoveMeta(MarkAnimMeta);
+        }));
+        mark.SetMeta(MarkAnimMeta, anim);
+    }
+
+    // Kill and forget a tween parked in a node meta slot (hover-v or animate-out), if still live.
+    private static void KillTween(Node node, string metaKey)
+    {
+        if (node.HasMeta(metaKey)
+            && node.GetMeta(metaKey).As<Tween>() is { } running
+            && GodotObject.IsInstanceValid(running))
+        {
+            running.Kill();
+        }
+        node.RemoveMeta(metaKey);
     }
 
     // Lift the mark's brightness on the focused/hovered button (and drop it back on unfocus), so the
@@ -418,13 +479,7 @@ void fragment() {
         }
 
         // Always kill the in-flight hover tween first, so a quick re-hover doesn't fight a fade-out.
-        if (mark.HasMeta(OverlayTweenMeta)
-            && mark.GetMeta(OverlayTweenMeta).As<Tween>() is { } running
-            && GodotObject.IsInstanceValid(running))
-        {
-            running.Kill();
-        }
-        mark.RemoveMeta(OverlayTweenMeta);
+        KillTween(mark, OverlayTweenMeta);
 
         if (focused)
         {
