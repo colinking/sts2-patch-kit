@@ -74,41 +74,12 @@ public static class RandomCharacterExclusionManager
 
     // Red "banned" X overlaid on excluded characters. A soft dark drop shadow hugging the X strokes
     // plus a uniform 20% black scrim (dimming the portrait behind the X) are baked into this image, so
-    // no shader is needed for them.
+    // the X renders as-authored (no shader). On top of the baked scrim, the portrait's own hsv is held
+    // at its resting (dim) state on hover so banning keeps it from lighting up (see the portrait-hold
+    // logic below).
     private const string MarkName = "CpkExclusionMark";
     private const string MarkTexturePath = "res://ColinsPatchKit/assets/disabled_char.png";
     private static Texture2D? _markTexture;
-
-    // Shader on the mark: just an hsv tweak (s/v). It's an identity no-op at the idle params and only
-    // does work on hover, where v lifts so the X brightens on the character the cursor is over,
-    // matching the portrait's brighten. Tuned in the MegaDot tester (tools/ban_overlay_preview.gd).
-    private const string OverlayShaderCode = @"
-shader_type canvas_item;
-uniform float s = 1.0;
-uniform float v = 1.0;
-void fragment() {
-    vec4 col = texture(TEXTURE, UV);
-    mat3 R = mat3(vec3(0.2989,0.5959,0.2115), vec3(0.5870,-0.2774,-0.5229), vec3(0.1140,-0.3216,0.3114));
-    vec3 y = R * col.rgb;
-    y.y *= s; y.z *= s;
-    y = mix(vec3(0.0), y, v);
-    col.rgb = inverse(R) * y;
-    // Multiply by MODULATE so the node's modulate (alpha) is honored — the vanilla-style animate-out
-    // fades modulate:a to 0. The default canvas_item fragment applies modulate implicitly, but this
-    // shader overwrites COLOR, so we have to fold it back in by hand.
-    COLOR = col * MODULATE;
-}";
-
-    // Overlay hsv params (mirror the tester defaults). v lifts on hover; s stays 1 (no desaturation).
-    private const float OverlaySaturation = 1.0f;
-    private const float OverlayIdleValue = 1.0f;
-    private const float OverlayHoverValue = 1.2f;
-
-    // Hover-out ease, matching the portrait: NCharacterSelectButton snaps its hsv on OnFocus but eases
-    // it back over 0.5s (Expo/Out) on OnUnfocus (AnimateSaturationToCurrentState), so the X follows the
-    // same asymmetric in/out as the portrait under it instead of popping back instantly.
-    private const float OverlayUnhoverDuration = 0.5f;
-    private const string OverlayTweenMeta = "CpkMarkHoverTween";
 
     // Resting zoom: scale the mark up 10% (centered) so the X arms reach slightly farther toward the
     // portrait edges; the ragged icon mask clips the overage. The mark sits at MarkIdleScale whenever
@@ -116,11 +87,9 @@ void fragment() {
     private static readonly Vector2 MarkIdleScale = Vector2.One * 1.1f;
 
     // Animate-out: a straight 100ms modulate:a fade to 0 (no scale pop), so an un-banned X fades out
-    // instead of vanishing instantly. The shader honors MODULATE so the alpha fade lands.
+    // instead of vanishing instantly. A plain TextureRect honors modulate natively, so the fade lands.
     private const float MarkAnimOutDuration = 0.1f;
     private const string MarkAnimMeta = "CpkMarkAnimTween";
-
-    private static Shader? _overlayShader;
 
     // Called from the Init postfix once per character button, every time the screen is built.
     public static void OnButtonInitialized(NCharacterSelectButton button)
@@ -363,6 +332,7 @@ void fragment() {
             && button.Character != null
             && _excluded.Contains(button.Character.Id.Entry);
         SetExclusionMark(button, excluded);
+        SyncHoveredPortrait(button, excluded);
     }
 
     // Show/hide the red frame + X overlaid on the character's icon. The mark is a TextureRect
@@ -396,10 +366,6 @@ void fragment() {
                 MainFile.Logger.Error($"Random-character exclusion overlay missing at {MarkTexturePath}");
                 return;
             }
-            _overlayShader ??= new Shader { Code = OverlayShaderCode };
-            var material = new ShaderMaterial { Shader = _overlayShader };
-            material.SetShaderParameter("s", OverlaySaturation);
-            material.SetShaderParameter("v", OverlayIdleValue);
             mark = new TextureRect
             {
                 Name = MarkName,
@@ -407,7 +373,6 @@ void fragment() {
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.Scale,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
-                Material = material,
             };
             icon.AddChildSafely(mark);
         }
@@ -434,9 +399,7 @@ void fragment() {
         }
 
         // Fade out: a straight modulate:a fade to 0, then hide and reset modulate so the next show
-        // starts clean (scale stays at MarkIdleScale throughout). Stop the hover-v tween too so it
-        // can't keep re-driving brightness underneath the fade.
-        KillTween(mark, OverlayTweenMeta);
+        // starts clean (scale stays at MarkIdleScale throughout).
         TextureRect closeMark = mark;
         Tween anim = mark.CreateTween();
         anim.TweenProperty(mark, "modulate:a", 0f, MarkAnimOutDuration);
@@ -465,35 +428,78 @@ void fragment() {
         node.RemoveMeta(metaKey);
     }
 
-    // Lift the mark's brightness on the focused/hovered button (and drop it back on unfocus), so the
-    // banned X brightens on the character the cursor is over — matching the portrait's hover brighten.
-    // The portrait snaps its hsv up on focus and eases it back down on unfocus, so we do the same: a
-    // hard set on hover-in, a 0.5s Expo/Out tween on hover-out (only v moves — s is fixed at 1).
-    // No-op when the button has no mark (not banned), so it's safe to call for every button.
-    public static void SetMarkFocused(NCharacterSelectButton button, bool focused)
+    // --- Portrait hover suppression for banned characters ---------------------------------------
+    // Vanilla NCharacterSelectButton.OnFocus snaps the portrait's hsv to s=1, v=1.1 (saturate +
+    // brighten) and OnUnfocus eases it back to the resting state. For a banned character we hold the
+    // portrait at its resting (dim) state so hovering it doesn't light it up — only the red X marks it.
+    private const float PortraitHoverSaturation = 1.0f; // mirrors OnFocus's hard-set values
+    private const float PortraitHoverValue = 1.1f;
+
+    private static MethodInfo? _getRestingSaturation;
+    private static MethodInfo? _getRestingValue;
+    private static PropertyInfo? _isFocusedProp;
+
+    // True when the button currently wears a shown ban mark — the single source of truth for "this
+    // character is disabled," kept in lockstep with SetExclusionMark (which hides the mark when a
+    // character is un-banned).
+    public static bool HasActiveBanMark(NCharacterSelectButton button) =>
+        button.GetNodeOrNull<TextureRect>("%Icon")?.GetNodeOrNull<TextureRect>(MarkName)
+            is { Visible: true };
+
+    // The portrait's hsv ShaderMaterial (lives on %Icon — the game sets it up in NCharacterSelectButton).
+    private static ShaderMaterial? GetPortraitHsv(NCharacterSelectButton button) =>
+        button.GetNodeOrNull<TextureRect>("%Icon")?.Material as ShaderMaterial;
+
+    // Whether the button is currently focused/hovered (NClickableControl.IsFocused is true while the
+    // cursor or controller is on it). Reflected because the property is protected.
+    private static bool IsFocused(NCharacterSelectButton button)
     {
-        TextureRect? icon = button.GetNodeOrNull<TextureRect>("%Icon");
-        if (icon?.GetNodeOrNull<TextureRect>(MarkName) is not { Material: ShaderMaterial sm } mark)
+        _isFocusedProp ??= AccessTools.Property(typeof(NClickableControl), "IsFocused");
+        return _isFocusedProp?.GetValue(button) is true;
+    }
+
+    // Snap the portrait to its resting (not-hovered) hsv, reading the game's own state-aware getters
+    // so it lands on the right dim level (not-selected / remotely-selected) without us hardcoding it.
+    public static void HoldPortraitResting(NCharacterSelectButton button)
+    {
+        if (GetPortraitHsv(button) is not { } hsv)
         {
             return;
         }
+        _getRestingSaturation ??= AccessTools.Method(typeof(NCharacterSelectButton), "GetSaturationForCurrentState");
+        _getRestingValue ??= AccessTools.Method(typeof(NCharacterSelectButton), "GetValueForCurrentState");
+        hsv.SetShaderParameter("s", (float)_getRestingSaturation.Invoke(button, null)!);
+        hsv.SetShaderParameter("v", (float)_getRestingValue.Invoke(button, null)!);
+    }
 
-        // Always kill the in-flight hover tween first, so a quick re-hover doesn't fight a fade-out.
-        KillTween(mark, OverlayTweenMeta);
-
-        if (focused)
+    // Snap the portrait to the vanilla hover hsv — used when a character is un-banned while the cursor
+    // is still over it, so it lights up immediately instead of waiting for the next focus event.
+    private static void RestorePortraitHover(NCharacterSelectButton button)
+    {
+        if (GetPortraitHsv(button) is { } hsv)
         {
-            // Hover-in: snap, mirroring the portrait's instant lift on OnFocus.
-            sm.SetShaderParameter("v", OverlayHoverValue);
+            hsv.SetShaderParameter("s", PortraitHoverSaturation);
+            hsv.SetShaderParameter("v", PortraitHoverValue);
+        }
+    }
+
+    // Keep a hovered portrait's saturation in sync the instant its ban state toggles. OnFocus/OnUnfocus
+    // only fire on navigation, so toggling the ban while the cursor sits on the button wouldn't
+    // otherwise update its brightness until you moved away and back.
+    private static void SyncHoveredPortrait(NCharacterSelectButton button, bool banned)
+    {
+        if (!IsFocused(button))
+        {
             return;
         }
-
-        // Hover-out: ease from wherever v currently sits back to idle (matches AnimateSaturationToCurrentState).
-        Tween tween = mark.CreateTween();
-        tween.TweenProperty(sm, "shader_parameter/v", OverlayIdleValue, OverlayUnhoverDuration)
-            .SetEase(Tween.EaseType.Out)
-            .SetTrans(Tween.TransitionType.Expo);
-        mark.SetMeta(OverlayTweenMeta, tween);
+        if (banned)
+        {
+            HoldPortraitResting(button);
+        }
+        else
+        {
+            RestorePortraitHover(button);
+        }
     }
 
     // Repaint every live button (e.g. on selection change or config toggle).
@@ -528,37 +534,26 @@ public static class RandomCharacterExclusionButtonPatch
     }
 }
 
-// Brighten the ban mark on the focused/hovered button and restore it on unfocus, so the X lifts on
-// the character the cursor is over (mirroring the game's portrait brighten). Harmless on un-banned
-// buttons (no mark to update).
+// Suppress the game's portrait hover saturate/brighten on banned characters. OnFocus snaps the
+// portrait's hsv to s=1, v=1.1 (when not selected); for a disabled character we instead hold it at
+// the resting (dim) state in a postfix, so hovering it doesn't light it up — only the red X marks
+// it. The rest of the hover (scale pop, sfx, hover tip) is left intact, and non-banned buttons are
+// untouched. OnUnfocus needs no patch: vanilla already eases back to the resting state we held.
 [HarmonyPatch(typeof(NCharacterSelectButton), "OnFocus")]
-public static class RandomCharacterExclusionFocusPatch
+public static class RandomCharacterExclusionPortraitHoldPatch
 {
     public static void Postfix(NCharacterSelectButton __instance)
     {
         try
         {
-            RandomCharacterExclusionManager.SetMarkFocused(__instance, true);
+            if (RandomCharacterExclusionManager.HasActiveBanMark(__instance))
+            {
+                RandomCharacterExclusionManager.HoldPortraitResting(__instance);
+            }
         }
         catch (Exception e)
         {
-            MainFile.Logger.Error($"Failed to brighten random-character exclusion mark on focus: {e}");
-        }
-    }
-}
-
-[HarmonyPatch(typeof(NCharacterSelectButton), "OnUnfocus")]
-public static class RandomCharacterExclusionUnfocusPatch
-{
-    public static void Postfix(NCharacterSelectButton __instance)
-    {
-        try
-        {
-            RandomCharacterExclusionManager.SetMarkFocused(__instance, false);
-        }
-        catch (Exception e)
-        {
-            MainFile.Logger.Error($"Failed to restore random-character exclusion mark on unfocus: {e}");
+            MainFile.Logger.Error($"Failed to hold banned portrait saturation on focus: {e}");
         }
     }
 }
