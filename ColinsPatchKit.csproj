@@ -56,6 +56,9 @@
         <Compile Remove="images/**" />
         <Compile Remove=".godot/**" />
         <Compile Remove="tmp/**" />
+        <!-- A decompiled game-source dump may be dropped here locally for reference (gitignored);
+             it's never part of the mod and would collide with itself across versions if compiled. -->
+        <Compile Remove="decompiled/**" />
         <EmbeddedResource Remove="ColinsPatchKit/**" />
         <EmbeddedResource Remove="materials/**" />
         <EmbeddedResource Remove="shaders/**" />

@@ -12,3 +12,6 @@ __pycache__
 release/ColinsPatchKit/content/*
 !release/ColinsPatchKit/content/README.md
 release/*.zip
+
+# Per-version decompiled game source (scripts/decompile-game.sh)
+decompiled/
