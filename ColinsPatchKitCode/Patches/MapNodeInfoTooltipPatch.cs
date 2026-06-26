@@ -332,18 +332,29 @@ public static class MapNodeInfoTooltipPatch
         string mark = drifts ? "*" : "";
 
         // The game blacklists Shop from a "?" roll in two cases (RunManager.BuildRoomTypeBlacklist),
-        // folding its mass into Event. Case B (every node out of this "?" is a guaranteed shop) is a
-        // static property of this node, so we can drop Shop outright. Case A (you arrive here straight
-        // from a shop) depends on the route, so we keep Shop but asterisk it: whether it's possible at
-        // all hinges on whether you pass through that shop first. The game tests the predecessor with
-        // HasRoomOfType(Shop), so a "?" that resolved into a shop counts too — the only such resolved
-        // predecessor we can read is the node you're standing on (CurrentMapPointHistoryEntry); an
-        // upcoming "?" predecessor that might resolve to a shop is already covered by the drift mark.
+        // folding its mass into Event. The two halves are asymmetric:
+        //   "after" — every child of this "?" is a guaranteed shop (nextMapPoints.All(== Shop)). This
+        //     is a static property of the node, evaluated over ALL children rather than the one you'll
+        //     pick, so it's all-or-nothing: drop Shop outright, never an asterisk.
+        //   "before" — your immediate predecessor was a shop (previousMapPointEntry.HasRoomOfType
+        //     (Shop)). Which predecessor that is depends on your route, so: drop Shop only if EVERY
+        //     reachable route in comes from a shop (guaranteed); asterisk it if a shop predecessor is
+        //     possible but not forced (some-but-not-all routes). The game tests the predecessor by its
+        //     resolved room, so a "?" that resolved into a shop counts too — but the only resolved
+        //     predecessor we can read is the node you're standing on (CurrentMapPointHistoryEntry); an
+        //     upcoming "?" predecessor that might resolve to a shop is already covered by the drift mark.
         MapPoint? current = runState.CurrentMapPoint ?? runState.Map?.StartingMapPoint;
         bool currentIsShop = runState.CurrentMapPointHistoryEntry?.HasRoomOfType(RoomType.Shop) == true;
-        bool shopBlacklisted = target.Children.Count > 0 && target.Children.All(c => c.PointType == MapPointType.Shop);
-        bool shopRouteDependent = !shopBlacklisted && target.parents.Any(p =>
-            p == current ? currentIsShop : p.PointType == MapPointType.Shop && between.Contains(p));
+        bool ParentIsShop(MapPoint p) => p == current ? currentIsShop : p.PointType == MapPointType.Shop;
+        // The parents you could actually arrive through: the node you're on, or any strictly between it
+        // and this "?". (Parents off your reachable graph can't be the predecessor, so they don't count.)
+        List<MapPoint> reachableParents = target.parents.Where(p => p == current || between.Contains(p)).ToList();
+        // Drop Shop when it can never roll: every child is a shop ("after"), or every reachable route in
+        // comes from a shop ("before", guaranteed).
+        bool shopBlacklisted = (target.Children.Count > 0 && target.Children.All(c => c.PointType == MapPointType.Shop))
+            || (reachableParents.Count > 0 && reachableParents.All(ParentIsShop));
+        // Asterisk Shop when a shop predecessor is possible but not forced (some, not all, routes in).
+        bool shopRouteDependent = !shopBlacklisted && reachableParents.Any(ParentIsShop);
 
         List<string> oddsLines = new();
         float nonEventSum = 0f;
