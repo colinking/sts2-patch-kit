@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
@@ -30,11 +31,12 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 // trigger is just "do I have energy left", which the energy orb already shows).
 //
 // All gated relics except Lava Lamp call the non-virtual RelicModel.Flash() at the exact
-// moment their effect is consumed, so a single postfix there handles "armed -> consumed".
-// The gate fields cannot be read at that point: several triggers are async methods that set
-// the field only after their first await, while a Harmony postfix on an async method runs
-// after just the synchronous prelude. Arming instead recomputes from the gate field in
-// synchronous reset hooks where the field has already settled.
+// moment their effect is consumed, so subscribing to each relic's Flashed event (HookFlash)
+// handles "armed -> consumed" without reading the gate field — which can't be trusted there
+// anyway, since several triggers are async methods that set the field only after their first
+// await. The Flashed event is used rather than a Harmony postfix on Flash so the hook survives
+// another mod also patching Flash (see HookFlash). Arming instead recomputes from the gate
+// field in synchronous reset hooks where the field has already settled.
 public static class RelicReadyPulsesManager
 {
     private sealed record TrackedRelic(FieldInfo Gate, bool ArmedWhenTrue);
@@ -65,6 +67,11 @@ public static class RelicReadyPulsesManager
         return new TrackedRelic(field, armedWhenTrue);
     }
 
+    // Tracks relic instances we've already wired a Flashed handler onto, so each is subscribed
+    // exactly once. Weak keys: a cloned/discarded relic instance falls out without leaking.
+    private static readonly ConditionalWeakTable<RelicModel, object> _flashHooked = new();
+    private static readonly object _hookedMarker = new();
+
     // Recomputes Status from the relic's gate field. Only valid at points where the field
     // has already settled (synchronous hooks); never call this from a Flash postfix.
     public static void Refresh(RelicModel relic)
@@ -75,6 +82,7 @@ public static class RelicReadyPulsesManager
             {
                 return;
             }
+            HookFlash(relic);
             bool armed = ColinsPatchKitConfig.ShowRelicReadyPulses
                 && CombatManager.Instance.IsInProgress
                 && (bool)tracked.Gate.GetValue(relic)! == tracked.ArmedWhenTrue;
@@ -84,6 +92,22 @@ public static class RelicReadyPulsesManager
         {
             MainFile.Logger.Error($"Failed to refresh relic ready pulse: {e}");
         }
+    }
+
+    // Consumption is detected through the relic's own Flashed event rather than a Harmony postfix
+    // on RelicModel.Flash: every gated relic (except Lava Lamp) Flash()es exactly when its effect
+    // is consumed, and the event fires from inside the method body, so it survives another mod
+    // also patching Flash (e.g. Stat The Relics, which prefix-patches every Flash overload and
+    // would otherwise suppress our postfix, leaving the pulse stuck on). Subscribed once per
+    // instance when the relic is first refreshed in combat.
+    private static void HookFlash(RelicModel relic)
+    {
+        if (_flashHooked.TryGetValue(relic, out _))
+        {
+            return;
+        }
+        _flashHooked.Add(relic, _hookedMarker);
+        relic.Flashed += (flashed, _) => StopPulse(flashed);
     }
 
     // Stops the pulse without consulting the gate field (it may not be written yet when the
@@ -276,16 +300,11 @@ public static class RainbowRingReadyPulseSetterPatch
         RainbowRingReadyPulseManager.Apply(__instance, value);
 }
 
-// Every tracked relic except Lava Lamp consumes its effect exactly when it Flash()es. The
-// parameterless Flash() funnels into this overload.
-[HarmonyPatch(typeof(RelicModel), nameof(RelicModel.Flash), typeof(IEnumerable<Creature>))]
-public static class RelicReadyPulsesFlashPatch
-{
-    public static void Postfix(RelicModel __instance)
-    {
-        RelicReadyPulsesManager.StopPulse(__instance);
-    }
-}
+// Consumption ("armed -> consumed") is handled by RelicReadyPulsesManager.HookFlash, which
+// subscribes to each tracked relic's Flashed event instead of Harmony-patching RelicModel.Flash.
+// A postfix on Flash is fragile here: another installed mod (Stat The Relics) reflection-patches
+// every Flash overload, which suppresses our postfix and would leave the pulse stuck on. The
+// event fires from inside the method body and so survives that.
 
 // Arms the per-combat relics. BeforeCombatStart fires after the room-entry hooks that reset
 // their gate fields, and none of the tracked relics override it, so the base no-op body is
