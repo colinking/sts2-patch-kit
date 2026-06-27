@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Devuelve a su posición la mano que señala del mercader más rápido después de que dejes de pasar el cursor por un objeto, para que deje de bloquear tu vista de la mercancía.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Enviar las cartas de recompensa devueltas directamente al mazo",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Enviar las cartas de recompensa devueltas directamente al mazo",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Envía las recompensas de cartas especiales (Thieving Hopper, Lantern Key) directamente a tu mazo en lugar de bloquear la pantalla durante dos segundos."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Envía las recompensas de cartas especiales (Thieving Hopper, Lantern Key) directamente a tu mazo en lugar de bloquear la pantalla durante dos segundos.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Consola",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Entrada de consola multilínea",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Entrada de consola multilínea",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Permite que la consola de desarrollo contenga varias líneas: pulsa Shift+Enter para una línea nueva o pega un bloque de comandos. Enter ejecuta cada línea en orden y se detiene en la primera que falle. Se aplica en el próximo inicio."
 }

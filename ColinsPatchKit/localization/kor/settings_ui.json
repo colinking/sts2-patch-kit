@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "물건에 마우스를 올렸다 떼면 상인이 가리키는 손이 더 빨리 제자리로 돌아가, 진열된 물건을 가리지 않게 합니다.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "되돌아온 보상 카드를 바로 덱으로 보내기",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "되돌아온 보상 카드를 바로 덱으로 보내기",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "특수 카드 보상(좀도둑 호퍼, 등불 열쇠)을 2초 동안 화면을 가리지 않고 바로 덱으로 보냅니다."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "특수 카드 보상(좀도둑 호퍼, 등불 열쇠)을 2초 동안 화면을 가리지 않고 바로 덱으로 보냅니다.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "콘솔",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "여러 줄 콘솔 입력",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "여러 줄 콘솔 입력",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "개발자 콘솔에서 여러 줄을 입력할 수 있게 합니다. Shift+Enter로 줄을 바꾸거나 명령어 묶음을 붙여넣을 수 있습니다. Enter를 누르면 각 줄을 순서대로 실행하며, 처음 실패하는 줄에서 멈춥니다. 다음 실행 시 적용됩니다."
 }

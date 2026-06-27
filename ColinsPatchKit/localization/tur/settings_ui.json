@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Bir öğenin üzerinden ayrıldıktan sonra tüccarın işaret eden elini daha hızlı yerine döndür, böylece mallara olan görüşünü engellemeyi bırakır.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Geri dönen ödül kartlarını doğrudan desteye gönder",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Geri dönen ödül kartlarını doğrudan desteye gönder",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Özel kart ödüllerini (Thieving Hopper, Lantern Key) ekranı iki saniye boyunca engellemek yerine doğrudan destene gönder."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Özel kart ödüllerini (Thieving Hopper, Lantern Key) ekranı iki saniye boyunca engellemek yerine doğrudan destene gönder.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Konsol",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Çok satırlı konsol girişi",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Çok satırlı konsol girişi",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Geliştirici konsolunun birden fazla satır içermesini sağlar: yeni satır için Shift+Enter'a basın veya bir komut bloğu yapıştırın. Enter her satırı sırayla çalıştırır ve başarısız olan ilk satırda durur. Sonraki açılışta etkin olur."
 }

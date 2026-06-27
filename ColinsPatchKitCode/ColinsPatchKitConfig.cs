@@ -60,4 +60,10 @@ public class ColinsPatchKitConfig : SimpleModConfig
 
     [ConfigHoverTip(true)]
     public static bool SkipReturnedCardPreviewDelay { get; set; } = true;
+
+    // Off by default: the dev console is a niche, mostly-developer surface, and this changes how
+    // its input box works, so it's opt-in.
+    [ConfigSection("Console")]
+    [ConfigHoverTip(true)]
+    public static bool AllowMultilineConsoleInput { get; set; } = false;
 }

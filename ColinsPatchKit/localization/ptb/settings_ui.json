@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Faz a mão apontadora do mercador voltar ao repouso mais rápido depois que você para de passar o cursor sobre um item, para que ela pare de bloquear sua visão dos produtos.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Enviar cartas de recompensa retornadas direto ao baralho",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Enviar cartas de recompensa retornadas direto ao baralho",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Envia recompensas de carta especiais (Saltador Ladrão, Chave da Lanterna) direto para o seu baralho em vez de bloquear a tela por dois segundos."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Envia recompensas de carta especiais (Saltador Ladrão, Chave da Lanterna) direto para o seu baralho em vez de bloquear a tela por dois segundos.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Console",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Entrada de console em várias linhas",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Entrada de console em várias linhas",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Permite que o console de desenvolvedor contenha várias linhas: pressione Shift+Enter para uma nova linha ou cole um bloco de comandos. Enter executa cada linha em ordem e para na primeira que falhar. Tem efeito na próxima inicialização."
 }

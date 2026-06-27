@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Sprawia, że wskazująca ręka kupca szybciej wraca do spoczynku po przestaniu najeżdżania na przedmiot, dzięki czemu przestaje zasłaniać widok towarów.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Wysyłaj zwrócone karty nagród prosto do talii",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Wysyłaj zwrócone karty nagród prosto do talii",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Wysyła specjalne nagrody kartowe (Thieving Hopper, Lantern Key) prosto do twojej talii zamiast blokować ekran na dwie sekundy."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Wysyła specjalne nagrody kartowe (Thieving Hopper, Lantern Key) prosto do twojej talii zamiast blokować ekran na dwie sekundy.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Konsola",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Wielowierszowe wprowadzanie w konsoli",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Wielowierszowe wprowadzanie w konsoli",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Pozwala konsoli deweloperskiej pomieścić wiele wierszy: naciśnij Shift+Enter, aby przejść do nowego wiersza, lub wklej blok poleceń. Enter uruchamia każdy wiersz po kolei i zatrzymuje się na pierwszym, który zawiedzie. Działa od następnego uruchomienia."
 }

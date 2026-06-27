@@ -227,6 +227,14 @@ Hard-won API facts:
     an instant click. Same scratch-profile warning as above; quit to menu and switch back to your
     own profile when done. Verify the setup via the `restsitehold-sandbox:` log lines, not a
     "complete" line.
+  - `"./Slay the Spire 2" --multilineconsole-sandbox=<any>` — light assertion harness + dev sandbox
+    for the multi-line console patch. Needs no run or profile (the console works at the menu); the
+    argument is ignored. Opens the dev console and drives its real input path (events via
+    `Input.ParseInputEvent`) to exercise the overlay existing, a multi-line block running
+    sequentially on Enter, Shift+Enter inserting a newline, and Tab completion — logging
+    `multilineconsole-sandbox: ...` lines and saving /tmp/ml_console_*.png at each step, then leaving
+    the console open so you can keep typing by hand. Verify via the log lines (each states its
+    expected value); it does not quit.
 - Window placement: whenever any of the above launch flags is present, `TestWindowPatch`
   (`E2ETests/TestWindowTool.cs`) wraps `NGame.ApplyDisplaySettings` so the game boots **windowed**
   (1280x800, top-left of the target display) instead of fullscreen — it must *prevent* fullscreen,

@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "当你停止悬停某件商品后，让商人指示的手更快地回到原位，使其不再遮挡你查看货物。",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "将返还的奖励卡牌直接送入牌组",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "将返还的奖励卡牌直接送入牌组",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "将特殊卡牌奖励（偷窃跳虫、提灯钥匙）直接送入你的牌组，而不是阻挡屏幕两秒钟。"
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "将特殊卡牌奖励（偷窃跳虫、提灯钥匙）直接送入你的牌组，而不是阻挡屏幕两秒钟。",
+
+  "COLINSPATCHKIT-CONSOLE.title": "控制台",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "多行控制台输入",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "多行控制台输入",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "让开发者控制台可以容纳多行：按 Shift+Enter 换行，或粘贴一段命令。按 Enter 会按顺序执行每一行，并在第一行失败时停止。将在下次启动时生效。"
 }

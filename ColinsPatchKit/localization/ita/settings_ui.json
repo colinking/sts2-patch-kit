@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Riporta più velocemente a riposo la mano che indica del mercante dopo che smetti di passare il cursore su un articolo, così smette di bloccarti la vista della merce.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Manda le carte ricompensa restituite direttamente al mazzo",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Manda le carte ricompensa restituite direttamente al mazzo",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Manda le ricompense in carte speciali (Cavalletta Ladra, Chiave Lanterna) direttamente al tuo mazzo invece di bloccare lo schermo per due secondi."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Manda le ricompense in carte speciali (Cavalletta Ladra, Chiave Lanterna) direttamente al tuo mazzo invece di bloccare lo schermo per due secondi.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Console",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Input multiriga della console",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Input multiriga della console",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Permette alla console di sviluppo di contenere più righe: premi Shift+Enter per andare a capo, oppure incolla un blocco di comandi. Enter esegue ogni riga in ordine e si ferma alla prima che fallisce. Ha effetto al prossimo avvio."
 }

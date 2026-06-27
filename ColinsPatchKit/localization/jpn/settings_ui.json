@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "商品にカーソルを合わせるのをやめた後、商人の指差す手を素早く元の位置に戻し、品物の表示を遮らないようにします。",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "戻ってきた報酬カードを直接デッキへ",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "戻ってきた報酬カードを直接デッキへ",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "特殊なカード報酬(盗み食いのホッパー、ランタンの鍵)を、画面を2秒間遮る代わりに直接デッキへ送ります。"
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "特殊なカード報酬(盗み食いのホッパー、ランタンの鍵)を、画面を2秒間遮る代わりに直接デッキへ送ります。",
+
+  "COLINSPATCHKIT-CONSOLE.title": "コンソール",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "コンソールの複数行入力",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "コンソールの複数行入力",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "開発者コンソールで複数行を扱えるようにします。Shift+Enter で改行、またはコマンドのまとまりを貼り付けできます。Enter で各行を順に実行し、最初に失敗した行で停止します。次回起動時に有効になります。"
 }

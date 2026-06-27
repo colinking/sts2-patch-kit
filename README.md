@@ -34,6 +34,8 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Skip game over animations](#skip-game-over-animations)
   - [Move shop hand away faster](#move-shop-hand-away-faster)
   - [Skip special card reward delay](#skip-special-card-reward-delay)
+- [Console](#console)
+  - [Multi-line console input](#multi-line-console-input)
 
 ### Map
 
@@ -178,3 +180,17 @@ stop hovering over a shop item. This helps prevent the merchant's hand from bloc
 
 If enabled, taking a "special card" reward (Thieving Hopper, Lantern Key) will send it straight to your deck instead of floating
 in the center of the screen for two seconds. This avoids blocking your view and mirrors how normal card rewards work.
+
+### Console
+
+#### Multi-line console input
+
+If enabled, the dev console accepts multiple lines of input. Press Shift+Enter to start a new line
+and keep typing, or paste a block of commands straight in. Pressing Enter runs every non-blank line
+in order, stopping at the first one that fails. Completions (Tab) and command history (up/down) still
+work on the line you're editing. This is handy for pasting a setup script of console commands and
+running it in one go.
+
+This patch is **disabled by default**. Compared to the default console, it doesn't support
+emacs keybinds and ghost text tab completion previews. If brought to parity, it may be enabled
+in the future.

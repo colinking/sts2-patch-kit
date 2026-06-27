@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "พามือที่ชี้ของพ่อค้ากลับเข้าที่เร็วขึ้นหลังจากคุณเลิกเลื่อนเมาส์ที่สินค้า เพื่อไม่ให้มันบังมุมมองสินค้าของคุณ",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "ส่งการ์ดรางวัลที่คืนเข้าเด็คทันที",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "ส่งการ์ดรางวัลที่คืนเข้าเด็คทันที",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "ส่งการ์ดรางวัลพิเศษ (Thieving Hopper, Lantern Key) เข้าเด็คของคุณทันทีแทนที่จะบังหน้าจอไว้สองวินาที"
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "ส่งการ์ดรางวัลพิเศษ (Thieving Hopper, Lantern Key) เข้าเด็คของคุณทันทีแทนที่จะบังหน้าจอไว้สองวินาที",
+
+  "COLINSPATCHKIT-CONSOLE.title": "คอนโซล",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "การป้อนข้อมูลคอนโซลแบบหลายบรรทัด",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "การป้อนข้อมูลคอนโซลแบบหลายบรรทัด",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "ให้คอนโซลสำหรับนักพัฒนารองรับได้หลายบรรทัด: กด Shift+Enter เพื่อขึ้นบรรทัดใหม่ หรือวางชุดคำสั่ง กด Enter เพื่อรันทุกบรรทัดตามลำดับ และจะหยุดที่บรรทัดแรกที่ทำงานล้มเหลว มีผลเมื่อเริ่มเกมครั้งถัดไป"
 }

@@ -42,6 +42,7 @@ public static class TestWindowPatch
         ("conflag-sandbox", true),
         ("gameover-skip-sandbox", true),
         ("restsitehold-sandbox", true),
+        ("multilineconsole-sandbox", true),
         ("relicpulse-e2e", false),
         ("powerpulse-e2e", false),
         ("retainslots-e2e", false),

@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Return the merchant's pointing hand to rest faster after you stop hovering an item, so it stops blocking your view of the wares.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Send returned reward cards straight to deck",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Send returned reward cards straight to deck",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Send special card rewards (Thieving Hopper, Lantern Key) straight to your deck instead of blocking the screen for two seconds."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Send special card rewards (Thieving Hopper, Lantern Key) straight to your deck instead of blocking the screen for two seconds.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Console",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Multi-line console input",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Multi-line console input",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Let the dev console hold multiple lines: press Shift+Enter for a new line, or paste a block of commands. Enter runs every line in order, stopping at the first one that fails. Takes effect on the next launch."
 }

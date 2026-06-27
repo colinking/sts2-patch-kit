@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Lässt die zeigende Hand des Händlers schneller in ihre Ruheposition zurückkehren, nachdem du einen Gegenstand nicht mehr überfährst, damit sie dir nicht die Sicht auf die Waren versperrt.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Zurückgegebene Belohnungskarten direkt ins Deck schicken",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Zurückgegebene Belohnungskarten direkt ins Deck schicken",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Schickt besondere Kartenbelohnungen (Diebischer Hüpfer, Laternenschlüssel) direkt in dein Deck, statt den Bildschirm zwei Sekunden lang zu blockieren."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Schickt besondere Kartenbelohnungen (Diebischer Hüpfer, Laternenschlüssel) direkt in dein Deck, statt den Bildschirm zwei Sekunden lang zu blockieren.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Konsole",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Mehrzeilige Konsoleneingabe",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Mehrzeilige Konsoleneingabe",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Lässt die Entwicklerkonsole mehrere Zeilen aufnehmen: Drücke Shift+Enter für eine neue Zeile oder füge einen Block von Befehlen ein. Enter führt jede Zeile der Reihe nach aus und stoppt bei der ersten, die fehlschlägt. Wird beim nächsten Start wirksam."
 }

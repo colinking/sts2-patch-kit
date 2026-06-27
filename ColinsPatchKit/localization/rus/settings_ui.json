@@ -50,5 +50,10 @@
   "COLINSPATCHKIT-MOVE_SHOP_HAND_AWAY_FASTER.hover.desc": "Быстрее возвращать указывающую руку торговца в исходное положение после того, как вы перестаёте наводить на товар, чтобы она не заслоняла обзор товаров.",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.title": "Отправлять возвращённые карты награды сразу в колоду",
   "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.title": "Отправлять возвращённые карты награды сразу в колоду",
-  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Отправлять особые карты награды (Thieving Hopper, Lantern Key) сразу в колоду, вместо того чтобы блокировать экран на две секунды."
+  "COLINSPATCHKIT-SKIP_RETURNED_CARD_PREVIEW_DELAY.hover.desc": "Отправлять особые карты награды (Thieving Hopper, Lantern Key) сразу в колоду, вместо того чтобы блокировать экран на две секунды.",
+
+  "COLINSPATCHKIT-CONSOLE.title": "Консоль",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.title": "Многострочный ввод в консоли",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.title": "Многострочный ввод в консоли",
+  "COLINSPATCHKIT-ALLOW_MULTILINE_CONSOLE_INPUT.hover.desc": "Позволяет консоли разработчика содержать несколько строк: нажмите Shift+Enter для новой строки или вставьте блок команд. Enter выполняет каждую строку по порядку и останавливается на первой, которая не сработала. Вступает в силу при следующем запуске."
 }
