@@ -59,9 +59,10 @@ public static class MapNodeInfoTooltipPatch
     // Disabled light-gray (StsColors.lightGray) for merchant prices the player can't afford.
     private const string DisabledColorHex = "BFBFBF";
 
-    // Red for the "No potion" history line, plus the potion reward icon (full path for rendering,
-    // bare filename for matching an existing potion row).
-    private const string NoPotionColorHex = "FF5555";
+    // Red for "missing reward" lines (the "No potion" history line and the Silver Crucible empty
+    // chest), plus the potion reward icon (full path for rendering, bare filename for matching an
+    // existing potion row).
+    private const string MissingRewardColorHex = "FF5555";
     private const string PotionIconPath = "res://images/packed/sprite_fonts/potion_icon.png";
     private const string PotionIconMarker = "potion_icon.png";
 
@@ -551,7 +552,7 @@ public static class MapNodeInfoTooltipPatch
         List<string> rewards = new();
         if (!Hook.ShouldGenerateTreasure(runState, player))
         {
-            rewards.Add(Loc("EMPTY_CHEST"));
+            rewards.Add($"[color=#{MissingRewardColorHex}]{Loc("EMPTY_CHEST")}[/color]");
         }
         else
         {
@@ -1002,7 +1003,7 @@ public static class MapNodeInfoTooltipPatch
         }
         else
         {
-            AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{NoPotionColorHex}]{Loc("NO_POTION", ("Chance", chancePct))}[/color]");
+            AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{MissingRewardColorHex}]{Loc("NO_POTION", ("Chance", chancePct))}[/color]");
         }
     }
 
