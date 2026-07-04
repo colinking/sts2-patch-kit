@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "С Миниатюрной палаткой кнопку «Продолжить» нужно удерживать, чтобы уйти, пока у вас остаётся неиспользованный доступный вариант отдыха, — чтобы вы случайно не оставили второе действие. Быстрый щелчок ничего не делает; отпустите раньше, чтобы отменить.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Показывать переключатель «Показать улучшения» в наградах за карты",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Показывать переключатель «Показать улучшения» в наградах за карты",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Добавить переключатель «Показать улучшения» из режима просмотра колоды на экран награды за карты, чтобы видеть карты награды улучшенными. Работает и со «Свитками».",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Добавить переключатель «Показать улучшения» из режима просмотра колоды на экран награды за карты.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Согласовать мультиплеерные карты Компендиума с забегом",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Согласовать мультиплеерные карты Компендиума с забегом",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Устанавливать переключатель «Мультиплеерные карты» в Компендиуме по умолчанию в соответствии с вашим забегом — выключен в одиночной игре, включён в мультиплеере — вместо того чтобы всегда быть включённым.",

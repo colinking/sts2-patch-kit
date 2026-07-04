@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Z Miniaturowym namiotem przycisk dalej trzeba przytrzymać, aby wyjść, dopóki masz jeszcze nieużytą, dostępną opcję odpoczynku — żebyś przez przypadek nie zostawił swojej drugiej akcji. Szybkie kliknięcie nic nie robi; puść wcześniej, aby anulować.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Pokaż przełącznik Pokaż ulepszenia przy nagrodach kartowych",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Pokaż przełącznik Pokaż ulepszenia przy nagrodach kartowych",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Dodaje przełącznik „Pokaż ulepszenia” z widoku talii do ekranu nagród kartowych, aby podejrzeć nagrodzone karty w ulepszonej wersji. Działa też ze Scroll Boxes.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Dodaje przełącznik „Pokaż ulepszenia” z widoku talii do ekranu nagród kartowych.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Dopasuj karty wieloosobowe w Kompendium do rozgrywki",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Dopasuj karty wieloosobowe w Kompendium do rozgrywki",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Ustawia domyślnie przełącznik „Karty wieloosobowe” w Kompendium tak, aby pasował do twojej rozgrywki — wyłączony w trybie jednoosobowym, włączony w wieloosobowym — zamiast zawsze włączony.",

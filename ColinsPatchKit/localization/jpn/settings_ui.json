@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "ミニチュアテントを所持しているとき、まだ使用可能な休憩所の選択肢が残っている間は、進むボタンを長押ししないと移動できません。2回目の行動をうっかり手放さないためです。短いクリックでは何も起きません。途中で離すとキャンセルされます。",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "カード報酬にアップグレード表示の切り替えを追加",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "カード報酬にアップグレード表示の切り替えを追加",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "デッキ表示の「アップグレードを表示」切り替えをカード報酬画面に追加し、報酬カードをアップグレードした状態でプレビューできるようにします。スクロールボックスでも機能します。",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "デッキ表示の「アップグレードを表示」切り替えをカード報酬画面に追加します。",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "図鑑のマルチプレイヤーカードをランに合わせる",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "図鑑のマルチプレイヤーカードをランに合わせる",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "図鑑の「マルチプレイヤーカード」切り替えを、常にオンにするのではなく、現在のランに合わせて初期設定します(シングルプレイヤーではオフ、マルチプレイヤーではオン)。",

@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Mit dem Mini-Zelt muss die Weiter-Schaltfläche zum Verlassen gedrückt gehalten werden, solange du noch eine ungenutzte, wählbare Rastplatz-Option hast – damit du deine zweite Aktion nicht versehentlich zurücklässt. Ein kurzer Klick bewirkt nichts; lass früher los, um abzubrechen.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Schalter „Upgrades ansehen“ bei Kartenbelohnungen anzeigen",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Schalter „Upgrades ansehen“ bei Kartenbelohnungen anzeigen",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Fügt den Schalter „Upgrades ansehen“ aus der Deckansicht zum Kartenbelohnungs-Bildschirm hinzu, um Belohnungskarten verbessert anzuzeigen. Funktioniert auch mit Schriftrollen-Boxen.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Fügt den Schalter „Upgrades ansehen“ aus der Deckansicht zum Kartenbelohnungs-Bildschirm hinzu.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Mehrspieler-Karten im Kompendium an Durchgang anpassen",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Mehrspieler-Karten im Kompendium an Durchgang anpassen",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Setzt den Schalter „Mehrspieler-Karten“ des Kompendiums standardmäßig passend zu deinem Durchgang — aus im Einzelspieler, an im Mehrspieler — statt ihn immer an zu lassen.",

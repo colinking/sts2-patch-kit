@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Avec la Tente miniature, le bouton continuer doit être maintenu pour quitter tant qu'il vous reste une option de repos inutilisée et sélectionnable — pour ne pas laisser votre seconde action par inadvertance. Un clic rapide ne fait rien ; relâchez tôt pour annuler.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Afficher la bascule Voir les améliorations sur les récompenses de carte",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Afficher la bascule Voir les améliorations sur les récompenses de carte",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Ajoute la bascule « Voir les améliorations » de la vue du deck à l'écran de récompense de carte pour prévisualiser les cartes de récompense améliorées. Fonctionne aussi avec les Boîtes à parchemins.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Ajoute la bascule « Voir les améliorations » de la vue du deck à l'écran de récompense de carte.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Adapter les cartes multijoueur du Compendium à la partie",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Adapter les cartes multijoueur du Compendium à la partie",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Règle par défaut la bascule « Cartes multijoueur » du Compendium pour correspondre à votre partie — désactivée en solo, activée en multijoueur — au lieu d'être toujours activée.",

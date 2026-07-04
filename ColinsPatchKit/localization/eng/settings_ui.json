@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "With Miniature Tent, the proceed button requires a hold to confirm while you still have an unused, selectable rest site option — so you don't accidentally leave your second action behind. A quick click does nothing; release early to cancel.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Show View Upgrades toggle on card rewards",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Show View Upgrades toggle on card rewards",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen to preview reward cards upgraded. Also works with Scroll Boxes.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Add the deck view's \"View Upgrades\" toggle to the card reward screen.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Match Compendium multiplayer cards to run",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Match Compendium multiplayer cards to run",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Default the Compendium's \"Multiplayer cards\" toggle to match your run — off in singleplayer, on in multiplayer — instead of always on.",

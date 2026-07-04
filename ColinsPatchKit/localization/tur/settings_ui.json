@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Minüatür Çadır ile, hâlâ kullanılmamış ve seçilebilir bir dinlenme seçeneğin varken ayrılmak için devam düğmesini basılı tutman gerekir — böylece ikinci eylemini yanlışlıkla geride bırakmazsın. Hızlı tıklama bir şey yapmaz; iptal etmek için erken bırak.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Kart ödüllerinde Yükseltmeleri Gör düğmesini göster",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Kart ödüllerinde Yükseltmeleri Gör düğmesini göster",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Ödül kartlarını yükseltilmiş olarak ön izlemek için deste görünümünün \"Yükseltmeleri Gör\" düğmesini kart ödülü ekranına ekle. Scroll Box'larla da çalışır.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Deste görünümünün \"Yükseltmeleri Gör\" düğmesini kart ödülü ekranına ekle.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Compendium çok oyunculu kartlarını koşuya uyarla",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Compendium çok oyunculu kartlarını koşuya uyarla",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Compendium'un \"Çok oyunculu kartlar\" düğmesini her zaman açık yerine koşuna uyacak şekilde varsayılan yap — tek oyunculuda kapalı, çok oyunculuda açık.",

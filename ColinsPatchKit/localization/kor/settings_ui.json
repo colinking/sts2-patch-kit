@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "미니어처 텐트가 있을 때, 아직 사용하지 않은 선택 가능한 휴식처 옵션이 남아 있는 동안에는 진행 버튼을 길게 눌러야 떠날 수 있습니다. 두 번째 행동을 실수로 버리지 않도록 하기 위함입니다. 짧게 누르면 아무 일도 일어나지 않으며, 도중에 뗼면 취소됩니다.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "카드 보상에 강화 미리보기 토글 표시",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "카드 보상에 강화 미리보기 토글 표시",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "덱 보기의 \"강화 미리보기\" 토글을 카드 보상 화면에 추가하여 보상 카드를 강화된 상태로 미리 볼 수 있습니다. 스크롤 상자에도 적용됩니다.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "덱 보기의 \"강화 미리보기\" 토글을 카드 보상 화면에 추가합니다.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "도감의 멀티플레이 카드를 게임에 맞춤",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "도감의 멀티플레이 카드를 게임에 맞춤",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "도감의 \"멀티플레이 카드\" 토글을 항상 켜진 상태가 아니라 현재 게임에 맞춰 기본값을 설정합니다 — 싱글플레이에서는 꺼짐, 멀티플레이에서는 켜짐.",

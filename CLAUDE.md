@@ -211,6 +211,20 @@ Hard-won API facts:
     (countdown) to the player, plays through three turns, and asserts the actual `pulse` shader
     parameter on the NPower icons at each step (`powerpulse-e2e: PASS ...` lines), saving
     /tmp/power_pulse_*.png. Same scratch-profile warning as above.
+  - `"./Slay the Spire 2" --choosecard-e2e=<profile>` — verifies the View Upgrades toggle on the
+    choose-a-card screen (relics that offer a card choice on pickup): starts a throwaway run,
+    grants Lead Paperweight via the console (its pickup effect opens the screen out of combat),
+    and logs a `choosecard-e2e: PASS <assertion>` line per step (tickbox exists, ticking previews
+    upgraded cards while `CardModel` keeps reporting the base card, unticking reverts, picking
+    while previewing adds the unupgraded card to the deck), saving /tmp/choose_card_*.png. Same
+    scratch-profile warning as above.
+  - `"./Slay the Spire 2" --simplegrid-e2e=<profile>` — verifies the View Upgrades toggle on the
+    simple card-select grid (Room Full of Cheese "Gorge", Brain Leech, Sea Glass, Sealed Deck):
+    starts a throwaway run, obtains Sea Glass in code (CharacterId pre-assigned, so no
+    missing-character error), and logs a `simplegrid-e2e: PASS <assertion>` line per step
+    (tickbox exists, ticking flips `NCardGrid.IsShowingUpgrades` and previews the holders,
+    unticking reverts, confirming a pick while previewing adds the unupgraded card), saving
+    /tmp/simple_grid_*.png. Same scratch-profile warning as above.
   - `"./Slay the Spire 2" --pulsegif=<profile>` — captures 30 frames (100ms apart) of pulsing
     relics and powers to /tmp/pulse_gif/ for the README GIFs (assemble with ffmpeg crop+
     palettegen). Uses `RenderingServer.ForceDraw(swapBuffers, frameStep)` per frame because

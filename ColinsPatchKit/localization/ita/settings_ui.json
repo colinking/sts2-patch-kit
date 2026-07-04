@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Con la Tenda da campo, il pulsante continua richiede di tenerlo premuto per uscire finché hai ancora un'opzione di sosta inutilizzata e selezionabile, così non lasci indietro la tua seconda azione per sbaglio. Un clic veloce non fa nulla; rilascia prima per annullare.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Mostra l'opzione Vedi Potenziamenti sulle ricompense in carte",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Mostra l'opzione Vedi Potenziamenti sulle ricompense in carte",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Aggiunge l'opzione \"Vedi Potenziamenti\" della visuale del mazzo alla schermata delle ricompense in carte, per vedere in anteprima le carte ricompensa potenziate. Funziona anche con le Scatole a Scorrimento.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Aggiunge l'opzione \"Vedi Potenziamenti\" della visuale del mazzo alla schermata delle ricompense in carte.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Adatta le carte multigiocatore del Compendio alla partita",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Adatta le carte multigiocatore del Compendio alla partita",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Imposta di base l'opzione \"Carte multigiocatore\" del Compendio in base alla tua partita — disattivata in singolo, attivata in multigiocatore — invece di tenerla sempre attivata.",

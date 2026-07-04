@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "เมื่อมีเต็นท์จิ๋ว ปุ่มดำเนินการต่อจะต้องกดค้างไว้เพื่อออก ตราบใดที่คุณยังมีตัวเลือกพักแรมที่ยังไม่ได้ใช้และเลือกได้เหลืออยู่ เพื่อไม่ให้คุณเผลอทิ้งการกระทำที่สองไป การคลิกเร็ว ๆ จะไม่มีอะไรเกิดขึ้น ปล่อยก่อนเพื่อยกเลิก",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "แสดงปุ่มสลับ View Upgrades ในรางวัลการ์ด",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "แสดงปุ่มสลับ View Upgrades ในรางวัลการ์ด",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "เพิ่มปุ่มสลับ \"View Upgrades\" ของหน้าดูเด็คเข้าไปในหน้าจอรางวัลการ์ด เพื่อดูตัวอย่างการ์ดรางวัลแบบอัปเกรดแล้ว ใช้ได้กับ Scroll Box ด้วย",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "เพิ่มปุ่มสลับ \"View Upgrades\" ของหน้าดูเด็คเข้าไปในหน้าจอรางวัลการ์ด",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "ปรับการ์ดผู้เล่นหลายคนใน Compendium ให้ตรงกับรอบเล่น",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "ปรับการ์ดผู้เล่นหลายคนใน Compendium ให้ตรงกับรอบเล่น",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "ตั้งค่าเริ่มต้นของปุ่มสลับ \"Multiplayer cards\" ใน Compendium ให้ตรงกับรอบเล่นของคุณ — ปิดในโหมดผู้เล่นคนเดียว เปิดในโหมดผู้เล่นหลายคน — แทนที่จะเปิดอยู่เสมอ",

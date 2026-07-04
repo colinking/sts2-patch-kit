@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Com a Barraca em miniatura, o botão de prosseguir exige segurar para sair enquanto você ainda tiver uma opção de descanso não usada e selecionável, para que não deixe sua segunda ação para trás sem querer. Um clique rápido não faz nada; solte antes para cancelar.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Mostrar alternância Ver Aprimoramentos nas recompensas de carta",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Mostrar alternância Ver Aprimoramentos nas recompensas de carta",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Adiciona a alternância \"Ver Aprimoramentos\" da visualização do baralho à tela de recompensa de cartas para pré-visualizar as cartas de recompensa aprimoradas. Também funciona com Caixas de Pergaminho.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Adiciona a alternância \"Ver Aprimoramentos\" da visualização do baralho à tela de recompensa de cartas.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Combinar cartas multijogador do Compêndio com a jornada",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Combinar cartas multijogador do Compêndio com a jornada",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Faz a alternância \"Cartas multijogador\" do Compêndio começar combinando com sua jornada — desligada no modo um jogador, ligada no multijogador — em vez de sempre ligada.",

@@ -159,7 +159,7 @@ that you can use all options at a rest site instead of reflexively proceeding af
 
 #### View Upgrades toggle
 
-If enabled, the card reward screen gets the same "View Upgrades" toggle as the deck view. Also works with Scroll Boxes.
+If enabled, the card reward screen gets the same "View Upgrades" toggle as the deck view.
 
 ![Card reward upgrades](/docs/images/card-reward-upgrades.png)
 

@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "持有迷你帐篷时，只要你还有尚未使用且可选择的营火选项，前进按钮就需要长按才能离开，以免你不小心放弃第二次行动。快速点击不会有任何反应；中途松开即可取消。",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "在卡牌奖励上显示「查看升级」开关",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "在卡牌奖励上显示「查看升级」开关",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "将牌组视图中的「查看升级」开关添加到卡牌奖励界面，以预览升级后的奖励卡牌。同样适用于卷轴盒。",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "将牌组视图中的「查看升级」开关添加到卡牌奖励界面。",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "图鉴多人卡牌与当前旅程一致",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "图鉴多人卡牌与当前旅程一致",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "让图鉴的「多人卡牌」开关默认与你的旅程一致——单人时关闭，多人时开启——而非始终开启。",

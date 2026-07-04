@@ -36,7 +36,7 @@
   "COLINSPATCHKIT-CONFIRM_REST_SITE_PROCEED_WITH_TENT.hover.desc": "Con la Tienda de campaña, el botón de continuar requiere mantenerlo pulsado para salir mientras todavía tengas una opción de descanso sin usar y seleccionable, para que no dejes atrás tu segunda acción sin querer. Un clic rápido no hace nada; suelta antes de tiempo para cancelar.",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.title": "Mostrar interruptor Ver mejoras en recompensas de cartas",
   "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.title": "Mostrar interruptor Ver mejoras en recompensas de cartas",
-  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Añade el interruptor \"Ver mejoras\" de la vista del mazo a la pantalla de recompensa de cartas para previsualizar las cartas de recompensa mejoradas. También funciona con las Cajas de Pergaminos.",
+  "COLINSPATCHKIT-SHOW_CARD_REWARD_VIEW_UPGRADES_TOGGLE.hover.desc": "Añade el interruptor \"Ver mejoras\" de la vista del mazo a la pantalla de recompensa de cartas.",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.title": "Ajustar cartas multijugador del Compendio a la partida",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.title": "Ajustar cartas multijugador del Compendio a la partida",
   "COLINSPATCHKIT-MATCH_COMPENDIUM_MULTIPLAYER_CARDS_TO_RUN.hover.desc": "Hace que el interruptor \"Cartas multijugador\" del Compendio coincida con tu partida por defecto — desactivado en un jugador, activado en multijugador — en lugar de estar siempre activado.",
