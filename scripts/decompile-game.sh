@@ -103,6 +103,9 @@ echo "Decompiling: $DLL"
 echo "        ->   decompiled/$VERSION"
 rm -rf "$OUT"
 mkdir -p "$OUT"
+# Keep Godot's exporter out of the tree — without this the shipped .pck picks up thousands of
+# dead res://decompiled/*.cs path stubs (the repo root is a Godot project exporting all_resources).
+touch "$REPO_ROOT/decompiled/.gdignore"
 "$ILSPY" -p -o "$OUT" "$DLL"
 
 # The game ships its XML doc-comments next to the dll; keep them alongside the source

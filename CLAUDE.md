@@ -103,11 +103,25 @@ directly. Steps:
 - README-only assets (patch screenshots etc.) go in `docs/images/`, which contains a `.gdignore`.
   The repo root is a Godot project exporting with `all_resources`, so files anywhere visible to
   Godot get baked into the shipped .pck (images also get `.import` sidecars); a `.gdignore` keeps a
-  folder out of both. `docs/images/` and `release/` each have one — the latter keeps the Steam
-  Workshop upload payload (`workshop.json`, the duplicate `image.png`, `content/`) out of the
-  shipped mod. Never put README assets under `ColinsPatchKit/` — that folder ships with the mod.
+  folder out of both. `docs/images/`, `release/`, and `decompiled/` each have one — `release/`'s
+  keeps the Steam Workshop upload payload (`workshop.json`, the duplicate `image.png`, `content/`)
+  out of the shipped mod, and `decompiled/`'s keeps the exporter from baking thousands of dead
+  `res://decompiled/*.cs` path stubs into the .pck (it's committed via a `.gitignore` exception,
+  and `scripts/decompile-game.sh` re-creates it). Never put README assets under `ColinsPatchKit/` — that folder ships with the mod.
   Note `ColinsPatchKit/mod_image.png` *is* under the shipped folder (it's the in-game mod image),
   so its `.import` sidecar is committed and it is intentionally baked into the .pck.
+
+## Dual game-branch support
+
+When Steam carries two live game branches (e.g. stable v0.107.1 and beta v0.108.0), the one
+shipped dll must run on both. Rules: never compile-time-reference a symbol that exists in only
+one branch — resolve those with `AccessTools` (`TypeByName` for branch-only types, `Property`/
+`Method` with fallback names for renames) — and when a mechanic differs across branches, pick the
+behavior by feature-detecting the loaded assembly (e.g. "does this power declare its own
+`DisplayAmount` override", see `PowerReadyPulsesManager`'s static ctor), never by parsing the
+game version. Verify any newly referenced symbol exists in *both* `decompiled/<version>/` trees.
+The compile-time reference is whatever build is installed; either branch works since the shared
+surface is what the code may bind to.
 
 ## Decompiled game source
 
@@ -263,4 +277,7 @@ Hard-won API facts:
     window on any logged error; harmless when it happens while the game is quitting (downstream of
     whatever error preceded it).
   - `Asset not cached` warnings and `does not declare min game version` mod warnings.
+  - `InvalidOperationException: Dev console used before being created` from
+    `NHotkeyManager._UnhandledInput` at boot (seen since v0.108.0) — a vanilla race where an input
+    event arrives before the console node exists; it logs before any mod has loaded.
 - `unlock all` in the dev console (backtick) unlocks everything on a fresh test profile.

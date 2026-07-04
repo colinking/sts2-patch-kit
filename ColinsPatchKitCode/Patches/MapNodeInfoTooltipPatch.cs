@@ -1093,21 +1093,45 @@ public static class MapNodeInfoTooltipPatch
             CollectFoughtIds(runState, RoomType.Elite, allActs: false));
     }
 
-    // The act's normal-monster pool, split into the easy (weak) and hard (regular) sub-pools the
-    // game draws from. The first NumberOfWeakEncounters normal combats of an act use the easy
-    // pool, the rest the hard pool — so which pool THIS node uses depends on how many normal
-    // combats precede it, which varies by route. Only show one pool when every route guarantees
-    // it; otherwise show both. "?" nodes count as a maybe-combat, widening the uncertainty.
+    // The enemies this node could be, deduced from player-knowable information only: the act's
+    // easy/hard pools (fixed public data), which encounters were already fought this act (the
+    // player was there), and the game's no-adjacent-shared-EncounterTag rule for the generated
+    // encounter order (as of v0.108.0 that includes "never two Slime- or Snapping-Jaxfruit-
+    // containing encounters in a row"). We deliberately do NOT read the act's generated order
+    // (RoomSet.normalEncounters): the game picks fights by walking that pre-shuffled list, so
+    // naming the exact upcoming entry would leak hidden per-run RNG state no vanilla player can
+    // know — surfacing the game's *rules* is fair, reading its *shuffle* is an oracle (see the
+    // README's "does not impact gameplay" promise). The tag rule is therefore applied only where
+    // a player could apply it themselves: when this node is guaranteed to be the very next
+    // normal combat on every route, it can't share a tag with the normal fight just fought
+    // (consecutive normal fights are adjacent generated entries — elites and events in between
+    // don't consume normal-list slots). Once the pool has cycled, neighbors are no longer
+    // generation-adjacent and the deduction lapses — which is exactly when the unfought set is
+    // empty and EncounterNames falls back to the full pool, skipping the exclusion.
+    //
+    // The first NumberOfWeakEncounters normal combats of an act use the easy pool, the rest the
+    // hard pool — so which pool THIS node uses depends on how many normal combats precede it,
+    // which varies by route ("?" nodes count as a maybe-combat, widening the uncertainty). Only
+    // show one pool when every route guarantees it; otherwise show both.
     private static List<string> GetEnemyBody(IRunState runState, MapPoint target)
     {
         HashSet<string> fought = CollectFoughtIds(runState, RoomType.Monster, allActs: false);
-        List<string> easy = EncounterNames(runState.Act?.AllWeakEncounters ?? Enumerable.Empty<EncounterModel>(), fought);
-        List<string> hard = EncounterNames(runState.Act?.AllRegularEncounters ?? Enumerable.Empty<EncounterModel>(), fought);
+        (int min, int max)? bounds = MonsterDepthBounds(runState, target);
+
+        // Guaranteed-next node: candidates sharing a tag with the just-fought normal encounter
+        // are impossible (deduction a player can make from the fight they just had).
+        EncounterModel? justFought = bounds is (1, 1) ? LastFoughtNormalEncounter(runState) : null;
+        Func<EncounterModel, bool>? impossibleNext =
+            justFought == null ? null : e => e.SharesTagsWith(justFought);
+
+        List<string> easy = EncounterNames(
+            runState.Act?.AllWeakEncounters ?? Enumerable.Empty<EncounterModel>(), fought, impossibleNext);
+        List<string> hard = EncounterNames(
+            runState.Act?.AllRegularEncounters ?? Enumerable.Empty<EncounterModel>(), fought, impossibleNext);
 
         bool showEasy = true;
         bool showHard = true;
         int? weakCount = GetWeakEncounterCount(runState);
-        (int min, int max)? bounds = MonsterDepthBounds(runState, target);
         if (weakCount.HasValue && bounds.HasValue)
         {
             int done = GetNormalsFought(runState);
@@ -1133,6 +1157,35 @@ public static class MapNodeInfoTooltipPatch
             body.AddRange(Section(Loc("HARD_POOL"), hard));
         }
         return body;
+    }
+
+    // The most recent normal encounter fought this act (elites track separately), resolved
+    // against the act's pools; null when none has been fought or the id isn't a pool encounter.
+    private static EncounterModel? LastFoughtNormalEncounter(IRunState runState)
+    {
+        int act = runState.CurrentActIndex;
+        if (act < 0 || act >= runState.MapPointHistory.Count)
+        {
+            return null;
+        }
+        string? lastId = null;
+        foreach (MapPointHistoryEntry node in runState.MapPointHistory[act])
+        {
+            foreach (MapPointRoomHistoryEntry room in node.Rooms)
+            {
+                if (room.RoomType == RoomType.Monster && room.ModelId != null)
+                {
+                    lastId = room.ModelId.Entry;
+                }
+            }
+        }
+        if (lastId == null)
+        {
+            return null;
+        }
+        return (runState.Act?.AllWeakEncounters ?? Enumerable.Empty<EncounterModel>())
+            .Concat(runState.Act?.AllRegularEncounters ?? Enumerable.Empty<EncounterModel>())
+            .FirstOrDefault(e => e != null && e.Id.Entry == lastId);
     }
 
     // How many normal combats have already been fought this act (the easy/hard cutoff counts from
@@ -1176,11 +1229,21 @@ public static class MapNodeInfoTooltipPatch
             RouteExtremum(current, target, reachable, MonstersMax, wantMax: true, 0));
     }
 
+    // Lasting Candy's every-other-combat counter, resolved for both game branches the shipped
+    // dll supports: the v0.108 beta renamed CombatsSeen to CombatRewardsSeen (it now ticks per
+    // combat *card reward* offered rather than per combat end, but options are generated before
+    // the tick, so the parity math below is identical on both). Reflection, not a compile-time
+    // reference — a direct property access would fail to JIT on the branch that lacks it.
+    private static readonly PropertyInfo? LastingCandyCounter =
+        AccessTools.Property(typeof(LastingCandy), "CombatRewardsSeen")
+        ?? AccessTools.Property(typeof(LastingCandy), "CombatsSeen");
+
     // The combat card-reward line. Lasting Candy appends an extra Power-card option to the reward
-    // every other combat (when its CombatsSeen counter lands even), so when it will fire for this
-    // node's combat we show "+ Power". If the parity isn't fixed — the number of combats you clear
-    // before this node varies by route or includes an unresolved "?" — the Power gets an asterisk
-    // (it may or may not fire).
+    // every other combat — exactly when the combat's 1-based index (its counter after that combat)
+    // is even; monster/elite/boss fights all carry a card reward, so counting combat nodes
+    // predicts it on both branches. When it will fire for this node's combat we show "+ Power".
+    // If the parity isn't fixed — the number of combats you clear before this node varies by
+    // route or includes an unresolved "?" — the Power gets an asterisk (it may or may not fire).
     private static string CardRewardLine(IRunState runState, Player player, MapPoint target)
     {
         LastingCandy? candy = player.GetRelic<LastingCandy>();
@@ -1188,13 +1251,52 @@ public static class MapNodeInfoTooltipPatch
         {
             return Loc("CARD_REWARD");
         }
-        if (CombatsBeforeBounds(runState, target) is not { } before || before.min != before.max)
+        if (LastingCandyCounter == null // future rename: can't predict, mark uncertain
+            || CombatsBeforeBounds(runState, target) is not { } before || before.min != before.max)
         {
             return Loc("CARD_REWARD_POWER") + "*";
         }
-        // Lasting Candy fires when the combat's 1-based index (CombatsSeen after it) is even.
-        bool fires = (candy.CombatsSeen + before.min + 1) % 2 == 0;
+        int counter = (int)LastingCandyCounter.GetValue(candy)! + PendingCurrentCombatTick(runState, target);
+        bool fires = (counter + before.min + 1) % 2 == 0;
         return fires ? Loc("CARD_REWARD_POWER") : Loc("CARD_REWARD");
+    }
+
+    // The candy's counter ticks when a combat's rewards are offered — after the fight ends — so
+    // while the map is open mid-combat the current fight's tick is still pending: it will land
+    // before any FUTURE node's reward, but is in neither the counter nor CombatsBeforeBounds
+    // (which only counts nodes between current and target). Without this correction the parity
+    // is off by one for every future node hovered during a fight, on both game branches (v0.107
+    // ticks at AfterCombatEnd, v0.108 at BeforeCombatRewardOffered — both after IsInProgress
+    // drops). The current node itself never gets the correction: its own reward IS the pending
+    // tick, and reads the counter as-is.
+    private static int PendingCurrentCombatTick(IRunState runState, MapPoint target)
+    {
+        if (!CombatManager.Instance.IsInProgress)
+        {
+            return 0;
+        }
+        MapPoint? current = runState.CurrentMapPoint ?? runState.Map?.StartingMapPoint;
+        if (current == null || target == current)
+        {
+            return 0;
+        }
+        // Reward-less encounters never tick the counter.
+        if (CombatManager.Instance.DebugOnlyGetState()?.Encounter is { } encounter
+            && !encounter.ShouldGiveRewards)
+        {
+            return 0;
+        }
+        // Only combat-room fights (monster/elite/boss, including a "?" that resolved into one —
+        // the history entry records the actual room type) offer the room-end rewards the candy
+        // counts; a fight inside an event room doesn't route through them.
+        int act = runState.CurrentActIndex;
+        if (act < 0 || act >= runState.MapPointHistory.Count || runState.MapPointHistory[act].Count == 0)
+        {
+            return 0;
+        }
+        MapPointHistoryEntry entry = runState.MapPointHistory[act][runState.MapPointHistory[act].Count - 1];
+        return entry.Rooms.Any(r =>
+            r.RoomType is RoomType.Monster or RoomType.Elite or RoomType.Boss) ? 1 : 0;
     }
 
     // (min, max) number of combats (Monster / Elite / Boss; "?" counts 0..1) strictly before
@@ -1226,11 +1328,26 @@ public static class MapNodeInfoTooltipPatch
 
     // Names in `pool` minus those already fought (`exclude`). The act's encounter lists cycle once
     // every entry has been used, so when excluding the fought ones empties the pool we fall back to
-    // the full pool — the next combat starts repeating the rotation from the top.
-    private static List<string> EncounterNames(IEnumerable<EncounterModel> pool, HashSet<string> exclude)
+    // the full pool — the next combat starts repeating the rotation from the top. `impossibleNext`
+    // additionally drops candidates ruled out by the no-shared-tags deduction (see GetEnemyBody);
+    // it applies only to the unfought set — the cycled-pool fallback is past the generation
+    // adjacency guarantee — and is skipped rather than allowed to empty the list (the true next
+    // encounter never shares tags, so an emptied list means our fought-tracking drifted; showing
+    // the over-approximation is the safe honest fallback).
+    private static List<string> EncounterNames(
+        IEnumerable<EncounterModel> pool, HashSet<string> exclude,
+        Func<EncounterModel, bool>? impossibleNext = null)
     {
         List<EncounterModel> all = pool.Where(e => e != null).ToList();
         List<EncounterModel> remaining = all.Where(e => !exclude.Contains(e.Id.Entry)).ToList();
+        if (remaining.Count > 0 && impossibleNext != null)
+        {
+            List<EncounterModel> narrowed = remaining.Where(e => !impossibleNext(e)).ToList();
+            if (narrowed.Count > 0)
+            {
+                remaining = narrowed;
+            }
+        }
         return (remaining.Count > 0 ? remaining : all)
             .Select(e => e.Title.GetFormattedText())
             .Where(s => !string.IsNullOrWhiteSpace(s))

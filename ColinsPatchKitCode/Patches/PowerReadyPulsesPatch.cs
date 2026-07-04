@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
@@ -20,9 +21,14 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 // patch drives the pulse for powers whose "will it trigger?" state is otherwise invisible:
 //
 //   - First-X-each-turn powers (Echo Form, Iteration, Nostalgia, Phantom Blades, Lethality,
-//     Unmovable, Pale Blue Dot, Smoggy): pulse while the effect is still armed this turn.
-//   - Threshold counters (Juggling, Orbit, Automation, Panache, Outbreak, Withering
-//     Presence): pulse when one event away from triggering (Nunchaku-style convention).
+//     Unmovable, Smoggy): pulse while the effect is still armed this turn.
+//   - Threshold counters (Juggling, Orbit, Automation, Panache, Withering Presence): pulse when
+//     one event away from triggering (Nunchaku-style convention).
+//   - Powers whose mechanic differs between the game's stable (v0.107) and beta (v0.108)
+//     branches are registered in the static ctor, feature-detecting the running game rather
+//     than parsing the version string: Pale Blue Dot and Outbreak pulse on stable only (the
+//     beta gives Pale Blue Dot its own countdown display and removes Outbreak's threshold),
+//     and the beta-only Cacophony pulses one draw from its trigger.
 //   - Countdowns to a one-shot event (The Bomb, Asleep, Slumber, Hatch, Battleworn Dummy
 //     time limit): pulse at 1 stack, i.e. "fires after this turn" (Escape Artist convention).
 //   - End-of-turn damage debuffs (Constrict, Disintegration): pulse the whole time as a
@@ -67,8 +73,6 @@ public static class PowerReadyPulsesManager
         [typeof(UnmovablePower)] = p => CombatManager.Instance.History.Entries
             .OfType<BlockGainedEntry>().Count(e => e.HappenedThisTurn(p.CombatState)
                 && e.Actor == p.Owner && e.Props.IsCardOrMonsterMove()) < p.Amount,
-        // Played 5+ cards this turn -> next hand draw is bigger (warn: it's locked in).
-        [typeof(PaleBlueDotPower)] = PaleBlueDotArmed,
         // Debuff: the first Skill played each turn afflicts all Skills (warning pulse).
         [typeof(SmoggyPower)] = p => !CombatManager.Instance.History.CardPlaysStarted
             .Any(e => e.HappenedThisTurn(p.CombatState)
@@ -86,8 +90,6 @@ public static class PowerReadyPulsesManager
         [typeof(OrbitPower)] = p => p.DisplayAmount == 1,
         // Every 5 cards played deals damage; DisplayAmount is cards left.
         [typeof(PanachePower)] = p => p.DisplayAmount == 1,
-        // Every 3rd poison application hits all enemies; DisplayAmount counts up to 3.
-        [typeof(OutbreakPower)] = p => p.DisplayAmount == 2,
         // Enemy power: every 6 of the player's card plays adds a Wither to their hand.
         [typeof(WitheringPresencePower)] = p => p.DisplayAmount == 1,
 
@@ -106,6 +108,46 @@ public static class PowerReadyPulsesManager
         [typeof(DisintegrationPower)] = _ => true,
     };
 
+    // Branch-dependent entries: one shipped dll runs on both the stable (v0.107) and beta
+    // (v0.108) game branches, whose mechanics for these powers differ. Which branch is running
+    // is feature-detected from the power types themselves (never from the version string), and
+    // v0.108-only types are resolved by name so the stable game never loads a missing token.
+    static PowerReadyPulsesManager()
+    {
+        // Pale Blue Dot. Stable: no counter is shown on the icon; 5+ cards played this turn make
+        // the next hand draw bigger — pulse once the bonus is locked in, since nothing else
+        // communicates it. Beta: reworked to "5th Attack this turn -> bonus draw next turn" WITH
+        // its own countdown DisplayAmount on the icon — the counter already says how close it
+        // is, so no pulse there (a pulse one Attack out read as noise in playtesting).
+        if (!DeclaresDisplayAmount(typeof(PaleBlueDotPower)))
+        {
+            _armed[typeof(PaleBlueDotPower)] = PaleBlueDotArmedV107;
+        }
+
+        // Outbreak. Stable: every 3rd poison application hits all enemies, with a DisplayAmount
+        // counter — pulse one poison away. Beta: the threshold (and the override) is gone, it
+        // fires on every application; nothing to arm, so no entry.
+        if (DeclaresDisplayAmount(typeof(OutbreakPower)))
+        {
+            _armed[typeof(OutbreakPower)] = p => p.DisplayAmount == 2;
+        }
+
+        // Cacophony (beta-only type): every 33rd card drawn zaps a random enemy; DisplayAmount
+        // is draws left — pulse one draw away.
+        if (AccessTools.TypeByName("MegaCrit.Sts2.Core.Models.Powers.CacophonyPower") is { } cacophony)
+        {
+            _armed[cacophony] = p => p.DisplayAmount == 1;
+        }
+    }
+
+    // Whether the type itself overrides DisplayAmount — the marker that distinguishes the two
+    // game branches' implementations of the powers above.
+    private static bool DeclaresDisplayAmount(Type powerType)
+    {
+        return powerType.GetProperty(nameof(PowerModel.DisplayAmount),
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly) != null;
+    }
+
     // Last pulse state pushed per power, so refreshes only fire events on changes.
     private static readonly ConditionalWeakTable<PowerModel, StrongBox<bool>> _lastState = new();
 
@@ -120,7 +162,9 @@ public static class PowerReadyPulsesManager
             .Count(e => e.HappenedThisTurn(p.CombatState) && filter(e));
     }
 
-    private static bool PaleBlueDotArmed(PowerModel p)
+    // Stable-branch (v0.107) Pale Blue Dot: played 5+ cards this turn -> next hand draw is
+    // bigger (warn: it's locked in). Mirrors the power's own ModifyHandDraw history check.
+    private static bool PaleBlueDotArmedV107(PowerModel p)
     {
         Player? player = p.Owner.Player;
         if (player == null)

@@ -2,7 +2,7 @@
 
 A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-All patches do not impact gameplay, nor competitive integrity. This mod has been tested with the latest version (`v0.107.1`) and is safe for use in multiplayer.
+All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.108.0`), and is safe for use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
@@ -115,10 +115,12 @@ If enabled, this patch enables pulsing for a handful of additional relics that b
 
 If enabled, buff/debuff icons will also pulse if they have a limited-time effect that is still available:
 
-- **First-each-turn effects** pulse while still available this turn: Echo Form, Iteration, Nostalgia, Phantom Blades, Lethality, Unmovable, Pale Blue Dot
-  (5+ cards played — bonus draw locked in), and Smoggy (warning: your first Skill will trigger it).
+- **First-each-turn effects** pulse while still available this turn: Echo Form, Iteration, Nostalgia,
+  Phantom Blades, Lethality, Unmovable, Pale Blue Dot (stable only), and Smoggy (warning: your first
+  Skill will trigger it).
 - **Counters** pulse when one step from triggering: Juggling (2 of 3 attacks played), Orbit,
-  Automation, Panache, Outbreak, and the Aeonglass's Withering Presence (your next card play adds a Wither).
+  Automation, Panache, Outbreak (stable only), Cacophony (beta only), and the Aeonglass's Withering
+  Presence (your next card play adds a Wither).
 - **Countdowns** pulse when the event fires after this turn: The Bomb, Asleep, Slumber,
   Hatch, and the Battleworn Dummy time limit.
 - **End-of-turn damage debuffs** pulse the whole time as a "don't forget to block" reminder:

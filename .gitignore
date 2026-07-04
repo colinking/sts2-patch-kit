@@ -13,5 +13,8 @@ release/ColinsPatchKit/content/*
 !release/ColinsPatchKit/content/README.md
 release/*.zip
 
-# Per-version decompiled game source (scripts/decompile-game.sh)
-decompiled/
+# Per-version decompiled game source (scripts/decompile-game.sh). The .gdignore is committed:
+# without it the Godot export bakes thousands of dead res://decompiled/*.cs path stubs into the
+# shipped .pck (ignore contents, not the dir itself, so the exception can apply).
+decompiled/*
+!decompiled/.gdignore
