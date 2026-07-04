@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Wenn du mit Wohldurchdachte Pläne Karten behältst, wird pro Karte, die du noch behalten kannst, ein gepunkteter Kartenumriss angezeigt.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Flüche & Statuskarten zuerst beim Entfernen/Umwandeln",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Flüche & Statuskarten zuerst beim Entfernen/Umwandeln",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Wenn du eine Karte aus dem Nachziehstapel zum Entfernen (Reinigen) oder Umwandeln (Aufladen, Séance) auswählst, werden Flüche und Statuskarten zuerst statt zuletzt aufgeführt — meist sind das die, die du loswerden möchtest.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Wenn du eine Karte aus dem Nachziehstapel zum Entfernen (Reinigen) oder Umwandeln (Aufladen, Séance) auswählst, werden Flüche, Statuskarten und Questkarten zuerst statt zuletzt aufgeführt — meist sind das die, die du loswerden möchtest.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Relikte pulsieren lassen, wenn ihr Effekt bereit ist",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Relikte pulsieren lassen, wenn ihr Effekt bereit ist",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Lässt mehr Relikt-Symbole pulsieren, solange ihre begrenzte Wirkung noch verfügbar ist. Im Original fehlt diese Logik bei vielen Relikten.",

@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Al conservar cartas con Well Laid Plans, muestra un contorno de carta punteado por cada carta que aún puedes conservar.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Maldiciones y estados primero al agotar/transformar",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Maldiciones y estados primero al agotar/transformar",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Al elegir una carta del mazo de robo para agotar (Cleanse) o transformar (Charge, Séance), lista primero las maldiciones y los estados en lugar de al final, ya que suelen ser las que quieres eliminar.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Al elegir una carta del mazo de robo para agotar (Cleanse) o transformar (Charge, Séance), lista primero las maldiciones, los estados y las cartas de misión en lugar de al final, ya que suelen ser las que quieres eliminar.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Hacer parpadear las reliquias mientras su efecto está listo",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Hacer parpadear las reliquias mientras su efecto está listo",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Hace palpitar más iconos de reliquias mientras su efecto limitado siga disponible. El juego original no incluye esta lógica para muchas reliquias.",

@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Ao reter cartas com Planos Bem Elaborados, mostra um contorno de carta pontilhado para cada carta que você ainda pode reter.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Maldições e status primeiro ao exaurir/transformar",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Maldições e status primeiro ao exaurir/transformar",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Ao escolher uma carta da pilha de compra para exaurir (Purificar) ou transformar (Carga, Sessão Espírita), lista maldições e status primeiro em vez de por último — geralmente são as que você quer eliminar.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Ao escolher uma carta da pilha de compra para exaurir (Purificar) ou transformar (Carga, Sessão Espírita), lista maldições, status e cartas de missão primeiro em vez de por último — geralmente são as que você quer eliminar.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Pulsar relíquias enquanto seu efeito está disponível",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Pulsar relíquias enquanto seu efeito está disponível",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Faz mais ícones de relíquias pulsarem enquanto seu efeito limitado ainda estiver disponível. O jogo original não tem essa lógica para muitas relíquias.",

@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Podczas zatrzymywania kart za pomocą Well Laid Plans pokazuje jeden przerywany zarys karty na każdą kartę, którą możesz jeszcze zatrzymać.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Klątwy i statusy najpierw przy wyczerpywaniu/przekształcaniu",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Klątwy i statusy najpierw przy wyczerpywaniu/przekształcaniu",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Przy wyborze karty ze stosu dobierania do wyczerpania (Cleanse) lub przekształcenia (Charge, Séance) wyświetla klątwy i statusy najpierw zamiast na końcu — to zwykle te, których chcesz się pozbyć.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Przy wyborze karty ze stosu dobierania do wyczerpania (Cleanse) lub przekształcenia (Charge, Séance) wyświetla klątwy, statusy i karty zadań najpierw zamiast na końcu — to zwykle te, których chcesz się pozbyć.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Pulsuj relikwiami, gdy ich efekt jest gotowy",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Pulsuj relikwiami, gdy ich efekt jest gotowy",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Sprawia, że pulsuje więcej ikon relikwii, dopóki ich ograniczony efekt jest jeszcze dostępny. Podstawowa wersja gry nie ma tej logiki dla wielu relikwii.",

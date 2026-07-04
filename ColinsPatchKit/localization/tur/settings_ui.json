@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Well Laid Plans ile kart saklarken, hâlâ saklayabileceğin her kart için noktalı bir kart hattı göster.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Tüketirken/dönüştürürken önce lanetler ve durumlar",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Tüketirken/dönüştürürken önce lanetler ve durumlar",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Tüketmek (Cleanse) veya dönüştürmek (Charge, Séance) için bir çekme destesi kartı seçerken, lanetleri ve durumları en sona değil en başa listele — genellikle ondan kurtulmak istediklerin onlardır.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Tüketmek (Cleanse) veya dönüştürmek (Charge, Séance) için bir çekme destesi kartı seçerken, lanetleri, durumları ve görev kartlarını en sona değil en başa listele — genellikle ondan kurtulmak istediklerin onlardır.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Etkisi hazırken kalıntıları nabız gibi parlat",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Etkisi hazırken kalıntıları nabız gibi parlat",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Sınırlı etkileri hâlâ kullanılabilirken daha fazla kalıntı simgesini titreştirir. Orijinal oyunda bu mantık birçok kalıntıda yok.",

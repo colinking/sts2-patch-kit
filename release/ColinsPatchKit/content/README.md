@@ -29,7 +29,7 @@ For the full list of patches (with examples), see [the GitHub README](https://gi
 ![Retain slots](/docs/images/retain-slots.png)
 
 - **Well Laid Plans retain slots** — Show one dotted card slot per card you can retain.
-- **Curses & statuses first when exhausting/transforming** — Sort curses and statuses first when picking a card to exhaust or transform.
+- **Curses & statuses first when exhausting/transforming** — Sort curses, statuses, and quest cards first when picking a card to exhaust or transform.
 - **More active relic pulses** — Pulse more relic icons while their limited effect is still available.
 - **Active buff/debuff pulses** — Pulse buff/debuff icons that still have a limited-time effect available this turn.
 

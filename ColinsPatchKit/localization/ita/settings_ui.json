@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Quando mantieni carte con Piani Ben Congegnati, mostra un contorno di carta tratteggiato per ogni carta che puoi ancora mantenere.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Maledizioni e status per primi quando esaurisci/trasformi",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Maledizioni e status per primi quando esaurisci/trasformi",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Quando scegli una carta nella pila di pesca da esaurire (Purificazione) o trasformare (Carica, Seduta Spiritica), elenca per prime le maledizioni e gli status invece che per ultimi — di solito sono quelli di cui vuoi liberarti.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Quando scegli una carta nella pila di pesca da esaurire (Purificazione) o trasformare (Carica, Seduta Spiritica), elenca per prime le maledizioni, gli status e le carte missione invece che per ultime — di solito sono le carte di cui vuoi liberarti.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Fai pulsare i cimeli mentre il loro effetto è pronto",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Fai pulsare i cimeli mentre il loro effetto è pronto",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Fa pulsare più icone di cimeli finché il loro effetto limitato è ancora disponibile. Il gioco base non ha questa logica per molti cimeli.",

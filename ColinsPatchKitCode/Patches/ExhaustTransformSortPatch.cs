@@ -8,11 +8,12 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 
 // When you pick a card to *exhaust* (Cleanse) or *transform into a specific card* (Charge, Séance)
-// out of your draw pile, the chosen card is usually a curse or status you want gone — but the
-// draw-pile selection screen sorts those to the very bottom (NCombatPileCardSelectScreen sorts the
-// draw pile RarityAscending then alphabetically, and GetCardRarityComparisonValue maps Status->6,
-// Curse->7, behind every normal rarity). This patch floats curses then statuses to the front of
-// that list so the cards you came to remove are right where you look first.
+// out of your draw pile, the chosen card is usually a curse, status, or quest card you want gone —
+// but the draw-pile selection screen sorts those to the very bottom (NCombatPileCardSelectScreen
+// sorts the draw pile RarityAscending then alphabetically, and GetCardRarityComparisonValue maps
+// Status->6, Curse->7, Quest->9, behind every normal rarity). This patch floats curses, then
+// statuses, then quest cards to the front of that list so the cards you came to remove are right
+// where you look first.
 //
 // Scoping: the draw-pile selection screen is shared by other effects that pull a card to *play*
 // (Wish, Secret Weapon, Secret Technique), where surfacing curses would be actively wrong, so we
@@ -54,9 +55,9 @@ internal static class ExhaustTransformSortScopePatch
 [HarmonyPatch(typeof(NCardGrid), "GetCardRarityComparisonValue")]
 internal static class ExhaustTransformSortRarityPatch
 {
-    // Curses sort ahead of statuses, both ahead of every normal rarity (>= 0). Leaving every other
-    // card's value untouched preserves the vanilla rarity ordering, and the screen's secondary
-    // AlphabetAscending key still breaks ties within each group.
+    // Curses sort ahead of statuses, then quest cards, all ahead of every normal rarity (>= 0).
+    // Leaving every other card's value untouched preserves the vanilla rarity ordering, and the
+    // screen's secondary AlphabetAscending key still breaks ties within each group.
     private static void Postfix(CardModel a, ref int __result)
     {
         if (!ExhaustTransformSort.Active)
@@ -66,9 +67,13 @@ internal static class ExhaustTransformSortRarityPatch
 
         if (a.Rarity == CardRarity.Curse)
         {
-            __result = -2;
+            __result = -3;
         }
         else if (a.Rarity == CardRarity.Status)
+        {
+            __result = -2;
+        }
+        else if (a.Rarity == CardRarity.Quest)
         {
             __result = -1;
         }

@@ -81,7 +81,7 @@ If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card 
 
 #### Curses & statuses first when exhausting/transforming
 
-If enabled, curses and statuses will be rendered first when choosing a card from your draw pile to exhaust (Cleanse) or transform into a specific
+If enabled, curses, statuses, and quest cards will be rendered first (in that order) when choosing a card from your draw pile to exhaust (Cleanse) or transform into a specific
 card (Charge, Séance).
 
 In vanilla, these are sorted to the bottom even though they are usually the cards you want to get rid of. Order is otherwise not affected. This mirrors the vanilla behavior when removing cards.

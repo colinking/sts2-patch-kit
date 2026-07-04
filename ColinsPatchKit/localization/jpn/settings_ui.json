@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "綿密な計画でカードを温存する際、まだ温存できるカード1枚につき点線のカード枠を1つ表示します。",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "消滅/変化時に呪い・状態カードを先頭に",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "消滅/変化時に呪い・状態カードを先頭に",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "ドロー山から消滅(浄化)または変化(チャージ、交霊)させるカードを選ぶ際、呪いカードと状態カードを末尾ではなく先頭に並べます。たいていは取り除きたいのはこれらだからです。",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "ドロー山から消滅(浄化)または変化(チャージ、交霊)させるカードを選ぶ際、呪いカード・状態カード・クエストカードを末尾ではなく先頭に並べます。たいていは取り除きたいのはこれらだからです。",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "効果が使用可能なレリックを点滅",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "効果が使用可能なレリックを点滅",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "限定効果が使用可能な間、より多くのレリックのアイコンを点滅させます。バニラでは多くのレリックにこの処理がありません。",

@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "치밀한 계획으로 카드를 유지할 때, 아직 유지할 수 있는 카드 수만큼 점선 카드 윤곽선을 표시합니다.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "소멸/변환 시 저주 및 상태 카드 우선 표시",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "소멸/변환 시 저주 및 상태 카드 우선 표시",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "뽑을 더미에서 소멸시킬(정화) 또는 변환할(충전, 강령술) 카드를 고를 때, 저주와 상태 카드를 맨 뒤가 아닌 맨 앞에 표시합니다 — 보통 없애고 싶은 카드들이기 때문입니다.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "뽑을 더미에서 소멸시킬(정화) 또는 변환할(충전, 강령술) 카드를 고를 때, 저주, 상태, 퀘스트 카드를 맨 뒤가 아닌 맨 앞에 표시합니다 — 보통 없애고 싶은 카드들이기 때문입니다.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "효과가 준비된 유물 깜빡임",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "효과가 준비된 유물 깜빡임",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "제한된 효과를 아직 사용할 수 있는 동안 더 많은 유물 아이콘을 깜박입니다. 바닐라에는 많은 유물에 이 로직이 없습니다.",

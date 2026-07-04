@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "เมื่อเก็บการ์ดด้วย Well Laid Plans จะแสดงเส้นกรอบการ์ดแบบประหนึ่งช่องต่อการ์ดหนึ่งใบที่คุณยังเก็บได้",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "เรียงคำสาปและสถานะขึ้นก่อนเมื่อกำจัด/แปลงร่าง",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "เรียงคำสาปและสถานะขึ้นก่อนเมื่อกำจัด/แปลงร่าง",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "เมื่อเลือกการ์ดจากกองจั่วเพื่อกำจัด (Cleanse) หรือแปลงร่าง (Charge, Séance) จะเรียงคำสาปและสถานะขึ้นก่อนแทนที่จะอยู่ท้ายสุด — เพราะมักเป็นใบที่คุณอยากกำจัดออก",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "เมื่อเลือกการ์ดจากกองจั่วเพื่อกำจัด (Cleanse) หรือแปลงร่าง (Charge, Séance) จะเรียงคำสาป สถานะ และการ์ดเควสต์ขึ้นก่อนแทนที่จะอยู่ท้ายสุด — เพราะมักเป็นใบที่คุณอยากกำจัดออก",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "ทำให้เรลิคกะพริบขณะเอฟเฟกต์พร้อมใช้",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "ทำให้เรลิคกะพริบขณะเอฟเฟกต์พร้อมใช้",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "ทำให้ไอคอนของวัตถุโบราณกะพริบมากขึ้นขณะที่เอฟเฟกต์จำกัดยังใช้งานได้ เกมต้นฉบับไม่มีตรรกะนี้สำหรับวัตถุโบราณหลายชิ้น",

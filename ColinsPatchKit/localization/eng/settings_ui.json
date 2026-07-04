@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "When retaining cards with Well Laid Plans, show one dotted card outline per card you can still retain.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Curses & statuses first when exhausting/transforming",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Curses & statuses first when exhausting/transforming",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "When choosing a draw-pile card to exhaust (Cleanse) or transform (Charge, Séance), list curses and statuses first instead of last — they're usually the ones you want gone.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "When choosing a draw-pile card to exhaust (Cleanse) or transform (Charge, Séance), list curses, statuses, and quest cards first instead of last — they're usually the ones you want gone.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Pulse relics while their effect is ready",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Pulse relics while their effect is ready",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Pulse more relic icons while their limited effect is still available. Vanilla is missing this logic for many relics.",

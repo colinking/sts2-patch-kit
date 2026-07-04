@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "使用「深谋远虑」保留卡牌时，每张你仍可保留的卡牌都会显示一个虚线卡牌轮廓。",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "消耗/转化时优先排列诅咒与状态牌",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "消耗/转化时优先排列诅咒与状态牌",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "在抽牌堆中选择卡牌进行消耗（净化）或转化（充能、降神）时，将诅咒牌和状态牌排在最前而非最后——它们通常正是你想清除的卡牌。",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "在抽牌堆中选择卡牌进行消耗（净化）或转化（充能、降神）时，将诅咒牌、状态牌和任务牌排在最前而非最后——它们通常正是你想清除的卡牌。",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "遗物效果就绪时使其闪动",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "遗物效果就绪时使其闪动",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "当遗物的有限效果仍可使用时，让更多遗物图标闪烁。原版游戏在许多遗物上缺少这一逻辑。",

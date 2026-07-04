@@ -16,7 +16,7 @@
   "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Lorsque vous conservez des cartes avec Plans bien conçus, affiche un contour de carte en pointillés par carte que vous pouvez encore conserver.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Malédictions et statuts en premier lors de l'épuisement/transformation",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Malédictions et statuts en premier lors de l'épuisement/transformation",
-  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Lors du choix d'une carte de la pioche à épuiser (Purification) ou à transformer (Charge, Séance), liste les malédictions et statuts en premier au lieu de les mettre en dernier — ce sont généralement celles dont vous voulez vous débarrasser.",
+  "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Lors du choix d'une carte de la pioche à épuiser (Purification) ou à transformer (Charge, Séance), liste les malédictions, statuts et cartes de quête en premier au lieu de les mettre en dernier — ce sont généralement celles dont vous voulez vous débarrasser.",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.title": "Faire pulser les reliques lorsque leur effet est prêt",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.title": "Faire pulser les reliques lorsque leur effet est prêt",
   "COLINSPATCHKIT-SHOW_RELIC_READY_PULSES.hover.desc": "Fait pulser davantage d'icônes de reliques tant que leur effet limité est encore disponible. Le jeu de base n'a pas cette logique pour de nombreuses reliques.",
