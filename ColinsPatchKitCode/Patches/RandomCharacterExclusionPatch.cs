@@ -160,7 +160,7 @@ public static class RandomCharacterExclusionManager
         }
 
         if (!ColinsPatchKitConfig.ExcludeCharactersFromRandom
-            || lobby.LocalPlayer.character is not RandomCharacter
+            || LocalPlayerCharacter(lobby) is not RandomCharacter
             || _excluded.Count == 0)
         {
             return;
@@ -201,10 +201,33 @@ public static class RandomCharacterExclusionManager
             int chosenAscension = lobby.Ascension;
             lobby.SetLocalCharacter(chosen);
             lobby.SyncAscensionChange(Math.Min(chosenAscension, lobby.MaxAscension));
-            lobby.LobbyListener.PlayerChanged(lobby.LocalPlayer, isRandomCharacterResolution: true);
+            PlayerChangedMethod.Invoke(lobby.LobbyListener,
+                new[] { LocalPlayerProp.GetValue(lobby), (object)true /* isRandomCharacterResolution */ });
         }
         _resolvedFromRandom = true;
     }
+
+    // v0.110.0 renamed the lobby-player type (LobbyPlayer -> StartRunLobbyPlayer), and that type
+    // is baked into the IL of StartRunLobby.LocalPlayer's getter and
+    // IStartRunLobbyListener.PlayerChanged's parameter list — a compile-time bind to either would
+    // throw MissingMethodException on the other branch. Bind both by name, and read the player's
+    // `character` field off whichever type the loaded assembly has.
+    private static readonly PropertyInfo LocalPlayerProp =
+        AccessTools.Property(typeof(StartRunLobby), "LocalPlayer")
+        ?? throw new MissingMemberException(nameof(StartRunLobby), "LocalPlayer");
+
+    private static readonly FieldInfo LobbyPlayerCharacterField =
+        AccessTools.Field(LocalPlayerProp.PropertyType, "character")
+        ?? throw new MissingFieldException(LocalPlayerProp.PropertyType.Name, "character");
+
+    private static readonly MethodInfo PlayerChangedMethod =
+        AccessTools.Method(typeof(IStartRunLobbyListener), "PlayerChanged")
+        ?? throw new MissingMethodException(nameof(IStartRunLobbyListener), "PlayerChanged");
+
+    private static CharacterModel? LocalPlayerCharacter(StartRunLobby lobby) =>
+        LocalPlayerProp.GetValue(lobby) is { } player
+            ? LobbyPlayerCharacterField.GetValue(player) as CharacterModel
+            : null;
 
     // v0.109.0 widened run seeds: StringHelper.GetDeterministicHashCode now returns ulong (was
     // int) and the seed ctor is Rng(ulong) (was Rng(uint, int counter)). One shipped dll runs on
