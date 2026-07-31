@@ -16,7 +16,7 @@ public class LocalizationTests
     // language has no eng fallback for our keys, so its strings would break). Update this list only
     // when the game itself adds/removes a supported locale.
     private static readonly string[] SupportedLocales =
-        { "eng", "deu", "esp", "spa", "fra", "ita", "jpn", "kor", "pol", "ptb", "rus", "tha", "tur", "zhs" };
+        { "eng", "deu", "esp", "spa", "fra", "ita", "jpn", "kor", "pol", "ptb", "rus", "tha", "tur", "zhs", "zht" };
 
     // The loc-table files the mod contributes (each merged into the same-named base-game table).
     private static readonly string[] LocFileNames = { "settings_ui.json", "map.json" };
