@@ -121,8 +121,10 @@ public static class CurrentNodeTooltipPatch
 
 // Renders the potion outcome onto a previous combat node's run-history tooltip: the chance that
 // applied when its reward rolled (reconstructed by replaying the run's potion pity from history —
-// see MapNodeInfoTooltipPatch.HistoricalPotionInfo), tagged onto the awarded potion or shown as a
-// red "No potion" line. Covers traveled nodes and the just-completed current node alike (both use
+// see MapNodeInfoTooltipPatch.HistoricalPotionInfo), tagged onto the rolled potion or shown as a
+// red "No potion" line — with the guaranteed potion tagged apart when an event added one at the
+// node (Punch Off's fight). Covers traveled nodes and the just-completed current node alike (both
+// use
 // NMapPointHistoryHoverTip); the still-in-combat current node shows its own expected-rewards
 // tooltip instead, so the live case never reaches here. ____playerId is the tip's player field.
 [HarmonyPatch(typeof(NMapPointHistoryHoverTip), "_Ready")]
@@ -143,7 +145,7 @@ public static class CombatPotionChanceHistoryTooltipPatch
             }
             if (MapNodeInfoTooltipPatch.HistoricalPotionInfo(runState, ____entry, ____playerId) is { } info)
             {
-                MapNodeInfoTooltipPatch.RenderHistoricalPotion(__instance, info.chance, info.awarded);
+                MapNodeInfoTooltipPatch.RenderHistoricalPotion(__instance, info.chance, info.rollHit, info.hasGuaranteedPotion);
             }
         }
         catch (Exception e)

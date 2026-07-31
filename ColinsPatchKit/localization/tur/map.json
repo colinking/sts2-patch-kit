@@ -58,5 +58,6 @@
   "COLINSPATCHKIT-MAPINFO-OPTION_UNAVAILABLE": "{Item} (kullanılamaz)",
 
   "COLINSPATCHKIT-MAPINFO-POTION_CHANCE_SUFFIX": "({Chance} olasılık)",
-  "COLINSPATCHKIT-MAPINFO-NO_POTION": "İksir yok ({Chance} olasılık)"
+  "COLINSPATCHKIT-MAPINFO-NO_POTION": "İksir yok ({Chance} olasılık)",
+  "COLINSPATCHKIT-MAPINFO-POTION_GUARANTEED_SUFFIX": "(garantili)"
 }

@@ -58,5 +58,6 @@
   "COLINSPATCHKIT-MAPINFO-OPTION_UNAVAILABLE": "{Item} (no disponible)",
 
   "COLINSPATCHKIT-MAPINFO-POTION_CHANCE_SUFFIX": "({Chance} de probabilidad)",
-  "COLINSPATCHKIT-MAPINFO-NO_POTION": "Sin poción ({Chance} de probabilidad)"
+  "COLINSPATCHKIT-MAPINFO-NO_POTION": "Sin poción ({Chance} de probabilidad)",
+  "COLINSPATCHKIT-MAPINFO-POTION_GUARANTEED_SUFFIX": "(garantizada)"
 }

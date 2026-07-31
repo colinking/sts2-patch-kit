@@ -58,5 +58,6 @@
   "COLINSPATCHKIT-MAPINFO-OPTION_UNAVAILABLE": "{Item} (niedostępne)",
 
   "COLINSPATCHKIT-MAPINFO-POTION_CHANCE_SUFFIX": "({Chance} szansy)",
-  "COLINSPATCHKIT-MAPINFO-NO_POTION": "Brak mikstury ({Chance} szansy)"
+  "COLINSPATCHKIT-MAPINFO-NO_POTION": "Brak mikstury ({Chance} szansy)",
+  "COLINSPATCHKIT-MAPINFO-POTION_GUARANTEED_SUFFIX": "(gwarantowana)"
 }

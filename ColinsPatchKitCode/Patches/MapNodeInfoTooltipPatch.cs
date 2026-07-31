@@ -17,6 +17,7 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Encounters;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
@@ -195,6 +196,12 @@ public static class MapNodeInfoTooltipPatch
     public static MapPointType? InProgressCombatType(IRunState runState)
     {
         if (runState.CurrentRoom is not CombatRoom combat || CombatManager.Instance?.IsInProgress != true)
+        {
+            return null;
+        }
+        // Combats whose encounter gives no rewards at all (Battleworn Dummy's practice fights)
+        // have no gold, potion roll, or card reward to preview.
+        if (combat.Encounter is { ShouldGiveRewards: false })
         {
             return null;
         }
@@ -902,15 +909,18 @@ public static class MapNodeInfoTooltipPatch
 
     // The potion chance that was in effect at a past combat node, reconstructed for the history
     // tooltip. The potion pity is a single per-player value that starts at 0.4 and moves ±0.1 each
-    // combat (down on a potion, up otherwise; PotionRewardOdds), so replaying every recorded combat
-    // in order recovers the value before any node's roll. The pity isn't stored per node, but
-    // whether a combat dropped a potion is — a PotionChoices entry on that node — which is exactly
-    // the ±0.1 signal. To guard against anything our model doesn't capture (first-run tutorial
+    // rolled combat (down on a potion, up otherwise; PotionRewardOdds), so replaying every recorded
+    // combat in order recovers the value before any node's roll. The pity isn't stored per node,
+    // but whether a combat's roll dropped a potion is — a PotionChoices entry on that node beyond
+    // any the event guaranteed regardless of the roll (Punch Off's fight adds one such potion) —
+    // which is exactly the ±0.1 signal. Combats that generate no reward set at all (the encounter's
+    // ShouldGiveRewards is false, e.g. Battleworn Dummy's practice fights) never roll and are not
+    // combat nodes here. To guard against anything our model doesn't capture (first-run tutorial
     // rewards that skip the roll, a future relic that overrides the pity, ...), we replay the whole
     // run and only trust the result if its end state reproduces the live pity value; otherwise we
-    // show nothing rather than a wrong number. Returns null when `target` isn't a recorded combat
-    // node or the checksum fails.
-    public static (float chance, bool awarded)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
+    // show nothing rather than a wrong number. Returns null when `target` isn't a recorded rolling
+    // combat node or the checksum fails.
+    public static (float chance, bool rollHit, bool hasGuaranteedPotion)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
     {
         if (!ColinsPatchKitConfig.ShowPotionChances)
         {
@@ -943,7 +953,7 @@ public static class MapNodeInfoTooltipPatch
         {
             foreach (MapPointHistoryEntry entry in act)
             {
-                RoomType? combat = CombatRoomType(entry);
+                RoomType? combat = RollingCombatRoomType(entry);
                 if (combat == null)
                 {
                     continue;
@@ -956,7 +966,7 @@ public static class MapNodeInfoTooltipPatch
                 {
                     continue;
                 }
-                pity += HasPotionChoice(entry, playerId) ? -step : step;
+                pity += PotionRollHit(entry, playerId) ? -step : step;
             }
         }
         if (targetChance == null)
@@ -967,40 +977,84 @@ public static class MapNodeInfoTooltipPatch
         {
             return null; // our replay disagrees with the live pity — don't show a guess
         }
-        return (targetChance.Value, HasPotionChoice(target, playerId));
+        return (targetChance.Value, PotionRollHit(target, playerId), GuaranteedEventPotionCount(target) > 0);
     }
 
-    // The type of the (first) combat room at a node, or null if it isn't a combat node. Monster,
-    // Elite and Boss rooms all roll the potion pity (RewardsSet.RollForPotionAndAddTo).
-    private static RoomType? CombatRoomType(MapPointHistoryEntry entry)
+    // The Punch Off event's fight encounter, whose reward set carries one potion the event
+    // guarantees on top of the normal roll.
+    private static readonly ModelId PunchOffEncounterId = ModelDb.GetId(typeof(PunchOffEventEncounter));
+
+    // The type of the (first) combat room at a node whose reward set rolls the potion pity, or null
+    // if the node has no such room. Monster, Elite and Boss rooms all roll
+    // (RewardsSet.RollForPotionAndAddTo) — except combats whose encounter opts out of rewards
+    // entirely (ShouldGiveRewards is false, e.g. Battleworn Dummy's practice fights): those build no
+    // reward set, so no roll happens and the pity doesn't move.
+    private static RoomType? RollingCombatRoomType(MapPointHistoryEntry entry)
     {
         foreach (MapPointRoomHistoryEntry room in entry.Rooms)
         {
-            if (room.RoomType is RoomType.Monster or RoomType.Elite or RoomType.Boss)
+            if (room.RoomType is not (RoomType.Monster or RoomType.Elite or RoomType.Boss))
             {
-                return room.RoomType;
+                continue;
             }
+            // Combat rooms record their encounter's model id. An id that no longer resolves (an
+            // encounter removed by a game update) is assumed to roll, as before this check existed;
+            // the checksum in HistoricalPotionInfo catches that guess when it's wrong.
+            if (room.ModelId is { } id && ModelDb.GetByIdOrNull<EncounterModel>(id) is { ShouldGiveRewards: false })
+            {
+                continue;
+            }
+            return room.RoomType;
         }
         return null;
     }
 
-    // Whether a potion was rolled (offered) for the player at this node — recorded whether the
-    // potion was taken or skipped, so its presence means the combat's potion roll succeeded.
-    private static bool HasPotionChoice(MapPointHistoryEntry entry, ulong playerId)
+    // How many potions an event guaranteed into this node's combat reward set regardless of the
+    // pity roll. Punch Off's "Fight" adds exactly one (the only event combat with a potion in its
+    // extra rewards as of v0.110.1); everything else adds none.
+    private static int GuaranteedEventPotionCount(MapPointHistoryEntry entry)
     {
-        PlayerMapPointHistoryEntry? stats = entry.PlayerStats.FirstOrDefault(s => s.PlayerId == playerId);
-        return stats is { PotionChoices.Count: > 0 };
+        return entry.Rooms.Any(room => room.ModelId == PunchOffEncounterId) ? 1 : 0;
     }
 
-    // Renders the historical potion outcome into a combat node's history tooltip: if a potion was
-    // awarded there, tag its reward row with the chance ("... (40% chance)"); otherwise add a red
-    // "No potion (40% chance)" line in the rewards area.
-    public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool awarded)
+    // Whether the combat's potion pity roll succeeded at this node: a potion choice was recorded
+    // (whether taken or skipped) beyond any the event guaranteed regardless of the roll.
+    private static bool PotionRollHit(MapPointHistoryEntry entry, ulong playerId)
+    {
+        PlayerMapPointHistoryEntry? stats = entry.PlayerStats.FirstOrDefault(s => s.PlayerId == playerId);
+        return (stats?.PotionChoices.Count ?? 0) > GuaranteedEventPotionCount(entry);
+    }
+
+    // Renders the historical potion outcome into a combat node's history tooltip. Normally: if the
+    // roll dropped a potion, tag its reward row with the chance ("... (40% chance)"); otherwise add
+    // a red "No potion (40% chance)" line in the rewards area. When the node's event also
+    // guaranteed a potion (Punch Off's fight), a hit leaves two potion rows that can't truly be
+    // told apart — the rows render in the order the player took them, not the order they were
+    // granted — so the first is arbitrarily labeled as the guaranteed one and the second carries
+    // the chance tag; a miss leaves only the guaranteed potion, which gets tagged as such next to
+    // the usual red missed-roll line.
+    public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool rollHit, bool hasGuaranteedPotion)
     {
         string chancePct = Pct(chance);
-        if (awarded)
+        if (hasGuaranteedPotion)
         {
-            if (!TryTagPotionRow(tip, " " + Loc("POTION_CHANCE_SUFFIX", ("Chance", chancePct))))
+            if (rollHit)
+            {
+                if (TagPotionRows(tip, " " + Loc("POTION_GUARANTEED_SUFFIX"), " " + Loc("POTION_CHANCE_SUFFIX", ("Chance", chancePct))) < 2)
+                {
+                    // Defensive: both rows weren't found — at least state the chance as a plain line.
+                    AppendPotionLineToHistoryTip(tip, Loc("POTION_CHANCE", ("Chance", chancePct)));
+                }
+            }
+            else
+            {
+                TagPotionRows(tip, " " + Loc("POTION_GUARANTEED_SUFFIX"));
+                AppendRewardRow(tip, $"[img=top]{PotionIconPath}[/img][color=#{MissingRewardColorHex}]{Loc("NO_POTION", ("Chance", chancePct))}[/color]");
+            }
+        }
+        else if (rollHit)
+        {
+            if (TagPotionRows(tip, " " + Loc("POTION_CHANCE_SUFFIX", ("Chance", chancePct))) < 1)
             {
                 // Defensive: the potion row wasn't found — show a plain line instead.
                 AppendPotionLineToHistoryTip(tip, Loc("POTION_CHANCE", ("Chance", chancePct)));
@@ -1012,10 +1066,12 @@ public static class MapNodeInfoTooltipPatch
         }
     }
 
-    // Appends `suffix` to the potion line in the obtained/skipped reward rows (the row carrying the
-    // potion icon). Returns false if no such row exists.
-    private static bool TryTagPotionRow(NMapPointHistoryHoverTip tip, string suffix)
+    // Appends the i-th suffix to the i-th potion line (the rows carrying the potion icon), walking
+    // the obtained then the skipped reward rows in display order. Extra potion lines beyond the
+    // given suffixes stay untagged. Returns how many suffixes were applied.
+    private static int TagPotionRows(NMapPointHistoryHoverTip tip, params string[] suffixes)
     {
+        int applied = 0;
         foreach (string container in new[] { "%RewardRows", "%SkippedRows" })
         {
             Control? rows = tip.GetNodeOrNull<Control>(container);
@@ -1030,18 +1086,26 @@ public static class MapNodeInfoTooltipPatch
                     continue;
                 }
                 string[] lines = label.Text.Split('\n');
-                for (int i = 0; i < lines.Length; i++)
+                bool changed = false;
+                for (int i = 0; i < lines.Length && applied < suffixes.Length; i++)
                 {
                     if (lines[i].Contains(PotionIconMarker))
                     {
-                        lines[i] += suffix;
+                        lines[i] += suffixes[applied++];
+                        changed = true;
                     }
                 }
-                label.Text = string.Join("\n", lines);
-                return true;
+                if (changed)
+                {
+                    label.Text = string.Join("\n", lines);
+                }
+                if (applied >= suffixes.Length)
+                {
+                    return applied;
+                }
             }
         }
-        return false;
+        return applied;
     }
 
     // Adds a line into the obtained-rewards rows (revealing the section if needed); falls back to the
@@ -1481,10 +1545,17 @@ public static class MapNodeInfoTooltipPatch
         {
             return false;
         }
-        // Boss combats roll the pity too (CombatRoomType counts them), and the roll hasn't happened
-        // yet mid-fight, so the in-progress boss node must be treated as pending — otherwise the
-        // historical-pity replay advances past a boss the live pity hasn't moved through, the
-        // checksum mismatches, and every node's potion line silently blanks out during a boss fight.
+        // A combat that builds no reward set (ShouldGiveRewards is false) never rolls, so nothing
+        // is pending; RollingCombatRoomType skips its node in the replay for the same reason.
+        if (combat.Encounter is { ShouldGiveRewards: false })
+        {
+            return false;
+        }
+        // Boss combats roll the pity too (RollingCombatRoomType counts them), and the roll hasn't
+        // happened yet mid-fight, so the in-progress boss node must be treated as pending —
+        // otherwise the historical-pity replay advances past a boss the live pity hasn't moved
+        // through, the checksum mismatches, and every node's potion line silently blanks out during
+        // a boss fight.
         return combat.RoomType is RoomType.Monster or RoomType.Elite or RoomType.Boss;
     }
 
