@@ -2,7 +2,7 @@
 
 A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.108.0`), and is safe for use in multiplayer.
+All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.110.1`), and is safe for use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
