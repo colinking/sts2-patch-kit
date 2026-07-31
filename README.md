@@ -77,6 +77,8 @@ If enabled, combat map tooltips show the chance of receiving a potion (on previo
 
 If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card outline ("slot") per card you can retain.
 
+*This only applies on the main branch, as Well Laid Plans was reworked on the beta branch.*
+
 ![Retain slots](/docs/images/retain-slots.png)
 
 #### Curses & statuses first when exhausting/transforming
