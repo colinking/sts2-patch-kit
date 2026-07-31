@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Cura un alleato",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Potenzia una carta",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "Potenzia {Count} carte",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Rimuovi 2 carte, +9 PF max",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Rimuovi 2 carte, +{MaxHp} PF max",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Ottieni un cimelo",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Forza a ogni combattimento ({Left} rimasti)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Duplica le carte incantate",

@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Curar um aliado",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Aprimorar uma carta",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "Aprimorar {Count} cartas",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Remover 2 cartas, +9 de PV máx.",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Remover 2 cartas, +{MaxHp} de PV máx.",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Ganhar uma relíquia",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 de Força a cada combate ({Left} restantes)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Duplicar cartas encantadas",

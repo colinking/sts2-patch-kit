@@ -852,7 +852,7 @@ public static class MapNodeInfoTooltipPatch
                 int smithCount = option is SmithRestSiteOption smith ? smith.SmithCount : 1;
                 return smithCount == 1 ? Loc("REST_SMITH_ONE") : Loc("REST_SMITH_MANY", ("Count", smithCount));
             case "COOK":
-                return Loc("REST_COOK");
+                return Loc("REST_COOK", ("MaxHp", CookMaxHpGain));
             case "DIG":
             case "HATCH":
                 return Loc("REST_GAIN_RELIC");
@@ -867,6 +867,11 @@ public static class MapNodeInfoTooltipPatch
                 return string.Empty;
         }
     }
+
+    // Cook's max-HP gain differs across game branches (v0.109.0 nerfed it from 9 to 5). The value
+    // only exists as a private const the game inlines, so it is keyed off the game version.
+    // Rebalances need a new threshold here — the per-update decompile sweep is what catches those.
+    private static readonly int CookMaxHpGain = GameVersionHelper.CompareTo(0, 109, 0) < 0 ? 9 : 5;
 
     // A concise label for one heal extra reported by ModifyExtraRestSiteHealText, keyed off the
     // contributing relic/modifier (LocEntryKey is "<ID>.additionalRestSiteHealText"). The game's own

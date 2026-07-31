@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Soigner un allié",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Améliorer une carte",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "Améliorer {Count} cartes",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Supprimer 2 cartes, +9 PV max",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Supprimer 2 cartes, +{MaxHp} PV max",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Obtenir une relique",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Force à chaque combat ({Left} restant)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Dupliquer les cartes enchantées",

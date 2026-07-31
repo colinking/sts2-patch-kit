@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "รักษาพันธมิตร",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "อัปเกรดการ์ด",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "อัปเกรดการ์ด {Count} ใบ",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "ลบการ์ด 2 ใบ, +9 Max HP",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "ลบการ์ด 2 ใบ, +{MaxHp} Max HP",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "รับเรลิค",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Strength ทุกการต่อสู้ (เหลือ {Left})",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "ทำซ้ำการ์ดที่ร่ายมนตร์",

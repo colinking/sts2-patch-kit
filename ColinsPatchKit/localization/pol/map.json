@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Ulecz sojusznika",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Ulepsz kartę",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "Ulepsz {Count} kart",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Usuń 2 karty, +9 maks. PŻ",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Usuń 2 karty, +{MaxHp} maks. PŻ",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Zdobądź relikwię",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Siła w każdej walce (pozostało {Left})",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Powiel zaklęte karty",

@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Bir müttefiki iyileştir",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Bir kartı yükselt",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "{Count} kartı yükselt",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "2 kart kaldır, +9 Maks. CP",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "2 kart kaldır, +{MaxHp} Maks. CP",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Bir kalıntı kazan",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "Her savaşta +1 Güç ({Left} kaldı)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Büyülü kartları çoğalt",

@@ -116,10 +116,16 @@ directly. Steps:
 When Steam carries two live game branches (e.g. stable v0.107.1 and beta v0.108.0), the one
 shipped dll must run on both. Rules: never compile-time-reference a symbol that exists in only
 one branch — resolve those with `AccessTools` (`TypeByName` for branch-only types, `Property`/
-`Method` with fallback names for renames) — and when a mechanic differs across branches, pick the
-behavior by feature-detecting the loaded assembly (e.g. "does this power declare its own
-`DisplayAmount` override", see `PowerReadyPulsesManager`'s static ctor), never by parsing the
-game version. Verify any newly referenced symbol exists in *both* `decompiled/<version>/` trees.
+`Method` with fallback names for renames) — and when a *mechanic or API shape* differs across
+branches, pick the behavior by feature-detecting the loaded assembly (e.g. "does this power
+declare its own `DisplayAmount` override", see `PowerReadyPulsesManager`'s static ctor), not by
+parsing the game version. Exception: a *balance-only number* that exists solely as a private
+const the game inlines (no public surface to read) is keyed off the game's semver instead —
+use `GameVersionHelper.CompareTo(major, minor, patch)` (wraps `ReleaseInfoManager.Instance.SemVer`,
+public on both branches; see `CookMaxHpGain` in `MapNodeInfoTooltipPatch`); reflecting on a private field
+would silently break if it's renamed, while a version threshold only goes stale on a rebalance,
+which the per-update decompile sweep catches. Verify any newly referenced symbol exists in
+*both* `decompiled/<version>/` trees.
 The compile-time reference is whatever build is installed; either branch works since the shared
 surface is what the code may bind to.
 

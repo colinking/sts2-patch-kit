@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Heal an ally",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Upgrade a card",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "Upgrade {Count} cards",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Remove 2 cards, +9 Max HP",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "Remove 2 cards, +{MaxHp} Max HP",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Gain a relic",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Strength each combat ({Left} left)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Duplicate enchanted cards",

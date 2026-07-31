@@ -46,7 +46,7 @@
   "COLINSPATCHKIT-MAPINFO-REST_MEND": "Einen Verbündeten heilen",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_ONE": "Eine Karte verbessern",
   "COLINSPATCHKIT-MAPINFO-REST_SMITH_MANY": "{Count} Karten verbessern",
-  "COLINSPATCHKIT-MAPINFO-REST_COOK": "2 Karten entfernen, +9 max. LP",
+  "COLINSPATCHKIT-MAPINFO-REST_COOK": "2 Karten entfernen, +{MaxHp} max. LP",
   "COLINSPATCHKIT-MAPINFO-REST_GAIN_RELIC": "Ein Relikt erhalten",
   "COLINSPATCHKIT-MAPINFO-REST_LIFT": "+1 Stärke pro Kampf ({Left} übrig)",
   "COLINSPATCHKIT-MAPINFO-REST_CLONE": "Verzauberte Karten duplizieren",
