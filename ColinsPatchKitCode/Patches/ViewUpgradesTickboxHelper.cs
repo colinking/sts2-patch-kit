@@ -97,7 +97,7 @@ public static class ViewUpgradesTickboxHelper
         tickbox.OffsetRight = tickbox.OffsetLeft + SideMargin + BoxSize + BoxLabelGap + labelWidth + SideMargin;
 
         tickbox.IsTicked = false;
-        tickbox.Visible = NControllerManager.Instance?.IsUsingController != true;
+        tickbox.Visible = DirectionalNavHelper.IsUsingDirectionalNav != true;
         tickbox.Connect(NTickbox.SignalName.Toggled,
             Callable.From<NTickbox>(t => onToggleChanged(t.IsTicked)));
         ConnectControllerVisibility(tickbox, onToggleChanged);
@@ -113,7 +113,7 @@ public static class ViewUpgradesTickboxHelper
         }
         Callable onDeviceChanged = Callable.From(() =>
         {
-            bool usingController = NControllerManager.Instance?.IsUsingController == true;
+            bool usingController = DirectionalNavHelper.IsUsingDirectionalNav == true;
             tickbox.Visible = !usingController;
             if (usingController && tickbox.IsTicked)
             {

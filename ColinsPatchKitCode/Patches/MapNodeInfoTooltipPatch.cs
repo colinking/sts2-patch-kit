@@ -110,7 +110,7 @@ public static class MapNodeInfoTooltipPatch
             return;
         }
         // Mirror vanilla guards: no tooltips on controller, while traveling, or while map drawing.
-        if (NControllerManager.Instance?.IsUsingController != false || LocalContext.NetId == null)
+        if (DirectionalNavHelper.IsUsingDirectionalNav != false || LocalContext.NetId == null)
         {
             return;
         }

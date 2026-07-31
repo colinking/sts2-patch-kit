@@ -24,11 +24,11 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 //     Unmovable, Smoggy): pulse while the effect is still armed this turn.
 //   - Threshold counters (Juggling, Orbit, Automation, Panache, Withering Presence): pulse when
 //     one event away from triggering (Nunchaku-style convention).
-//   - Powers whose mechanic differs between the game's stable (v0.107) and beta (v0.108)
-//     branches are registered in the static ctor, feature-detecting the running game rather
-//     than parsing the version string: Pale Blue Dot and Outbreak pulse on stable only (the
-//     beta gives Pale Blue Dot its own countdown display and removes Outbreak's threshold),
-//     and the beta-only Cacophony pulses one draw from its trigger.
+//   - Powers whose mechanic differs across game builds (v0.107 vs v0.108+) are registered in
+//     the static ctor, feature-detecting the running game rather than parsing the version
+//     string: Pale Blue Dot and Outbreak pulse on v0.107 only (v0.108 gives Pale Blue Dot its
+//     own countdown display and removes Outbreak's threshold; v0.110 deletes OutbreakPower
+//     entirely), and Cacophony (v0.108+) pulses one draw from its trigger.
 //   - Countdowns to a one-shot event (The Bomb, Asleep, Slumber, Hatch, Battleworn Dummy
 //     time limit): pulse at 1 stack, i.e. "fires after this turn" (Escape Artist convention).
 //   - End-of-turn damage debuffs (Constrict, Disintegration): pulse the whole time as a
@@ -124,12 +124,15 @@ public static class PowerReadyPulsesManager
             _armed[typeof(PaleBlueDotPower)] = PaleBlueDotArmedV107;
         }
 
-        // Outbreak. Stable: every 3rd poison application hits all enemies, with a DisplayAmount
-        // counter — pulse one poison away. Beta: the threshold (and the override) is gone, it
-        // fires on every application; nothing to arm, so no entry.
-        if (DeclaresDisplayAmount(typeof(OutbreakPower)))
+        // Outbreak. v0.107: every 3rd poison application hits all enemies, with a DisplayAmount
+        // counter — pulse one poison away. v0.108: the threshold (and the override) is gone, it
+        // fires on every application; nothing to arm. v0.110: the power type was deleted outright
+        // (Outbreak became a plain card that applies poison directly), so even a typeof token
+        // fails to load — resolve by name, like Cacophony below.
+        if (AccessTools.TypeByName("MegaCrit.Sts2.Core.Models.Powers.OutbreakPower") is { } outbreak
+            && DeclaresDisplayAmount(outbreak))
         {
-            _armed[typeof(OutbreakPower)] = p => p.DisplayAmount == 2;
+            _armed[outbreak] = p => p.DisplayAmount == 2;
         }
 
         // Cacophony (beta-only type): every 33rd card drawn zaps a random enemy; DisplayAmount
