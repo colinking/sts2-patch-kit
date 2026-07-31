@@ -206,6 +206,31 @@ public static class RandomCharacterExclusionManager
         _resolvedFromRandom = true;
     }
 
+    // v0.109.0 widened run seeds: StringHelper.GetDeterministicHashCode now returns ulong (was
+    // int) and the seed ctor is Rng(ulong) (was Rng(uint, int counter)). One shipped dll runs on
+    // both game branches, and a compile-time bind to either shape throws MissingMethodException
+    // on the other — so resolve both by reflection and mirror whichever pair the loaded assembly
+    // has (same seed -> same roll as that branch's own seeded-Rng call sites).
+    private static readonly MethodInfo SeedHashMethod =
+        AccessTools.Method(typeof(StringHelper), "GetDeterministicHashCode")
+        ?? throw new MissingMethodException(nameof(StringHelper), "GetDeterministicHashCode");
+
+    private static readonly ConstructorInfo SeededRngCtor =
+        AccessTools.Constructor(typeof(Rng), new[] { typeof(ulong) })
+        ?? AccessTools.Constructor(typeof(Rng), new[] { typeof(uint), typeof(int) })
+        ?? throw new MissingMethodException(nameof(Rng), ".ctor");
+
+    private static Rng CreateSeededRng(string seed)
+    {
+        object rawHash = SeedHashMethod.Invoke(null, new object[] { seed })!;
+        // The v0.107 hash is a possibly-negative int that the game truncates with an unchecked
+        // uint cast; mirror that here (zero-extended — the uint ctor path keeps the same 32 bits).
+        ulong hash = rawHash as ulong? ?? unchecked((uint)(int)rawHash);
+        return SeededRngCtor.GetParameters()[0].ParameterType == typeof(ulong)
+            ? (Rng)SeededRngCtor.Invoke(new object[] { hash })
+            : (Rng)SeededRngCtor.Invoke(new object[] { (uint)hash, 0 });
+    }
+
     // Pick a non-banned character, cached for the visit so a ready/unready cycle yields the same one
     // (banning a different character must not change it, so this caches rather than re-deriving from
     // the pool). Re-rolls only when the cached pick itself is no longer allowed.
@@ -229,7 +254,7 @@ public static class RandomCharacterExclusionManager
         // Seed the roll so it is reproducible: a real lobby seed if one exists, otherwise a value
         // captured once for this visit (standard mode has no run seed until the run actually begins).
         string seed = lobby.Seed ?? (_sessionSeed ??= SeedHelper.GetRandomSeed());
-        CharacterModel? chosen = new Rng((uint)StringHelper.GetDeterministicHashCode(seed)).NextItem(pool);
+        CharacterModel? chosen = CreateSeededRng(seed).NextItem(pool);
         if (chosen != null)
         {
             _rolledCharacterId = chosen.Id.Entry;
