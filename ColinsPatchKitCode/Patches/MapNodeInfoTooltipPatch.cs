@@ -915,12 +915,17 @@ public static class MapNodeInfoTooltipPatch
     // any the event guaranteed regardless of the roll (Punch Off's fight adds one such potion) —
     // which is exactly the ±0.1 signal. Combats that generate no reward set at all (the encounter's
     // ShouldGiveRewards is false, e.g. Battleworn Dummy's practice fights) never roll and are not
-    // combat nodes here. To guard against anything our model doesn't capture (first-run tutorial
-    // rewards that skip the roll, a future relic that overrides the pity, ...), we replay the whole
-    // run and only trust the result if its end state reproduces the live pity value; otherwise we
-    // show nothing rather than a wrong number. Returns null when `target` isn't a recorded rolling
-    // combat node or the checksum fails.
-    public static (float chance, bool rollHit, bool hasGuaranteedPotion)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
+    // combat nodes here. White Beast Statue is modeled explicitly: it forces its owner's combat
+    // potion rewards, and from v0.109.0 a forced roll leaves the pity untouched (see
+    // ForcedPotionSkipsPity), so the replay skips those combats on that branch and reports the
+    // node as `forced` so the renderer can label the drop guaranteed instead of quoting a chance.
+    // Statue gains, losses, and even a wax (Toybox-granted) statue's scheduled melt are all read
+    // or reproduced from the history walk (see StatuePityModel). To guard against anything the
+    // model still doesn't capture (first-run tutorial rewards that skip the roll, a future relic
+    // that overrides the pity, ...), we replay the whole run and only trust the result if its end
+    // state reproduces the live pity value; otherwise we show nothing rather than a wrong number.
+    // Returns null when `target` isn't a recorded rolling combat node or the checksum fails.
+    public static (float chance, bool rollHit, bool hasGuaranteedPotion, bool forced)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
     {
         if (!ColinsPatchKitConfig.ShowPotionChances)
         {
@@ -949,24 +954,29 @@ public static class MapNodeInfoTooltipPatch
         const float eliteBonus = PotionRewardOdds.eliteBonus * 0.5f;
         float pity = 0.4f; // PotionRewardOdds base
         float? targetChance = null;
+        bool targetForced = false;
+        // Statue state walks with the replay: melts tick before a node's roll, while the node's
+        // own relic picks (which happen after its reward roll) fold in afterwards.
+        StatuePityModel statue = new();
         foreach (IReadOnlyList<MapPointHistoryEntry> act in runState.MapPointHistory)
         {
             foreach (MapPointHistoryEntry entry in act)
             {
+                statue.OnNodeCombats(entry);
                 RoomType? combat = RollingCombatRoomType(entry);
-                if (combat == null)
+                if (combat != null)
                 {
-                    continue;
+                    if (entry == target)
+                    {
+                        targetChance = pity + (combat == RoomType.Elite ? eliteBonus : 0f);
+                        targetForced = statue.Held;
+                    }
+                    if (entry != pending && !(statue.Held && ForcedPotionSkipsPity))
+                    {
+                        pity += PotionRollHit(entry, playerId) ? -step : step;
+                    }
                 }
-                if (entry == target)
-                {
-                    targetChance = pity + (combat == RoomType.Elite ? eliteBonus : 0f);
-                }
-                if (entry == pending)
-                {
-                    continue;
-                }
-                pity += PotionRollHit(entry, playerId) ? -step : step;
+                statue.OnNodeEnd(entry, playerId);
             }
         }
         if (targetChance == null)
@@ -977,12 +987,111 @@ public static class MapNodeInfoTooltipPatch
         {
             return null; // our replay disagrees with the live pity — don't show a guess
         }
-        return (targetChance.Value, PotionRollHit(target, playerId), GuaranteedEventPotionCount(target) > 0);
+        return (targetChance.Value, PotionRollHit(target, playerId), GuaranteedEventPotionCount(target) > 0, targetForced);
     }
 
     // The Punch Off event's fight encounter, whose reward set carries one potion the event
     // guarantees on top of the normal roll.
     private static readonly ModelId PunchOffEncounterId = ModelDb.GetId(typeof(PunchOffEventEncounter));
+
+    // White Beast Statue forces its owner's combat potion rewards (the only
+    // ShouldForcePotionReward implementer as of v0.110.1). From v0.109.0 a forced reward
+    // returns before the pity bookkeeping (PotionRewardOdds.Roll), so forced combats must not
+    // step the replayed pity on that branch; on v0.107 the forced roll still steps it as usual.
+    private static readonly ModelId WhiteBeastStatueId = ModelDb.GetId(typeof(WhiteBeastStatue));
+    private static readonly bool ForcedPotionSkipsPity = GameVersionHelper.CompareTo(0, 109, 0) >= 0;
+
+    // Tracks whether the player's potion rolls are forced by White Beast Statue at each point of
+    // the history walk. Every acquisition and loss path the game has is in the recorded history:
+    // RelicCmd.Obtain logs every relic gain — chest, shop, reward or event — into its node's
+    // RelicChoices, RelicCmd.Remove logs into RelicsRemoved (the relic trader routes through
+    // both; Replace too), and the one remaining path, RelicCmd.Melt (Toybox reclaiming a wax
+    // relic it granted), follows a schedule this model reproduces: Toybox melts the first
+    // surviving wax relic — relic-list order, i.e. the order they were picked, recorded in
+    // RelicChoices right after the TOY_BOX entry on its pickup node — after every
+    // DynamicVars["Combats"] combat ends since pickup. AfterCombatEnd fires per combat room
+    // (reward-less fights included) and precedes the room's reward roll, so a melt takes effect
+    // for its own combat's roll.
+    private sealed class StatuePityModel
+    {
+        private static readonly ModelId ToyBoxId = ModelDb.GetId(typeof(ToyBox));
+        private static readonly int CombatsPerMelt =
+            ModelDb.GetByIdOrNull<RelicModel>(ToyBoxId)?.DynamicVars["Combats"].IntValue ?? 3;
+
+        private bool _permanentStatue;
+        private bool _toyBoxActive;
+        private int _combatsSinceToyBox;
+        // The Toybox's surviving wax relics in melt order; the statue forces rolls while it is
+        // either held permanently or still waiting in this queue.
+        private readonly List<ModelId> _waxQueue = new();
+
+        public bool Held => _permanentStatue || _waxQueue.Contains(WhiteBeastStatueId);
+
+        // Ticks the Toybox melt schedule for this node's combats; call before replaying the
+        // node's potion roll, since melts land before their own combat's roll.
+        public void OnNodeCombats(MapPointHistoryEntry entry)
+        {
+            if (!_toyBoxActive)
+            {
+                return;
+            }
+            foreach (MapPointRoomHistoryEntry room in entry.Rooms)
+            {
+                if (room.RoomType is not (RoomType.Monster or RoomType.Elite or RoomType.Boss))
+                {
+                    continue;
+                }
+                _combatsSinceToyBox++;
+                if (_combatsSinceToyBox % CombatsPerMelt == 0 && _waxQueue.Count > 0)
+                {
+                    _waxQueue.RemoveAt(0);
+                }
+            }
+        }
+
+        // Folds in the gains and losses recorded on this node; call after replaying its roll (a
+        // node's relic picks happen after its reward roll). A statue picked among the Toybox's
+        // offer is wax and joins the melt queue; picked anywhere else it is permanent. Removals
+        // shift the melt schedule for whatever wax relics survive.
+        public void OnNodeEnd(MapPointHistoryEntry entry, ulong playerId)
+        {
+            PlayerMapPointHistoryEntry? stats = entry.PlayerStats.FirstOrDefault(s => s.PlayerId == playerId);
+            if (stats == null)
+            {
+                return;
+            }
+            bool afterToyBox = false;
+            foreach (ModelChoiceHistoryEntry choice in stats.RelicChoices)
+            {
+                if (!choice.wasPicked)
+                {
+                    continue;
+                }
+                if (choice.choice == ToyBoxId)
+                {
+                    _toyBoxActive = true;
+                    _combatsSinceToyBox = 0;
+                    afterToyBox = true;
+                }
+                else if (afterToyBox)
+                {
+                    _waxQueue.Add(choice.choice);
+                }
+                else if (choice.choice == WhiteBeastStatueId)
+                {
+                    _permanentStatue = true;
+                }
+            }
+            foreach (ModelId removed in stats.RelicsRemoved)
+            {
+                if (removed == WhiteBeastStatueId)
+                {
+                    _permanentStatue = false;
+                }
+                _waxQueue.Remove(removed);
+            }
+        }
+    }
 
     // The type of the (first) combat room at a node whose reward set rolls the potion pity, or null
     // if the node has no such room. Monster, Elite and Boss rooms all roll
@@ -1032,10 +1141,21 @@ public static class MapNodeInfoTooltipPatch
     // told apart — the rows render in the order the player took them, not the order they were
     // granted — so the first is arbitrarily labeled as the guaranteed one and the second carries
     // the chance tag; a miss leaves only the guaranteed potion, which gets tagged as such next to
-    // the usual red missed-roll line.
-    public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool rollHit, bool hasGuaranteedPotion)
+    // the usual red missed-roll line. When the roll itself was forced (White Beast Statue), a
+    // chance percentage would be meaningless, so every potion row is tagged guaranteed instead.
+    public static void RenderHistoricalPotion(NMapPointHistoryHoverTip tip, float chance, bool rollHit, bool hasGuaranteedPotion, bool forced)
     {
         string chancePct = Pct(chance);
+        if (forced)
+        {
+            string guaranteed = " " + Loc("POTION_GUARANTEED_SUFFIX");
+            if (TagPotionRows(tip, hasGuaranteedPotion ? new[] { guaranteed, guaranteed } : new[] { guaranteed }) < 1)
+            {
+                // Defensive: no potion row was found — at least state the drop as a plain line.
+                AppendPotionLineToHistoryTip(tip, Loc("POTION"));
+            }
+            return;
+        }
         if (hasGuaranteedPotion)
         {
             if (rollHit)

@@ -145,7 +145,7 @@ public static class CombatPotionChanceHistoryTooltipPatch
             }
             if (MapNodeInfoTooltipPatch.HistoricalPotionInfo(runState, ____entry, ____playerId) is { } info)
             {
-                MapNodeInfoTooltipPatch.RenderHistoricalPotion(__instance, info.chance, info.rollHit, info.hasGuaranteedPotion);
+                MapNodeInfoTooltipPatch.RenderHistoricalPotion(__instance, info.chance, info.rollHit, info.hasGuaranteedPotion, info.forced);
             }
         }
         catch (Exception e)
