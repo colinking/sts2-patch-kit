@@ -527,13 +527,13 @@ public static class MapNodeInfoTooltipPatch
         return floor;
     }
 
-    // Elite node: which (not-yet-fought) elites this act can throw at you, the gold range, and the
-    // (elite-boosted) potion chance, plus any reward-count relic bonuses.
+    // Elite node: which elites this node can be, the gold range, and the (elite-boosted) potion
+    // chance, plus any reward-count relic bonuses.
     private static string BuildElite(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
         List<string> lines = Section(Loc("EXPECTED_REWARDS"), EliteRewardLines(mapPoint, runState, player, dependsOnUnresolved));
         // Behind Cmd/Ctrl, like the enemy list, for consistency.
-        AppendExpandableSection(lines, Loc("NOUN_ELITES"), runState, rs => Section(Loc("POSSIBLE_ELITES"), GetUnfoughtEliteNames(rs)));
+        AppendExpandableSection(lines, Loc("NOUN_ELITES"), runState, rs => Section(Loc("POSSIBLE_ELITES"), GetPossibleEliteNames(rs, mapPoint)));
         return string.Join("\n", lines);
     }
 
@@ -1271,15 +1271,106 @@ public static class MapNodeInfoTooltipPatch
         return ForwardReachable(runState, out _).Contains(target);
     }
 
-    // The act's elite encounters minus the ones already fought this act. The act's generated elite
-    // sequence cycles once exhausted (RoomSet.NextEliteEncounter indexes by visited % count), so
-    // EncounterNames re-shows the whole pool when every elite has been fought — e.g. after three
-    // elites a reachable fourth can be any of them again.
-    private static List<string> GetUnfoughtEliteNames(IRunState runState)
+    // The elites this node can be, deduced from player-knowable information only. The game deals
+    // elites from a grab bag: the act's generated elite sequence is built by shuffling the full
+    // pool, dealing it out, and reshuffling once empty (ActModel.GenerateRooms), and elite fights
+    // consume it in order (RoomSet.NextEliteEncounter). So every consecutive run of poolSize elite
+    // fights contains each elite exactly once — a rule the player can combine with their own fight
+    // history: an elite fought in the current cycle can't reappear until the cycle completes. That
+    // exclusion only holds while the node's fight is guaranteed to land within the current cycle
+    // on every route; otherwise (or on a fresh cycle) any elite in the pool is possible and the
+    // whole pool is shown. As with normal encounters (see GetEnemyBody), we never read the
+    // generated sequence's *composition* — that would leak hidden per-run RNG state.
+    private static List<string> GetPossibleEliteNames(IRunState runState, MapPoint target)
     {
         return EncounterNames(
             runState.Act?.AllEliteEncounters ?? Enumerable.Empty<EncounterModel>(),
-            CollectFoughtIds(runState, RoomType.Elite, allActs: false));
+            CurrentCycleEliteExclusions(runState, target));
+    }
+
+    // The elite ids the current grab-bag cycle has already consumed, when (and only when) that
+    // exclusion provably applies to `target`'s fight — otherwise empty, meaning no exclusion.
+    private static HashSet<string> CurrentCycleEliteExclusions(IRunState runState, MapPoint target)
+    {
+        HashSet<string> none = new();
+        int poolSize = (runState.Act?.AllEliteEncounters ?? Enumerable.Empty<EncounterModel>())
+            .Where(e => e != null)
+            .Select(e => e.Id.Entry)
+            .Distinct()
+            .Count();
+        if (poolSize == 0)
+        {
+            return none;
+        }
+        List<string> fought = FoughtEliteIdsInOrder(runState);
+        int consumed = fought.Count % poolSize; // slots consumed so far in the current cycle
+        if (consumed == 0)
+        {
+            return none; // fresh cycle: every elite is possible
+        }
+        // The generated sequence is finite and wraps by index (visited % count), so pool sizes
+        // that don't divide it leave a trailing partial cycle without the each-elite-once
+        // structure — stop deducing once the current cycle would extend past the end. Only the
+        // sequence's *length* is read here (a fixed 15 in ActModel.GenerateRooms, used as the
+        // fallback when the room set is unreadable), never its contents.
+        int sequenceLength = GetRooms(runState)?.eliteEncounters.Count ?? 15;
+        if ((fought.Count / poolSize + 1) * poolSize > sequenceLength)
+        {
+            return none;
+        }
+        // The exclusion holds only if this node's fight lands in the current cycle on every
+        // route: at most (poolSize - consumed) elite fights, this one included, may precede it.
+        (int min, int max)? bounds = EliteDepthBounds(runState, target);
+        if (bounds == null || bounds.Value.max > poolSize - consumed)
+        {
+            return none;
+        }
+        return fought.Skip(fought.Count - consumed).ToHashSet();
+    }
+
+    // The elite encounter ids fought this act, oldest first — duplicates kept, because the cycle
+    // math needs the sequence, not the set.
+    private static List<string> FoughtEliteIdsInOrder(IRunState runState)
+    {
+        List<string> fought = new();
+        int act = runState.CurrentActIndex;
+        if (act < 0 || act >= runState.MapPointHistory.Count)
+        {
+            return fought;
+        }
+        foreach (MapPointHistoryEntry node in runState.MapPointHistory[act])
+        {
+            foreach (MapPointRoomHistoryEntry room in node.Rooms)
+            {
+                if (room.RoomType == RoomType.Elite && room.ModelId != null)
+                {
+                    fought.Add(room.ModelId.Entry);
+                }
+            }
+        }
+        return fought;
+    }
+
+    // How many elite fights deep this node could be, as a min/max over every forward route from
+    // the current node (target inclusive, current exclusive — 1 means guaranteed the very next
+    // elite fought). Null when the target isn't forward-reachable. Definite Elite nodes count on
+    // both bounds; an unresolved "?" can only resolve to an elite when the run's unknown-node
+    // odds allow it at all (base odds are "never" — only the Deadly Events modifier raises them),
+    // in which case it counts as a maybe-elite on the max.
+    private static (int min, int max)? EliteDepthBounds(IRunState runState, MapPoint target)
+    {
+        HashSet<MapPoint> reachable = ForwardReachable(runState, out MapPoint? current);
+        if (current == null || !reachable.Contains(target))
+        {
+            return null;
+        }
+        bool unknownMayBeElite = runState.Odds.UnknownMapPoint.EliteOdds >= 0f;
+        static int ElitesMin(MapPoint node) => node.PointType == MapPointType.Elite ? 1 : 0;
+        int ElitesMax(MapPoint node) =>
+            node.PointType == MapPointType.Elite
+                || (unknownMayBeElite && node.PointType == MapPointType.Unknown) ? 1 : 0;
+        return (RouteExtremum(current, target, reachable, ElitesMin, wantMax: false, 0),
+            RouteExtremum(current, target, reachable, ElitesMax, wantMax: true, 0));
     }
 
     // The enemies this node could be, deduced from player-knowable information only: the act's
