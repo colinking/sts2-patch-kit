@@ -11,12 +11,12 @@ namespace ColinsPatchKit.Tests;
 // it runs on any machine. See CLAUDE.md "Localization" for how the game merges these tables.
 public class LocalizationTests
 {
-    // The locales the base game ships (eng plus 13), read from the game .pck path table. The mod
+    // The locales the base game ships (eng plus 15), read from the game .pck path table. The mod
     // must provide a translation for exactly these — no more (a typo'd dir), no fewer (an untranslated
-    // language has no eng fallback for our keys, so its strings would break). Update this list only
-    // when the game itself adds/removes a supported locale.
+    // language falls back to our eng strings, so its UI would sit in English). Update this list only
+    // when the game itself adds/removes a supported locale (`ind` arrived in game v0.111.0).
     private static readonly string[] SupportedLocales =
-        { "eng", "deu", "esp", "spa", "fra", "ita", "jpn", "kor", "pol", "ptb", "rus", "tha", "tur", "zhs", "zht" };
+        { "eng", "deu", "esp", "spa", "fra", "ind", "ita", "jpn", "kor", "pol", "ptb", "rus", "tha", "tur", "zhs", "zht" };
 
     // The loc-table files the mod contributes (each merged into the same-named base-game table).
     private static readonly string[] LocFileNames = { "settings_ui.json", "map.json" };
