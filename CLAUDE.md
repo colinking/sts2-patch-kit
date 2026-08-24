@@ -84,10 +84,17 @@ directly. Steps:
    1. Building the uploader: in the `megacrit/sts2-mod-uploader` checkout, `git pull`, then
    `dotnet publish -c Release -r osx-arm64 -p:PublishTrimmed=true --artifacts-path osx-arm64`.
    2. Performing the upload (the Steam client must be running and logged in): from
-   `megacrit/sts2-mod-uploader/osx-arm64/publish/ModUploader/release_osx-arm64`, run
+   `megacrit/sts2-mod-uploader/osx-arm64/bin/ModUploader/release_osx-arm64` — the **`bin/` tree, not
+   `publish/`** — run
    `./ModUploader upload -w /Users/colin/dev/github.com/colinking/sts2-patch-kit/release/ColinsPatchKit`.
    The uploader reads `workshop.json`, pushes `content/` and `image.png`, and updates the existing
    item identified by `mod_id.txt` (published mod `3747530432`).
+   The uploader's repo copies its native Steam libs (`steam/libsteam_api.dylib` and friends) into the
+   *build* output only, so the `publish/` tree lacks the dylib and dies at startup with
+   `DllNotFoundException: Unable to load shared library 'steam_api'` — every `dlopen` attempt in the
+   trace reports "no such file". Run from `bin/` (or copy `steam/libsteam_api.dylib` next to the
+   published binary). "No such file" means the dylib is missing; an *"incompatible architecture"*
+   message would instead mean the arm64 build needs `-r osx-x64`.
 
 ## Architecture
 
