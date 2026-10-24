@@ -46,12 +46,17 @@ internal static class E2EHelpers
         return false;
     }
 
-    public static void RestoreProfile(int originalProfileId, string tag)
+    // Switches back to the profile the harness started on. Waits first: the game records a fight's stats (wins,
+    // kills) into the CURRENT profile's progress.save a moment after combat ends, so switching right after a kill
+    // writes the throwaway fight into the real profile. --relicpulse-e2e did that to profile 1 on 2026-10-23 (+1
+    // win, +2 kills). Saves are Steam Cloud authoritative, so that can't be undone by editing files afterwards.
+    public static async Task RestoreProfile(int originalProfileId, string tag)
     {
         if (originalProfileId < 0)
         {
             return;
         }
+        await Task.Delay(3000);
         MainFile.Logger.Info($"{tag}: switching back to profile {originalProfileId}");
         SaveManager.Instance.SwitchProfileId(originalProfileId);
         SaveManager.Instance.InitPrefsData();

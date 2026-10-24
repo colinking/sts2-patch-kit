@@ -76,7 +76,7 @@ public static class ChooseCardUpgradeE2EPatch
         }
         finally
         {
-            E2EHelpers.RestoreProfile(_originalProfileId, "choosecard-e2e");
+            await E2EHelpers.RestoreProfile(_originalProfileId, "choosecard-e2e");
             await Task.Delay(500);
             tree.Quit();
         }

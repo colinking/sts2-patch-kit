@@ -83,7 +83,7 @@ public static class GameOverAbandonE2EPatch
         }
         finally
         {
-            E2EHelpers.RestoreProfile(_originalProfileId, "gameover-abandon-e2e");
+            await E2EHelpers.RestoreProfile(_originalProfileId, "gameover-abandon-e2e");
             await Task.Delay(500);
             tree.Quit();
         }

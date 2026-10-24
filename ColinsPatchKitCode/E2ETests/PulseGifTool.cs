@@ -76,7 +76,7 @@ public static class PulseGifPatch
         }
         finally
         {
-            E2EHelpers.RestoreProfile(_originalProfileId, "pulsegif");
+            await E2EHelpers.RestoreProfile(_originalProfileId, "pulsegif");
             await Task.Delay(500);
             tree.Quit();
         }

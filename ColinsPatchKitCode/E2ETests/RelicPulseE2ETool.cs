@@ -80,7 +80,7 @@ public static class RelicPulseE2EPatch
         }
         finally
         {
-            E2EHelpers.RestoreProfile(_originalProfileId, "relicpulse-e2e");
+            await E2EHelpers.RestoreProfile(_originalProfileId, "relicpulse-e2e");
             await Task.Delay(500);
             tree.Quit();
         }

@@ -203,6 +203,9 @@ Hard-won API facts:
   the test only when the *game* adds/removes a shipped locale.
 - Launch-flag harnesses (`ColinsPatchKitCode/E2ETests/`) verify patches without manual play;
   shared plumbing (scratch-profile switch, throwaway-run bootstrap) is in `E2ETests/E2EHelpers.cs`.
+  Always `await E2EHelpers.RestoreProfile(...)`: it waits 3 s before switching back, because the game writes a
+  fight's stats into the *current* profile's progress.save a moment after combat ends, and switching sooner records
+  the throwaway fight on the real profile. Don't try to fix a save by editing files: Steam Cloud's copy wins.
   Launch the game binary directly from
   `.../Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS`. **Prefer launching via macOS `open -g`**
   so the game doesn't steal foreground focus — the app activates itself at process launch (before

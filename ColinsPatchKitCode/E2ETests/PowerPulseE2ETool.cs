@@ -82,7 +82,7 @@ public static class PowerPulseE2EPatch
         }
         finally
         {
-            E2EHelpers.RestoreProfile(_originalProfileId, "powerpulse-e2e");
+            await E2EHelpers.RestoreProfile(_originalProfileId, "powerpulse-e2e");
             await Task.Delay(500);
             tree.Quit();
         }
