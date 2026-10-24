@@ -3,6 +3,11 @@
 Slay the Spire 2 quality-of-life mod: Harmony patches on the game's C# assembly, built as a
 Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list and dev-tool usage.
 
+Simulator work doesn't go here. The run log, the `--runlog-e2e` and `--simreplay` harnesses, the coaching notes,
+and the analysis tools live in `../sts2-simulator` (its local-only mod is `mod/`, "SimBridge"; notes in
+`learnings/`); they moved there from this repo's `sim-work` branch and `strategy/` folder on 2026-10-23. Keep
+this mod Workshop-only.
+
 ## Publishing
 
 - `dotnet publish ColinsPatchKit.csproj` — the one command for every change. It compiles, copies the
@@ -14,6 +19,9 @@ Godot 4.5 / .NET 9 class library. See README.md for the user-facing patch list a
   loc keys (and assets vanish). It's cheap to always publish: the Godot export is skipped
   automatically when nothing under `ColinsPatchKit/` changed, so a code-only publish costs about the
   same as a plain compile.
+- Every build (not just publish) copies the dll into the game's mods folder, so **never build while
+  the game is running** (`pgrep -f "MacOS/Slay the Spire 2"`; a bare `SlayTheSpire2.app` pattern also matches shells whose command line mentions it, e.g. wait loops). To type-check without touching the install,
+  redirect the copy: `dotnet build ColinsPatchKit.csproj -p:ModsPath=<scratch dir>/`.
 - `dotnet publish ColinsPatchKit.csproj -t:UninstallMod` — removes the locally installed mod folder
   (`<game>/mods/ColinsPatchKit/`). Also runs automatically as part of `dotnet clean`. Use it to test
   the Steam Workshop copy, which the local install otherwise always shadows (the game's mod loader
