@@ -1,8 +1,8 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.111.0`), and is safe for use in multiplayer.
+All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.113.0`), and is safe for use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
@@ -26,9 +26,6 @@ For the full list of patches (with examples), see [the GitHub README](https://gi
 
 ### Combat
 
-![Retain slots](/docs/images/retain-slots.png)
-
-- **Well Laid Plans retain slots** — Show one dotted card slot per card you can retain (main branch only).
 - **Curses & statuses first when exhausting/transforming** — Sort curses, statuses, and quest cards first when picking a card to exhaust or transform.
 - **More active relic pulses** — Pulse more relic icons while their limited effect is still available.
 - **Active buff/debuff pulses** — Pulse buff/debuff icons that still have a limited-time effect available this turn.
