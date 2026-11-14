@@ -128,21 +128,42 @@ directly. Steps:
 
 ## Dual game-branch support
 
-When Steam carries two live game branches (e.g. stable v0.107.1 and beta v0.108.0), the one
+When Steam carries two live game branches (e.g. stable v0.107.1 and beta v0.113.0), the one
 shipped dll must run on both. Rules: never compile-time-reference a symbol that exists in only
 one branch — resolve those with `AccessTools` (`TypeByName` for branch-only types, `Property`/
 `Method` with fallback names for renames) — and when a *mechanic or API shape* differs across
 branches, pick the behavior by feature-detecting the loaded assembly (e.g. "does this power
-declare its own `DisplayAmount` override", see `PowerReadyPulsesManager`'s static ctor), not by
-parsing the game version. Exception: a *balance-only number* that exists solely as a private
-const the game inlines (no public surface to read) is keyed off the game's semver instead —
-use `GameVersionHelper.CompareTo(major, minor, patch)` (wraps `ReleaseInfoManager.Instance.SemVer`,
-public on both branches; see `CookMaxHpGain` in `MapNodeInfoTooltipPatch`); reflecting on a private field
-would silently break if it's renamed, while a version threshold only goes stale on a rebalance,
-which the per-update decompile sweep catches. Verify any newly referenced symbol exists in
-*both* `decompiled/<version>/` trees.
+declare its own `DisplayAmount` override", see `PowerReadyPulsesManager`'s static ctor, or "does
+this method take the new parameter", see `BranchCompat`), not by parsing the game version.
+Exception: a *balance-only number* that exists solely as a private const the game inlines (no
+public surface to read) is keyed off the game's semver instead — use
+`GameVersionHelper.CompareTo(major, minor, patch)` (wraps `ReleaseInfoManager.Instance.SemVer`,
+public on both branches; see `CookMaxHpGain` in `MapNodeInfoTooltipPatch`); reflecting on a
+private field would silently break if it's renamed, while a version threshold only goes stale on
+a rebalance, which the per-update decompile sweep catches. Verify any newly referenced symbol
+exists in *both* `decompiled/<version>/` trees. Check which version stable actually is (switch
+Steam to the main branch and read `release_info.json`) rather than trusting patch notes that say
+it "will be brought up to date" — v0.113.0's notes said main would move to v0.111.0, but it
+stayed on v0.107.1. Once a game update makes both live branches agree, delete
+the shim for the older shape (stale shims accumulate otherwise).
 The compile-time reference is whatever build is installed; either branch works since the shared
 surface is what the code may bind to.
+
+A clean compile against both branches is **not** enough: some changes are source-compatible but
+binary-incompatible, so the dll binds to only one shape and throws `MissingMethodException` on the
+other at runtime — an added optional parameter (`SetLocalCharacter(c)` → `(c, bool = false)`), a
+setter turned `init` (`modreq(IsExternalInit)` is part of the signature), a property turned
+`const` (if the code reads it). Route those through `BranchCompat` (reflection with per-branch fallbacks). Also never
+compare against an enum member whose value differs across branches: enum constants compile to
+ints, and `GameMode` was renumbered in v0.113.0 (`Custom = 3` → `Dread = 3`), so compare by name.
+`tools/BinaryCompat` checks this mechanically — it resolves every `sts2` member reference in a
+built dll, signature-exact, against a given `sts2.dll`:
+`dotnet run --project tools/BinaryCompat -- <ColinsPatchKit.dll> <sts2.dll>`. Run it against the
+installed branch's `sts2.dll` after each game update; for the branch not installed, diff
+`--list <dll>` output of the new build vs the last release and check only the new references
+against that branch's decompile. Harmony patch targets and reflection-by-name aren't covered —
+`PatchAll` throwing at load (a `[ERROR]` in `godot.log` before "Finished mod initialization")
+catches the former on the installed branch.
 
 ## Decompiled game source
 
@@ -216,20 +237,14 @@ Hard-won API facts:
   immediately and detaches the process; monitor `godot.log` and `pkill -9 -f "Slay the Spire 2"` to
   stop it. The bare-binary form below still works but grabs focus, so reserve it for the rare case
   Steam isn't running. The per-flag examples below list just the flags:
-  - `"./Slay the Spire 2" --retainslots=3:1 --retainslots-shot=/tmp/retain_slots.png --retainslots-quit`
-    — static visual check at the main menu (~15s boot, then screenshots and exits); `3:1` = 3 slots
-    with slot index 1 filled by a card.
-  - `"./Slay the Spire 2" --retainslots-e2e=<profile>` — full in-combat check: starts a throwaway
-    run, jumps to a weak fight, grants Well Laid Plans x2, ends the turn, then picks/deselects/
-    re-picks cards, saving /tmp/retain_e2e_*.png at each step, and switches back to the original
-    profile before quitting. It **abandons any run in progress on the given profile** — only ever
-    pass a scratch profile whose saves are disposable, never one with a real run.
   - `"./Slay the Spire 2" --relicpulse-e2e=<profile>` — verifies the relic ready-pulse patch in a
     real combat: grants Permafrost/Music Box (tracked) plus Pael's Tears (untracked negative
     control), jumps to a weak fight, and logs a `relicpulse-e2e: PASS <assertion>` line per
     expected Status transition (armed at combat start, consumed on Flash, untracked relic never
     pulses across its real turn-boundary trigger, all cleared after combat), saving
-    /tmp/relic_pulse_*.png. Same scratch-profile warning as above.
+    /tmp/relic_pulse_*.png, and switches back to the original profile before quitting. Like every
+    run-starting harness below, it **abandons any run in progress on the given profile** — only
+    ever pass a scratch profile whose saves are disposable, never one with a real run.
   - `"./Slay the Spire 2" --powerpulse-e2e=<profile>` — verifies the power ready-pulse patch in a
     real combat: applies Echo Form (armed gate), Constrict (constant reminder) and The Bomb x3
     (countdown) to the player, plays through three turns, and asserts the actual `pulse` shader
@@ -249,6 +264,26 @@ Hard-won API facts:
     (tickbox exists, ticking flips `NCardGrid.IsShowingUpgrades` and previews the holders,
     unticking reverts, confirming a pick while previewing adds the unupgraded card), saving
     /tmp/simple_grid_*.png. Same scratch-profile warning as above.
+  - `"./Slay the Spire 2" --blitzmap-e2e=<profile>` — beta-only (v0.113.0+): verifies the Blitz
+    map tooltips on the top-bar map. Starts a throwaway singleplayer Blitz run, hovers every room
+    from act 1's Ancient (no gold anywhere; weak first Monster has no potion, the second has one;
+    shop keeps vanilla's description; elite 2 relics; treasure 2 relics; boss Rare card + potion), then enters
+    the first fight, checks the in-combat expected rewards, wins via `win`, and checks the real
+    reward screen matches (`blitzmap-e2e: PASS ...` lines), saving /tmp/blitz_map_*.png. Same
+    scratch-profile warning as above.
+  - `"./Slay the Spire 2" --randomban-e2e=<profile> [--randomban-screen=standard|blitz]` —
+    verifies the random-character bans on the standard (default) or Blitz (v0.113.0+) character
+    select: runs `unlock all` (Random only shows once every character is unlocked), selects
+    Random, right-clicks every character but one, checks the ban marks, embarks, and checks the
+    run is the unbanned character at the chosen ascension (`randomban-e2e: PASS ...` lines),
+    saving /tmp/random_ban_*.png. Same scratch-profile warning as above, plus it unlocks
+    everything on that profile.
+  - `"./Slay the Spire 2" --restoptions-e2e=<profile>` — beta-only (v0.113.0+): verifies the
+    upcoming-rest-site tooltip's Evolve (Byrdpip) and Restore (Wuppy) details. Grants both relics,
+    readies Byrdpip (6 Swoops) and damages Wuppy, checks the tooltip body, jumps into a real rest
+    site to check the game offers both and that neither relic's own Status was clobbered, then
+    checks Restore greys out at full HP (`restoptions-e2e: PASS ...` lines), saving
+    /tmp/rest_options.png. Same scratch-profile warning as above.
   - `"./Slay the Spire 2" --pulsegif=<profile>` — captures 30 frames (100ms apart) of pulsing
     relics and powers to /tmp/pulse_gif/ for the README GIFs (assemble with ffmpeg crop+
     palettegen). Uses `RenderingServer.ForceDraw(swapBuffers, frameStep)` per frame because
@@ -300,7 +335,7 @@ Hard-won API facts:
   it touches (Fullscreen/TargetDisplay/WindowSize/WindowPosition) — that store is global and
   `NGame.Quit()` persists it, so without the restore a test run would overwrite the user's real
   fullscreen/resolution preferences (settings live at `.../SlayTheSpire2/steam/<id>/settings.save`).
-  Note this also shrinks `--pulsegif`/`--retainslots` captures to the 1280x800 window; re-derive
+  Note this also shrinks `--pulsegif` captures to the 1280x800 window; re-derive
   GIF crop coords if you regenerate README assets, or pass `--test-screen` to a full-size display.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at

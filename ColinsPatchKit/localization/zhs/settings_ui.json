@@ -11,9 +11,6 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "在战斗地图提示框中显示你的药水掉落几率——包括过去、当前以及前方的楼层。",
 
   "COLINSPATCHKIT-COMBAT.title": "战斗",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "为「深谋远虑」显示保留槽位",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "为「深谋远虑」显示保留槽位",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "使用「深谋远虑」保留卡牌时，每张你仍可保留的卡牌都会显示一个虚线卡牌轮廓。",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "消耗/转化时优先排列诅咒与状态牌",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "消耗/转化时优先排列诅咒与状态牌",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "在抽牌堆中选择卡牌进行消耗（净化）或转化（充能、降神）时，将诅咒牌、状态牌和任务牌排在最前而非最后——它们通常正是你想清除的卡牌。",

@@ -45,9 +45,12 @@ public static class TestWindowPatch
         ("multilineconsole-sandbox", true),
         ("relicpulse-e2e", false),
         ("powerpulse-e2e", false),
-        ("retainslots-e2e", false),
-        ("retainslots-sizecheck", false),
-        ("retainslots", false),
+        ("blitzmap-e2e", false),
+        ("randomban-e2e", false),
+        ("restoptions-e2e", false),
+        ("choosecard-e2e", false),
+        ("simplegrid-e2e", false),
+        ("gameover-abandon-e2e", false),
         ("pulsegif", false),
     ];
 

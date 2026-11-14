@@ -108,8 +108,32 @@ public static class RestSiteProceedHoldManager
             return;
         }
         ResetBar();
-        NMapScreen.Instance?.Open();
+        // Leave exactly the way vanilla's click handler does: v0.111.0 opens the map, v0.113.0 calls
+        // RunManager.Proceed (which advances to the next node in Blitz, where there is no map). The
+        // bypass flag lets that call through RestSiteProceedSuppressInstantPatch.
+        if (NRestSiteRoom.Instance is { } room && ProceedReleasedMethod != null)
+        {
+            Bypass = true;
+            try
+            {
+                ProceedReleasedMethod.Invoke(room, new object[] { _button });
+            }
+            finally
+            {
+                Bypass = false;
+            }
+        }
+        else
+        {
+            NMapScreen.Instance?.Open();
+        }
     }
+
+    private static readonly System.Reflection.MethodInfo? ProceedReleasedMethod =
+        AccessTools.Method(typeof(NRestSiteRoom), "OnProceedButtonReleased");
+
+    // True only while OnHoldComplete is invoking vanilla's proceed handler on purpose.
+    public static bool Bypass { get; private set; }
 
     private static void EnsureBar(NProceedButton button)
     {
@@ -201,14 +225,15 @@ public static class RestSiteProceedHoldOnReleasePatch
 }
 
 // While the gate is active, the click-release must not leave the rest site — only a completed hold
-// (RestSiteProceedHoldManager.OnHoldComplete) calls NMapScreen.Open. Skipping the original here is
-// what makes a quick click a no-op.
+// (RestSiteProceedHoldManager.OnHoldComplete, which re-invokes this handler with Bypass set) leaves.
+// Skipping the original here is what makes a quick click a no-op.
 [HarmonyPatch(typeof(NRestSiteRoom), "OnProceedButtonReleased")]
 public static class RestSiteProceedSuppressInstantPatch
 {
     public static bool Prefix(NButton _)
     {
-        return _ is not NProceedButton proceed || !RestSiteProceedHoldManager.GateActive(proceed);
+        return RestSiteProceedHoldManager.Bypass
+            || _ is not NProceedButton proceed || !RestSiteProceedHoldManager.GateActive(proceed);
     }
 }
 

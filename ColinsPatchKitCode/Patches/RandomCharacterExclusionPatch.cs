@@ -21,8 +21,10 @@ namespace ColinsPatchKit.ColinsPatchKitCode.Patches;
 // Lets you ban characters from the "Random" character pick. While the "Random" option is the
 // current selection, right-click a character button to toggle it off (it gets a red X);
 // right-click again to re-enable it. Embarking as Random then rolls only among the characters
-// that are still enabled. Only applies on the standard character select screen — the custom-run
-// screen reuses the same button but has no Random option, so the ban semantics are skipped there.
+// that are still enabled. Applies on every screen with a Random option: the standard character
+// select and v0.113.0's Blitz screen (see RandomCharacterScreens). The custom-run screen reuses the
+// same button but has no Random option, and v0.113.0's Dread screen only has a deterministic
+// "Rotating" pick, so the ban semantics are skipped on both.
 //
 // Right-clicking a character when Random is *not* the current selection jumps the selection to
 // Random and bans that character in one gesture (it never toggles in this case — an already-banned
@@ -50,8 +52,13 @@ public static class RandomCharacterExclusionManager
     // current visit to the character select screen — cleared on every (re)open.
     private static readonly HashSet<string> _excluded = new();
 
-    // Live character buttons, so we can repaint them. Pruned of freed nodes.
-    private static readonly List<NCharacterSelectButton> _buttons = new();
+    // Live character buttons, so we can repaint them, each mapped to the screen that owns it (the
+    // standard and Blitz screens both stay alive as main-menu submenus, so their buttons coexist).
+    // Pruned of freed nodes.
+    private static readonly Dictionary<NCharacterSelectButton, Node> _buttons = new();
+
+    // The Random-offering screen currently open; only its buttons take part in bans.
+    private static Node? _activeScreen;
 
     // Whether the "Random" option is the current selection. The ban UI is only active then.
     private static bool _randomSelected;
@@ -59,6 +66,8 @@ public static class RandomCharacterExclusionManager
     // True after we've swapped the local player's RandomCharacter for a concrete pick on ready,
     // so that un-readying (multiplayer) can restore Random and re-roll on the next ready.
     private static bool _resolvedFromRandom;
+
+    public static bool ResolvedFromRandom => _resolvedFromRandom;
 
     // True once the player has committed (pressed embark/ready); suppresses the ban marks so they
     // don't linger over the fade-out / black transition. Cleared on un-ready and on screen open.
@@ -91,12 +100,12 @@ public static class RandomCharacterExclusionManager
     private const float MarkAnimOutDuration = 0.1f;
     private const string MarkAnimMeta = "CpkMarkAnimTween";
 
-    // Called from the Init postfix once per character button, every time the screen is built.
-    public static void OnButtonInitialized(NCharacterSelectButton button)
+    // Called once per character button, every time a screen is built (the Init postfix), and for
+    // each screen's Random button on open.
+    public static void OnButtonInitialized(NCharacterSelectButton button, Node screen)
     {
-        if (!_buttons.Contains(button))
+        if (!_buttons.ContainsKey(button))
         {
-            _buttons.Add(button);
             // NClickableControl emits MousePressed for both left and right clicks while enabled.
             button.Connect(NClickableControl.SignalName.MousePressed,
                 Callable.From<InputEvent>(e => OnButtonMousePressed(button, e)));
@@ -104,12 +113,14 @@ public static class RandomCharacterExclusionManager
             // need to stop tracking it for the repaint pass.
             button.Connect(Node.SignalName.TreeExiting, Callable.From(() => _buttons.Remove(button)));
         }
+        _buttons[button] = screen;
         ApplyVisual(button);
     }
 
-    // Bans never persist across visits — reset them whenever the screen opens.
-    public static void OnScreenOpened()
+    // Bans never persist across visits — reset them whenever a Random-offering screen opens.
+    public static void OnScreenOpened(Node screen)
     {
+        _activeScreen = screen;
         _excluded.Clear();
         _randomSelected = false;
         _resolvedFromRandom = false;
@@ -118,6 +129,14 @@ public static class RandomCharacterExclusionManager
         _sessionSeed = null;
         RefreshAll();
     }
+
+    public static bool IsActiveScreen(object? screen) => screen != null && screen == _activeScreen;
+
+    private static bool IsOnActiveScreen(NCharacterSelectButton button) =>
+        _activeScreen != null && _buttons.TryGetValue(button, out Node? screen) && screen == _activeScreen;
+
+    private static IEnumerable<NCharacterSelectButton> ActiveButtons =>
+        _buttons.Keys.Where(b => GodotObject.IsInstanceValid(b) && IsOnActiveScreen(b));
 
     // Track whether the current selection is the Random option, then repaint: the red tint is
     // only shown while Random is selected, but the underlying ban set is preserved either way.
@@ -130,7 +149,10 @@ public static class RandomCharacterExclusionManager
     // Resolve (or, on un-ready, un-resolve) the local player's Random pick around the ready commit.
     public static void OnSetReady(StartRunLobby lobby, bool ready)
     {
-        if (lobby == null)
+        // Only the open Random-offering screen's lobby has bans. Every other lobby (custom/daily
+        // runs, v0.113.0's Dread screen) is left alone so stale bans or resolve state from an
+        // earlier visit never leak into it.
+        if (lobby == null || !IsActiveScreen(lobby.LobbyListener))
         {
             return;
         }
@@ -151,7 +173,7 @@ public static class RandomCharacterExclusionManager
                 }
                 else
                 {
-                    lobby.SetLocalCharacter(ModelDb.Character<RandomCharacter>());
+                    BranchCompat.SetLocalCharacter(lobby, ModelDb.Character<RandomCharacter>());
                 }
                 _resolvedFromRandom = false;
             }
@@ -184,25 +206,36 @@ public static class RandomCharacterExclusionManager
             }
             else
             {
-                lobby.SetLocalCharacter(chosen);
+                BranchCompat.SetLocalCharacter(lobby, chosen);
             }
         }
         else
         {
-            // Singleplayer: keep the selector on Random and play the vanilla reveal. Vanilla resolves a
-            // Random pick in BeginRunLocally with isRandomCharacterResolution: true, which makes the
-            // screen show the chosen character's background and hold for a beat before the run starts.
-            // We resolved early (to keep the choice off the wire), so replay that notification here.
+            // Singleplayer: keep the selector on Random and play the vanilla reveal. On v0.111.0
+            // vanilla resolves a Random pick in BeginRunLocally with isRandomCharacterResolution: true,
+            // which makes the screen show the chosen character's background and hold for a beat before
+            // the run starts; we resolved early (to keep the choice off the wire), so replay that
+            // notification here. v0.113.0 dropped that parameter and instead plays the reveal itself
+            // whenever the Random button is still selected at embark — which it is — so there's
+            // nothing to replay.
             //
             // SetLocalCharacter on a concrete character resets the Ascension to that character's
             // *preferred* level (SetSingleplayerAscensionAfterCharacterChanged). Vanilla's Random
             // resolution instead keeps the Ascension the player chose, only clamping it down to the
             // rolled character's max — so capture the selection first and re-apply that clamp.
+            // (Blitz shares one ascension across characters, so there SetLocalCharacter leaves it
+            // alone — re-sync only if it actually moved.)
             int chosenAscension = lobby.Ascension;
-            lobby.SetLocalCharacter(chosen);
-            lobby.SyncAscensionChange(Math.Min(chosenAscension, lobby.MaxAscension));
-            PlayerChangedMethod.Invoke(lobby.LobbyListener,
-                new[] { LocalPlayerProp.GetValue(lobby), (object)true /* isRandomCharacterResolution */ });
+            BranchCompat.SetLocalCharacter(lobby, chosen);
+            if (lobby.Ascension != chosenAscension)
+            {
+                lobby.SyncAscensionChange(Math.Min(chosenAscension, lobby.MaxAscension));
+            }
+            if (PlayerChangedMethod.GetParameters().Length == 2)
+            {
+                PlayerChangedMethod.Invoke(lobby.LobbyListener,
+                    new[] { LocalPlayerProp.GetValue(lobby), (object)true /* isRandomCharacterResolution */ });
+            }
         }
         _resolvedFromRandom = true;
     }
@@ -211,7 +244,9 @@ public static class RandomCharacterExclusionManager
     // is baked into the IL of StartRunLobby.LocalPlayer's getter and
     // IStartRunLobbyListener.PlayerChanged's parameter list — a compile-time bind to either would
     // throw MissingMethodException on the other branch. Bind both by name, and read the player's
-    // `character` field off whichever type the loaded assembly has.
+    // `character` field off whichever type the loaded assembly has. PlayerChanged also lost its
+    // `isRandomCharacterResolution` parameter in v0.113.0, so it is invoked only where it still
+    // takes two.
     private static readonly PropertyInfo LocalPlayerProp =
         AccessTools.Property(typeof(StartRunLobby), "LocalPlayer")
         ?? throw new MissingMemberException(nameof(StartRunLobby), "LocalPlayer");
@@ -295,7 +330,7 @@ public static class RandomCharacterExclusionManager
     // Grabbing focus here mirrors what a click would do and keeps the previous button re-selectable.
     private static bool SelectButton(Func<NCharacterSelectButton, bool> predicate, bool grabFocus = false)
     {
-        NCharacterSelectButton? button = _buttons.FirstOrDefault(b => GodotObject.IsInstanceValid(b) && predicate(b));
+        NCharacterSelectButton? button = ActiveButtons.FirstOrDefault(predicate);
         if (button == null)
         {
             return false;
@@ -311,21 +346,14 @@ public static class RandomCharacterExclusionManager
     // OnEmbarkPressed disables the embark button before we run, but selecting the rolled character
     // routes through SelectCharacter which re-enables it. The player has already committed (the
     // waiting/unready UI is in charge now), so put it back to disabled.
-    private static FieldInfo? _embarkButtonField;
-
     private static void KeepEmbarkDisabled(StartRunLobby lobby)
     {
-        if (lobby.LobbyListener is not NCharacterSelectScreen screen)
-        {
-            return;
-        }
-        _embarkButtonField ??= AccessTools.Field(typeof(NCharacterSelectScreen), "_embarkButton");
-        if (_embarkButtonField?.GetValue(screen) is NClickableControl embark)
+        if (lobby.LobbyListener is Node screen
+            && AccessTools.Field(screen.GetType(), "_embarkButton")?.GetValue(screen) is NClickableControl embark)
         {
             embark.Disable();
         }
     }
-
 
     // The run is actually starting (all players ready). Hide the ban marks so they don't linger
     // over the fade-out / black transition. This is deliberately at run-begin rather than ready, so
@@ -353,6 +381,13 @@ public static class RandomCharacterExclusionManager
         {
             return;
         }
+        // Bans only mean anything through the Random option, which vanilla hides until someone has
+        // unlocked every character and locks until you have (v0.113.0's Fool resets that for most
+        // players). Selecting a hidden/locked Random would leave the screen un-embarkable.
+        if (!IsOnActiveScreen(button) || !ActiveButtons.Any(b => b.IsRandom && b.Visible && !b.IsLocked))
+        {
+            return;
+        }
         string id = button.Character.Id.Entry;
         if (!_randomSelected)
         {
@@ -376,6 +411,7 @@ public static class RandomCharacterExclusionManager
         bool excluded = ColinsPatchKitConfig.ExcludeCharactersFromRandom
             && _randomSelected
             && !_committing
+            && IsOnActiveScreen(button)
             && !button.IsRandom
             && button.Character != null
             && _excluded.Contains(button.Character.Id.Entry);
@@ -553,26 +589,50 @@ public static class RandomCharacterExclusionManager
     // Repaint every live button (e.g. on selection change or config toggle).
     public static void RefreshAll()
     {
-        _buttons.RemoveAll(b => !GodotObject.IsInstanceValid(b));
-        foreach (NCharacterSelectButton button in _buttons)
+        foreach (NCharacterSelectButton dead in _buttons.Keys.Where(b => !GodotObject.IsInstanceValid(b)).ToList())
+        {
+            _buttons.Remove(dead);
+        }
+        foreach (NCharacterSelectButton button in _buttons.Keys)
         {
             ApplyVisual(button);
         }
     }
 }
 
+// The character select screens that offer a Random option, and the per-screen members the
+// patches below hook. The standard screen exists on both branches; the Blitz screen only on
+// v0.113.0+, so it is resolved by name. Both declare the same private members.
+public static class RandomCharacterScreens
+{
+    public static readonly Type? Blitz =
+        AccessTools.TypeByName("MegaCrit.Sts2.Core.Nodes.Screens.Blitz.NBlitzScreen");
+
+    public static IEnumerable<Type> All =>
+        Blitz == null ? new[] { typeof(NCharacterSelectScreen) } : new[] { typeof(NCharacterSelectScreen), Blitz };
+
+    public static bool Is(object? screen) =>
+        screen is NCharacterSelectScreen || (screen != null && Blitz?.IsInstanceOfType(screen) == true);
+
+    public static IEnumerable<MethodBase> Methods(string name) =>
+        All.Select(t => AccessTools.DeclaredMethod(t, name)).Where(m => m != null).Cast<MethodBase>();
+
+    public static NCharacterSelectButton? RandomButton(Node screen) =>
+        AccessTools.Field(screen.GetType(), "_randomCharacterButton")?.GetValue(screen) as NCharacterSelectButton;
+}
+
 [HarmonyPatch(typeof(NCharacterSelectButton), "Init")]
 public static class RandomCharacterExclusionButtonPatch
 {
-    // `del` is the owning screen. Only the standard character select screen has a Random option,
-    // so skip the custom-run screen (which reuses this button but never offers Random).
+    // `del` is the owning screen. Only screens with a Random option take part, so skip the
+    // custom-run and Dread screens (which reuse this button but never offer Random).
     public static void Postfix(NCharacterSelectButton __instance, ICharacterSelectButtonDelegate del)
     {
         try
         {
-            if (del is NCharacterSelectScreen)
+            if (RandomCharacterScreens.Is(del))
             {
-                RandomCharacterExclusionManager.OnButtonInitialized(__instance);
+                RandomCharacterExclusionManager.OnButtonInitialized(__instance, (Node)del);
             }
         }
         catch (Exception e)
@@ -606,14 +666,19 @@ public static class RandomCharacterExclusionPortraitHoldPatch
     }
 }
 
-[HarmonyPatch(typeof(NCharacterSelectScreen), "SelectCharacter")]
+[HarmonyPatch]
 public static class RandomCharacterExclusionSelectPatch
 {
-    public static void Postfix(NCharacterSelectButton charSelectButton)
+    public static IEnumerable<MethodBase> TargetMethods() => RandomCharacterScreens.Methods("SelectCharacter");
+
+    public static void Postfix(Node __instance, NCharacterSelectButton charSelectButton)
     {
         try
         {
-            RandomCharacterExclusionManager.OnCharacterSelected(charSelectButton);
+            if (RandomCharacterExclusionManager.IsActiveScreen(__instance))
+            {
+                RandomCharacterExclusionManager.OnCharacterSelected(charSelectButton);
+            }
         }
         catch (Exception e)
         {
@@ -622,14 +687,25 @@ public static class RandomCharacterExclusionSelectPatch
     }
 }
 
-[HarmonyPatch(typeof(NCharacterSelectScreen), "OnSubmenuOpened")]
+// A prefix, so the reset lands before vanilla selects the opening button: v0.113.0 reopens on the
+// character you last embarked with (Random included), and that Select() must be what sets
+// _randomSelected. It also registers the Random button, which v0.113.0 builds with InitAsRandom
+// rather than Init, so the Init postfix above never sees it (on v0.111.0 it already has; the
+// registration is idempotent). The field is created in _Ready, before the screen first opens.
+[HarmonyPatch]
 public static class RandomCharacterExclusionScreenOpenPatch
 {
-    public static void Postfix()
+    public static IEnumerable<MethodBase> TargetMethods() => RandomCharacterScreens.Methods("OnSubmenuOpened");
+
+    public static void Prefix(Node __instance)
     {
         try
         {
-            RandomCharacterExclusionManager.OnScreenOpened();
+            RandomCharacterExclusionManager.OnScreenOpened(__instance);
+            if (RandomCharacterScreens.RandomButton(__instance) is { } random && GodotObject.IsInstanceValid(random))
+            {
+                RandomCharacterExclusionManager.OnButtonInitialized(random, __instance);
+            }
         }
         catch (Exception e)
         {
@@ -686,6 +762,54 @@ public static class RandomCharacterExclusionNameplateShakePatch
         catch (Exception e)
         {
             MainFile.Logger.Error($"Failed to settle lobby nameplate shake: {e}");
+        }
+    }
+}
+
+// v0.113.0 remembers the character you embark with (UpdatePreferredStandardCharacter /
+// UpdatePreferredBlitzCharacter, called from BeginRun) by reading the selected button — and when
+// you picked Random it's meant to remember Random. Our multiplayer resolve switches the selection
+// to the rolled character's button, so point the selection back at Random for the duration of the
+// save. Absent (and skipped) on v0.111.0.
+[HarmonyPatch]
+public static class RandomCharacterExclusionPreferredCharacterPatch
+{
+    private static IEnumerable<MethodBase> Targets() =>
+        RandomCharacterScreens.Methods("UpdatePreferredStandardCharacter")
+            .Concat(RandomCharacterScreens.Methods("UpdatePreferredBlitzCharacter"));
+
+    public static bool Prepare() => Targets().Any();
+
+    public static IEnumerable<MethodBase> TargetMethods() => Targets();
+
+    public static void Prefix(Node __instance, out NCharacterSelectButton? __state)
+    {
+        __state = null;
+        try
+        {
+            FieldInfo? selectedField = AccessTools.Field(__instance.GetType(), "_selectedButton");
+            if (RandomCharacterExclusionManager.ResolvedFromRandom
+                && RandomCharacterExclusionManager.IsActiveScreen(__instance)
+                && selectedField != null
+                && RandomCharacterScreens.RandomButton(__instance) is { } random
+                && selectedField.GetValue(__instance) is NCharacterSelectButton selected
+                && selected != random)
+            {
+                __state = selected;
+                selectedField.SetValue(__instance, random);
+            }
+        }
+        catch (Exception e)
+        {
+            MainFile.Logger.Error($"Failed to remember Random as the preferred character: {e}");
+        }
+    }
+
+    public static void Postfix(Node __instance, NCharacterSelectButton? __state)
+    {
+        if (__state != null)
+        {
+            AccessTools.Field(__instance.GetType(), "_selectedButton")?.SetValue(__instance, __state);
         }
     }
 }

@@ -11,9 +11,6 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "在戰鬥地圖提示框中顯示你的藥水掉落機率——包括過去、目前以及前方的樓層。",
 
   "COLINSPATCHKIT-COMBAT.title": "戰鬥",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "為「計畫妥當」顯示保留欄位",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "為「計畫妥當」顯示保留欄位",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "使用「計畫妥當」保留卡牌時，每張你仍可保留的卡牌都會顯示一個虛線卡牌輪廓。",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "消耗/轉化時優先排列詛咒與狀態牌",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "消耗/轉化時優先排列詛咒與狀態牌",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "在抽牌堆中選擇卡牌進行消耗（淨化）或轉化（衝鋒！！、降靈）時，將詛咒牌、狀態牌和任務牌排在最前而非最後——它們通常正是你想清除的卡牌。",

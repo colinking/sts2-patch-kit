@@ -13,9 +13,10 @@ using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 namespace ColinsPatchKit.ColinsPatchKitCode.E2ETests;
 
 // Dev harness: static visual comparison of the banned-character overlay options.
-// Renders a grid at the main menu — the top row is the five characters with no
-// overlay, then one row per overlay PNG found in ColinsPatchKit/assets/, each
-// stretched over the same five portraits exactly the way the real exclusion mark
+// Renders a grid at the main menu — the top row is every character (five on
+// stable, six with v0.113.0's Fool) with no overlay, then one row per overlay
+// PNG found in ColinsPatchKit/assets/, each stretched over the same portraits
+// exactly the way the real exclusion mark
 // is (StretchMode.Scale over the icon rect). Saves a single screenshot so every
 // candidate overlay can be eyeballed side by side without starting a run:
 //

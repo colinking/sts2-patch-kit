@@ -11,9 +11,6 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "Tampilkan peluangmu mendapatkan ramuan di tooltip peta untuk lantai pertarungan — baik yang sudah dilewati, saat ini, maupun berikutnya.",
 
   "COLINSPATCHKIT-COMBAT.title": "Pertarungan",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "Tampilkan slot penahanan untuk Well Laid Plans",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "Tampilkan slot penahanan untuk Well Laid Plans",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Saat menahan kartu dengan Well Laid Plans, tampilkan satu bingkai kartu bergaris putus-putus untuk tiap kartu yang masih bisa kamu tahan.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Kutukan & status lebih dulu saat exhaust/transformasi",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Kutukan & status lebih dulu saat exhaust/transformasi",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Saat memilih kartu dari tumpukan draw untuk di-exhaust (Cleanse) atau diubah (Charge, Séance), tampilkan kartu kutukan, status, dan quest lebih dulu alih-alih paling akhir — biasanya kartu itulah yang ingin kamu singkirkan.",

@@ -24,9 +24,6 @@ public class ColinsPatchKitConfig : SimpleModConfig
 
     [ConfigSection("Combat")]
     [ConfigHoverTip(true)]
-    public static bool ShowWellLaidPlansRetainSlots { get; set; } = true;
-
-    [ConfigHoverTip(true)]
     public static bool SortCursesAndStatusesFirst { get; set; } = true;
 
     [ConfigHoverTip(true)]

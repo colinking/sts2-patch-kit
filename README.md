@@ -1,8 +1,8 @@
 # Colin's Patch Kit
 
-A mod for Slay the Spire 2 with **15 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
+A mod for Slay the Spire 2 with **14 quality-of-life improvements**. These patches are intended to feel like missing vanilla features.
 
-All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.111.0`), and is safe for use in multiplayer.
+All patches do not impact gameplay, nor competitive integrity. This mod supports the latest stable version (`v0.107.1`) and the latest beta version (`v0.113.0`), and is safe for use in multiplayer.
 
 Please submit feedback / feature requests [via GitHub](https://github.com/colinking/sts2-patch-kit/issues).
 
@@ -20,7 +20,6 @@ individually (Main Menu > Mod Configuration > ColinsPatchKit).
   - [Upcoming floor tooltips](#upcoming-floor-tooltips)
   - [Potion chances](#potion-chances)
 - [Combat](#combat)
-  - [Well Laid Plans retain slots](#well-laid-plans-retain-slots)
   - [Curses \& statuses first when exhausting/transforming](#curses--statuses-first-when-exhaustingtransforming)
   - [More active relic pulses](#more-active-relic-pulses)
   - [Active buff/debuff pulses](#active-buffdebuff-pulses)
@@ -72,14 +71,6 @@ If enabled, combat map tooltips show the chance of receiving a potion (on previo
 ![Potion chances](/docs/images/potion-chance.png)
 
 ### Combat
-
-#### Well Laid Plans retain slots
-
-If enabled, choosing cards to Retain with Well Laid Plans shows one dotted card outline ("slot") per card you can retain.
-
-*This only applies on the main branch, as Well Laid Plans was reworked on the beta branch.*
-
-![Retain slots](/docs/images/retain-slots.png)
 
 #### Curses & statuses first when exhausting/transforming
 

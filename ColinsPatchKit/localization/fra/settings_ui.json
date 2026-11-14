@@ -11,9 +11,6 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "Affiche votre chance d'obtention de potion dans les infobulles de carte de combat — sur les étages passés, actuels et à venir.",
 
   "COLINSPATCHKIT-COMBAT.title": "Combat",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "Afficher les emplacements de rétention pour Plans bien conçus",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "Afficher les emplacements de rétention pour Plans bien conçus",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Lorsque vous conservez des cartes avec Plans bien conçus, affiche un contour de carte en pointillés par carte que vous pouvez encore conserver.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Malédictions et statuts en premier lors de l'épuisement/transformation",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Malédictions et statuts en premier lors de l'épuisement/transformation",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Lors du choix d'une carte de la pioche à épuiser (Purification) ou à transformer (Charge, Séance), liste les malédictions, statuts et cartes de quête en premier au lieu de les mettre en dernier — ce sont généralement celles dont vous voulez vous débarrasser.",

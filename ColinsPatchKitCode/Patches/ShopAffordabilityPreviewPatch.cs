@@ -57,8 +57,10 @@ internal static class ShopAffordabilityPreview
     {
         MerchantEntry entry = slot.Entry;
         // Only preview off an item you can actually buy: if you can't afford the hovered item itself
-        // there's nothing to subtract, and its own price is already shown red.
-        if (rug?.Inventory?.Player is not { } player || entry is not { IsStocked: true } || !entry.EnoughGold)
+        // there's nothing to subtract, and its own price is already shown red. Only the gold-priced
+        // slot kinds take part: v0.113.0's Blitz shop slots cost nothing (gold doesn't matter there).
+        if (!IsPreviewSlot(slot) || rug?.Inventory?.Player is not { } player
+            || entry is not { IsStocked: true } || !entry.EnoughGold || entry.Cost <= 0)
         {
             return;
         }
@@ -104,6 +106,15 @@ internal static class ShopAffordabilityPreview
         {
             foreach (NMerchantSlot slot in rug.GetAllSlots())
             {
+                // Some UpdateVisual overrides end in ClearHoverTip() — card removal whenever it's
+                // still available, and every v0.113.0 Blitz slot — so repainting the slot under the
+                // cursor would delete the tooltip vanilla just opened for it. The hovered slot's own
+                // color never changes with the preview, so card removal is skipped while hovered and
+                // non-gold slots are never touched.
+                if (!IsPreviewSlot(slot) || (slot == _hoveredSlot && slot is NMerchantCardRemoval))
+                {
+                    continue;
+                }
                 UpdateVisualMethod.Invoke(slot, null);
             }
         }
@@ -111,6 +122,12 @@ internal static class ShopAffordabilityPreview
         {
             _animating = false;
         }
+    }
+
+    // The gold-priced slot kinds whose UpdateVisual overrides ShopAffordabilityPreviewRepaintPatch hooks.
+    private static bool IsPreviewSlot(NMerchantSlot slot)
+    {
+        return slot is NMerchantCard or NMerchantRelic or NMerchantPotion or NMerchantCardRemoval;
     }
 
     // Prefix: snapshot the live color before vanilla snaps it, and cancel any fade still running on

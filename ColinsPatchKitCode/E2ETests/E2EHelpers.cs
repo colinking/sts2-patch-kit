@@ -63,13 +63,9 @@ internal static class E2EHelpers
         SaveManager.Instance.InitProgressData();
     }
 
-    // Abandons any leftover test run on the current (scratch) profile, then
-    // clicks through the main menu and character select into a fresh
-    // singleplayer run. Returns once a room is assigned and settled.
-    // preferredCharacterId (a SCREAMING_SNAKE model id entry, e.g. "IRONCLAD") selects that
-    // character when it is unlocked; null keeps the default of the first unlocked character.
-    public static async Task<RunState> StartThrowawayRun(SceneTree tree, string tag, CancellationToken ct,
-        string? preferredCharacterId = null)
+    // Waits for the main menu with FTUEs off, abandoning any leftover test run on the current
+    // (scratch) profile so a fresh run can start. Returns the main menu node.
+    public static async Task<Control> PrepareMainMenu(SceneTree tree, string tag, CancellationToken ct)
     {
         SaveManager.Instance.SetFtuesEnabled(enabled: false);
         Control mainMenu = await WaitHelper.ForNode<Control>(tree.Root, "/root/Game/RootSceneContainer/MainMenu", ct, TimeSpan.FromSeconds(30));
@@ -87,6 +83,19 @@ internal static class E2EHelpers
                 ct, TimeSpan.FromSeconds(15), "abandon confirmation did not close");
         }
 
+        return mainMenu;
+    }
+
+    // Abandons any leftover test run on the current (scratch) profile, then
+    // clicks through the main menu and character select into a fresh
+    // singleplayer run. Returns once a room is assigned and settled.
+    // preferredCharacterId (a SCREAMING_SNAKE model id entry, e.g. "IRONCLAD") selects that
+    // character when it is unlocked; null keeps the default of the first unlocked character.
+    public static async Task<RunState> StartThrowawayRun(SceneTree tree, string tag, CancellationToken ct,
+        string? preferredCharacterId = null)
+    {
+        Control mainMenu = await PrepareMainMenu(tree, tag, ct);
+
         MainFile.Logger.Info($"{tag}: starting run");
         await UiHelper.Click(mainMenu.GetNode<NButton>("MainMenuTextButtons/SingleplayerButton"));
         Control? charSelect = null;
@@ -94,7 +103,10 @@ internal static class E2EHelpers
         await WaitHelper.Until(() =>
         {
             charSelect = mainMenu.GetNodeOrNull<Control>("Submenus/CharacterSelectScreen");
-            standardButton = mainMenu.GetNodeOrNull<NButton>("Submenus/SingleplayerSubmenu/StandardButton");
+            // v0.113.0 nested it under a ButtonContainer and marked it unique (%StandardButton).
+            Control? submenu = mainMenu.GetNodeOrNull<Control>("Submenus/SingleplayerSubmenu");
+            standardButton = submenu?.GetNodeOrNull<NButton>("%StandardButton")
+                ?? submenu?.GetNodeOrNull<NButton>("StandardButton");
             return (charSelect?.Visible ?? false) || (standardButton?.Visible ?? false);
         }, ct, TimeSpan.FromSeconds(15), "no singleplayer submenu or character select");
         if ((standardButton?.Visible ?? false) && !(charSelect?.Visible ?? false))
@@ -115,7 +127,7 @@ internal static class E2EHelpers
             (preferredCharacterId != null
                 ? characters.FirstOrDefault(b => !b.IsLocked && b.Character.Id.Entry == preferredCharacterId)
                 : null)
-            ?? characters.First(b => !b.IsLocked);
+            ?? characters.First(b => !b.IsLocked && !b.IsRandom && b.Visible);
         if (preferredCharacterId != null && chosen.Character.Id.Entry != preferredCharacterId)
         {
             MainFile.Logger.Info($"{tag}: '{preferredCharacterId}' not available, falling back to {chosen.Character.Id.Entry}");

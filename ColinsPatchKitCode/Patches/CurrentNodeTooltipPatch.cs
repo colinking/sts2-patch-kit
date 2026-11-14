@@ -54,6 +54,18 @@ public static class CurrentNodeTooltipPatch
         {
             return;
         }
+        ShowHistoryTooltip(point, point.Point, runState, MapNodeInfoTooltipPatch.AlignToMapPoint);
+    }
+
+    // Shows the room-history tooltip for the current node `mapPoint`, owned by `anchor` (the hovered
+    // control — a map-screen node, or Blitz's top-bar point) and positioned by `place`. Returns
+    // whether it was shown.
+    public static bool ShowHistoryTooltip(Control anchor, MapPoint mapPoint, IRunState runState, Action<Control, NHoverTipSet> place)
+    {
+        if (LocalContext.NetId == null)
+        {
+            return false;
+        }
         // While you're actually in this room's combat, the history tooltip's Rewards section is empty
         // (nothing's been earned yet), so we insert our expected rewards into it below. Once the
         // combat ends, the section fills with the real rewards and the insertion is skipped.
@@ -61,16 +73,16 @@ public static class CurrentNodeTooltipPatch
         Player? combatPlayer = combatType.HasValue
             ? runState.Players.FirstOrDefault(p => p.NetId == LocalContext.NetId.Value)
             : null;
-        MapPointHistoryEntry? entry = runState.GetHistoryEntryFor(new MapLocation(point.Point.coord, runState.CurrentActIndex));
+        MapPointHistoryEntry? entry = runState.GetHistoryEntryFor(new MapLocation(mapPoint.coord, runState.CurrentActIndex));
         if (entry == null)
         {
-            return;
+            return false;
         }
         // NMapPointHistoryHoverTip._Ready throws if the local player has no stats
         // entry (possible if they weren't in the run when this room was entered).
         if (entry.PlayerStats.All(s => s.PlayerId != LocalContext.NetId.Value))
         {
-            return;
+            return false;
         }
         // The game only snapshots HP/gold into the history entry when leaving a room
         // (RunManager.UpdatePlayerStatsInMapPointHistory), so for the current room they
@@ -93,29 +105,27 @@ public static class CurrentNodeTooltipPatch
             Player? me = runState.Players.FirstOrDefault(p => p.NetId == LocalContext.NetId.Value);
             entry.Rooms.Last().TurnsTaken = me?.PlayerCombatState?.TurnNumber ?? combatRoom.CombatState.RoundNumber;
         }
-        int floorNum = point.Point.coord.row + 1;
+        int floorNum = mapPoint.coord.row + 1;
         for (int i = 0; i < runState.MapPointHistory.Count - 1; i++)
         {
             floorNum += runState.MapPointHistory[i].Count;
         }
-        NHoverTipSet.Remove(point);
-        NMapPointHistoryHoverTip historyTip = NMapPointHistoryHoverTip.Create(floorNum, LocalContext.NetId.Value, entry);
-        NHoverTipSet tip = NHoverTipSet.CreateAndShowMapPointHistory(point, historyTip);
+        NHoverTipSet.Remove(anchor);
+        NMapPointHistoryHoverTip historyTip = BranchCompat.CreateMapPointHistoryHoverTip(floorNum, LocalContext.NetId.Value, entry, runState);
+        NHoverTipSet tip = NHoverTipSet.CreateAndShowMapPointHistory(anchor, historyTip);
         // Mid-combat, fill the (otherwise empty) Rewards section with the expected rewards. Runs after
         // the tooltip's _Ready has populated the section, so it reveals/overrides it.
         if (combatType.HasValue && combatPlayer != null)
         {
-            MapNodeInfoTooltipPatch.RenderExpectedRewardsIntoHistory(historyTip, runState, combatPlayer, point.Point, combatType.Value);
+            MapNodeInfoTooltipPatch.RenderExpectedRewardsIntoHistory(historyTip, runState, combatPlayer, mapPoint, combatType.Value);
         }
         // The recorded potion-chance line is appended by CombatPotionChanceHistoryTooltipPatch's
         // _Ready postfix, which runs for every history tooltip — this current node and the traveled
         // ones alike (it no-ops on the still-in-progress current combat, whose expected potion chance
-        // is shown by the inserted block above instead). Alignment is deferred so the tip is sized
-        // (including that line) before it's positioned.
-        Callable.From(delegate
-        {
-            tip.SetAlignment(point, HoverTip.GetHoverTipAlignment(point));
-        }).CallDeferred();
+        // is shown by the inserted block above instead). `place` defers positioning so the tip is
+        // sized (including that line) before it's positioned.
+        place(anchor, tip);
+        return true;
     }
 }
 

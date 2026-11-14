@@ -11,9 +11,6 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "戦闘マップのツールチップに、ポーションのドロップ確率を表示します。過去・現在・これから進む階層のいずれにも表示されます。",
 
   "COLINSPATCHKIT-COMBAT.title": "戦闘",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "綿密な計画の温存スロットを表示",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "綿密な計画の温存スロットを表示",
-  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "綿密な計画でカードを温存する際、まだ温存できるカード1枚につき点線のカード枠を1つ表示します。",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "消滅/変化時に呪い・状態カードを先頭に",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "消滅/変化時に呪い・状態カードを先頭に",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "ドロー山から消滅(浄化)または変化(チャージ、交霊)させるカードを選ぶ際、呪いカード・状態カード・クエストカードを末尾ではなく先頭に並べます。たいていは取り除きたいのはこれらだからです。",

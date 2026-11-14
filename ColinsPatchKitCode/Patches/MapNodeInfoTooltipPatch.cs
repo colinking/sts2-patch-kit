@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Ascension;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Helpers;
@@ -18,7 +19,9 @@ using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Encounters;
+using MegaCrit.Sts2.Core.Models.Modifiers;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
@@ -67,13 +70,15 @@ public static class MapNodeInfoTooltipPatch
     private const string PotionIconPath = "res://images/packed/sprite_fonts/potion_icon.png";
     private const string PotionIconMarker = "potion_icon.png";
 
-    // The currently-hovered Unknown/Monster node, tracked so MapNodeInfoModifierPatch can rebuild
-    // its tooltip (to add/remove the possible-events / possible-enemies list) when Cmd/Ctrl is
-    // pressed or released.
-    private static NMapPoint? _hoveredExpandable;
+    // The currently-hovered Unknown/Monster/Elite node, tracked so MapNodeInfoModifierPatch can
+    // rebuild its tooltip (to add/remove the possible-events / possible-enemies list) when Cmd/Ctrl
+    // is pressed or released. The anchor is the hovered control: an NMapPoint on the map screen, or
+    // Blitz's top-bar map point (BlitzTopBarMapPointTooltipPatch), each with its own tip placement.
+    private static Control? _hoveredExpandable;
+    private static MapPoint? _hoveredMapPoint;
     private static IRunState? _hoveredRunState;
-    private static NMapScreen? _hoveredScreen;
     private static Player? _hoveredPlayer;
+    private static Action<Control, NHoverTipSet>? _hoveredPlace;
     private static bool _expandedShown;
 
     // Cached reflection handles for the protected ActModel._rooms field (generated room pools)
@@ -125,33 +130,47 @@ public static class MapNodeInfoTooltipPatch
             return;
         }
 
-        ShowExpectedRewardsTooltip(point, runState, screen, localPlayer);
+        ShowExpectedRewardsTooltip(point, point.Point, runState, localPlayer, AlignToMapPoint);
     }
 
-    // Builds and shows the "Floor N / room type / expected rewards" tooltip for an upcoming `point`.
-    // The current in-combat node takes a separate path (CurrentNodeTooltipPatch, which inserts the
-    // expected rewards into the vanilla history tooltip), so this only ever runs for upcoming nodes —
-    // hence no Cmd-expand or asterisk-suppression handling for the current room here.
-    public static void ShowExpectedRewardsTooltip(NMapPoint point, IRunState runState, NMapScreen screen, Player player)
+    // Map-screen placement: beside the node, like the vanilla history tooltip. Deferred a frame so
+    // the tooltip is sized before it's positioned (as in CurrentNodeTooltipPatch).
+    public static void AlignToMapPoint(Control anchor, NHoverTipSet set)
     {
-        MapPointType type = point.Point.PointType;
-        bool dependsOnUnresolved = PotionChanceDrifts(runState, point.Point);
-        (string roomTypeKey, string? body) = BuildTooltipFor(type, point.Point, runState, player, dependsOnUnresolved);
+        Callable.From(delegate
+        {
+            set.SetAlignment(anchor, HoverTip.GetHoverTipAlignment(anchor));
+        }).CallDeferred();
+    }
+
+    // Builds and shows the "Floor N / room type / expected rewards" tooltip for an upcoming
+    // `mapPoint`, owned by `anchor` (the hovered control) and positioned by `place`. The current
+    // in-combat node takes a separate path (CurrentNodeTooltipPatch, which inserts the expected
+    // rewards into the vanilla history tooltip), so this only ever runs for upcoming nodes — hence
+    // no Cmd-expand or asterisk-suppression handling for the current room here. Returns whether a
+    // tooltip was shown (false leaves the vanilla one in place).
+    public static bool ShowExpectedRewardsTooltip(Control anchor, MapPoint mapPoint, IRunState runState, Player player,
+        Action<Control, NHoverTipSet> place)
+    {
+        MapPointType type = mapPoint.PointType;
+        // Blitz rewards are fixed per room (no potion pity), so nothing can drift.
+        bool dependsOnUnresolved = !BranchCompat.IsBlitz(runState) && PotionChanceDrifts(runState, mapPoint);
+        (string roomTypeKey, string? body) = BuildTooltipFor(type, mapPoint, runState, player, dependsOnUnresolved);
         if (body == null)
         {
-            // Boss / Ancient / Unassigned: nothing useful to add.
-            return;
+            // Ancient / Unassigned / Blitz's shop: nothing useful to add (vanilla's tooltip stays).
+            return false;
         }
 
-        NHoverTipSet.Remove(point);
+        NHoverTipSet.Remove(anchor);
         // Mirror the historical-node tooltip: a "Floor N" header, the room type in normal text below
         // it, then the expected-reward sections (reusing the same floor-header loc string).
         LocString header = new("run_history", "MAP_POINT_HISTORY.header");
-        header.Add("FloorNum", FloorNumberFor(runState, point.Point));
+        header.Add("FloorNum", FloorNumberFor(runState, mapPoint));
         string roomType = new LocString(LocTable, roomTypeKey).GetFormattedText();
         // Bosses fold their name into the room-type line ("Boss: Waterfall Giant") rather than
         // showing it as a separate body line.
-        if (type == MapPointType.Boss && BossEncounterFor(runState, point.Point) is { } bossEncounter)
+        if (type == MapPointType.Boss && BossEncounterFor(runState, mapPoint) is { } bossEncounter)
         {
             roomType = LabelValue(roomType, bossEncounter.Title.GetFormattedText());
         }
@@ -165,28 +184,25 @@ public static class MapNodeInfoTooltipPatch
         // overflow and break mid-phrase. The wide-tooltip positioning this relies on is already
         // exercised by the Shop price table and the Cmd/Ctrl-expanded enemy/elite/event lists, so
         // it's a proven path — long encounter names like "Two Gremlins in a Trenchcoat" included.
-        tip.ShouldOverrideTextOverflow = true;
-        NHoverTipSet? set = NHoverTipSet.CreateAndShow(point, tip, HoverTipAlignment.None);
+        tip = BranchCompat.WithTextOverflowOverride(tip);
+        NHoverTipSet? set = NHoverTipSet.CreateAndShow(anchor, tip, HoverTipAlignment.None);
         if (set == null)
         {
-            return;
+            return false;
         }
         // Track expandable nodes so MapNodeInfoModifierPatch can rebuild the tooltip when Cmd/Ctrl
         // is pressed/released (to expand/collapse the possible events / enemies / elites list).
         if (type is MapPointType.Unknown or MapPointType.Monster or MapPointType.Elite)
         {
-            _hoveredExpandable = point;
+            _hoveredExpandable = anchor;
+            _hoveredMapPoint = mapPoint;
             _hoveredRunState = runState;
-            _hoveredScreen = screen;
             _hoveredPlayer = player;
+            _hoveredPlace = place;
             _expandedShown = IsModifierHeld();
         }
-        // Defer alignment a frame so the tooltip is sized before it's positioned (as in
-        // CurrentNodeTooltipPatch).
-        Callable.From(delegate
-        {
-            set.SetAlignment(point, HoverTip.GetHoverTipAlignment(point));
-        }).CallDeferred();
+        place(anchor, set);
+        return true;
     }
 
     // If the local player is in an in-progress Monster/Elite/Boss combat, the map point type to
@@ -260,7 +276,8 @@ public static class MapNodeInfoTooltipPatch
     // the combat rolls no potion (the final act's boss).
     private static List<string> ExpectedPotionOnlyLines(IRunState runState, Player player, MapPointType type)
     {
-        if (!ColinsPatchKitConfig.ShowPotionChances)
+        // Blitz potions are fixed per room, so there's no chance to show.
+        if (!ColinsPatchKitConfig.ShowPotionChances || BranchCompat.IsBlitz(runState))
         {
             return new List<string>();
         }
@@ -286,7 +303,10 @@ public static class MapNodeInfoTooltipPatch
             MapPointType.Elite => ("LEGEND_ELITE.title", BuildElite(mapPoint, runState, player, dependsOnUnresolved)),
             MapPointType.Treasure => ("LEGEND_TREASURE.title", BuildTreasure(mapPoint, runState, player)),
             MapPointType.Monster => ("LEGEND_ENEMY.title", BuildMonster(mapPoint, runState, player, dependsOnUnresolved)),
-            MapPointType.Shop => ("LEGEND_MERCHANT.title", BuildMerchant(mapPoint, runState, player)),
+            // Blitz's merchant hands out free picks rather than priced stock; its map hover keeps
+            // vanilla's description (a null body leaves the vanilla tooltip in place).
+            MapPointType.Shop => ("LEGEND_MERCHANT.title",
+                BranchCompat.IsBlitz(runState) ? null : BuildMerchant(mapPoint, runState, player)),
             MapPointType.RestSite => ("LEGEND_REST.title", BuildRest(player)),
             MapPointType.Boss => ("LEGEND_BOSS.title", BuildBoss(mapPoint, runState, player, dependsOnUnresolved)),
             _ => (string.Empty, null),
@@ -471,33 +491,35 @@ public static class MapNodeInfoTooltipPatch
         }
     }
 
-    // "Hold Cmd/Ctrl to list X" hint, expanding to the full body (built by getBody, which already
-    // includes any headers) while the modifier is held. Separated from the preceding section by a
-    // blank line.
+    // "Hold Cmd/Ctrl to list X" hint, expanding to the full body (built by getBody, whose headers
+    // each open their own section gap) while the modifier is held. The hint opens a section gap too.
     private static void AppendExpandableSection(List<string> lines, string noun, IRunState runState, Func<IRunState, List<string>> getBody)
     {
         if (IsModifierHeld())
         {
-            List<string> body = getBody(runState);
-            if (body.Count > 0)
-            {
-                lines.Add("");
-                lines.AddRange(body);
-            }
+            lines.AddRange(getBody(runState));
         }
         else
         {
-            lines.Add("");
-            lines.Add($"[color=#888888]{Loc("HOLD_TO_LIST", ("Modifier", ModifierName()), ("Noun", noun))}[/color]");
+            lines.Add($"{SectionGap}[color=#888888]{Loc("HOLD_TO_LIST", ("Modifier", ModifierName()), ("Noun", noun))}[/color]");
         }
     }
 
+    // Prefixed to the first line of each section to leave the small extra gap the vanilla history
+    // tooltip has above its "Rewards:" / "Skipped:" headers (there each section is its own node in a
+    // container; here everything is one label). A blank line is far too tall — the label won't make
+    // a line shorter than its default font, so even a tiny-font blank line costs a whole line — so
+    // instead an invisible zero-width space at a larger font size makes the section's first line a
+    // few pixels taller, mostly above its text (a taller font grows its ascent more than descent).
+    private const int SectionGapFontSize = 26;
+    private static readonly string SectionGap = $"[font_size={SectionGapFontSize}]\u200B[/font_size]";
+
     // Section/list headers reuse the history tooltip's "Rewards" label styling: gold (StsColors.gold
     // #EFC851), bold, and size 22 (the description label's default is smaller), so they read as
-    // native headers above the cream body text.
+    // native headers above the cream body text. Each opens a section gap.
     private static string Header(string text)
     {
-        return $"[font_size=22][color=#{GoldColorHex}][b]{text}[/b][/color][/font_size]";
+        return $"{SectionGap}[font_size=22][color=#{GoldColorHex}][b]{text}[/b][/color][/font_size]";
     }
 
     // A gold header with each entry indented two spaces beneath it, mirroring the history tooltip's
@@ -541,12 +563,16 @@ public static class MapNodeInfoTooltipPatch
     // run-history tooltip we insert into: gold, relic, card, then potion last.
     private static List<string> EliteRewardLines(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
+        if (BranchCompat.IsBlitz(runState))
+        {
+            return BlitzEliteRewardLines(mapPoint, runState, player);
+        }
         List<string> rewards = new() { GoldText(runState, player, RoomType.Elite, CombatGoldBonus(runState, player)) };
         rewards.Add(CombatRelicLine(runState, player, mapPoint, isElite: true)!);
-        rewards.Add(CardRewardLine(runState, player, mapPoint));
+        rewards.Add(CardRewardLine(runState, player, mapPoint, HasBigGameHunter(runState) ? CardRarity.Rare : null));
         if (player.GetRelic<WhiteStar>() != null)
         {
-            rewards.Add(Loc("EXTRA_CARD_REWARD"));
+            rewards.Add(WhiteStarRewardLine());
         }
         rewards.Add(PotionRewardLine(runState, player, RoomType.Elite, dependsOnUnresolved));
         return rewards;
@@ -557,7 +583,11 @@ public static class MapNodeInfoTooltipPatch
     private static string BuildTreasure(MapPoint mapPoint, IRunState runState, Player player)
     {
         List<string> rewards = new();
-        if (!Hook.ShouldGenerateTreasure(runState, player))
+        if (BranchCompat.IsBlitz(runState))
+        {
+            rewards.Add(RelicLine(BlitzTreasureRelics(runState, player)));
+        }
+        else if (!Hook.ShouldGenerateTreasure(runState, player))
         {
             rewards.Add($"[color=#{MissingRewardColorHex}]{Loc("EMPTY_CHEST")}[/color]");
         }
@@ -592,6 +622,10 @@ public static class MapNodeInfoTooltipPatch
     // run-history tooltip we insert into: gold, relic, card, then potion last.
     private static List<string> MonsterRewardLines(MapPoint mapPoint, IRunState runState, Player player, bool dependsOnUnresolved)
     {
+        if (BranchCompat.IsBlitz(runState))
+        {
+            return BlitzMonsterRewardLines(mapPoint, runState, player);
+        }
         List<string> rewards = new() { GoldText(runState, player, RoomType.Monster, CombatGoldBonus(runState, player)) };
         // Monsters give no base relic, but Wongo's Mystery Ticket can drop one here.
         if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
@@ -625,13 +659,20 @@ public static class MapNodeInfoTooltipPatch
         {
             return new List<string>();
         }
+        if (BranchCompat.IsBlitz(runState) && runState.CurrentActIndex < BlitzRewardActs)
+        {
+            return BlitzBossRewardLines(mapPoint, runState, player);
+        }
         List<string> rewards = new() { GoldText(runState, player, RoomType.Boss, CombatGoldBonus(runState, player)) };
         // Bosses give no base relic, but Wongo's Mystery Ticket can drop one here.
         if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
         {
             rewards.Add(relicLine);
         }
-        rewards.Add(CardRewardLine(runState, player, mapPoint));
+        // Boss card rewards are always Rare: CardRarityOddsType.BossEncounter weights Rare at 100%
+        // and the roll ignores the rarity pity (CardRarityOdds.Roll). The reward-option hooks that
+        // touch it (Dingy Rug, Prismatic Gem, the Character Cards modifier) only add card pools.
+        rewards.Add(CardRewardLine(runState, player, mapPoint, CardRarity.Rare));
         rewards.Add(PotionRewardLine(runState, player, RoomType.Boss, dependsOnUnresolved));
         return rewards;
     }
@@ -646,6 +687,120 @@ public static class MapNodeInfoTooltipPatch
             return act.SecondBossEncounter ?? act.BossEncounter;
         }
         return act.BossEncounter;
+    }
+
+    // ---- Blitz (v0.113.0 beta) ----
+    // Blitz replaces the default room rewards wholesale (BlitzRunModel.TryReplaceDefaultRoomRewards):
+    // no gold anywhere, a fixed-rarity card reward per room type, and potions fixed by room rather
+    // than rolled from the pity. Relic hooks still run on top (RewardsSet.GenerateWithoutOffering →
+    // Hook.ModifyRewards), so White Star / Wongo's Mystery Ticket still add their rewards; most other
+    // reward relics are banned from Blitz (RelicLists.notAllowedInBlitz). Every Blitz type is
+    // beta-only, so nothing here references one at compile time.
+
+    // Blitz only replaces the rewards of the first two acts' bosses (CurrentActIndex < 2); a later
+    // boss falls through to the default rewards.
+    private const int BlitzRewardActs = 2;
+
+    // Monster: a Common card reward, plus a potion unless the fight is weak (each act's first normal
+    // combat is its only weak one in Blitz — ActModel.GenerateRooms).
+    private static List<string> BlitzMonsterRewardLines(MapPoint mapPoint, IRunState runState, Player player)
+    {
+        List<string> rewards = new();
+        // Wongo's Mystery Ticket can still drop its relics here.
+        if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
+        {
+            rewards.Add(relicLine);
+        }
+        rewards.Add(BlitzCardRewardLine(runState, CardRarity.Common, upgradesApply: true));
+        switch (BlitzMonsterIsWeak(runState, mapPoint))
+        {
+            case false:
+                rewards.Add(Loc("POTION"));
+                break;
+            case null:
+                rewards.Add(Loc("POTION_POSSIBLY")); // defensive: the weak slot couldn't be placed
+                break;
+        }
+        return rewards;
+    }
+
+    // Elite: two relics, an Uncommon card reward, and no potion.
+    private static List<string> BlitzEliteRewardLines(MapPoint mapPoint, IRunState runState, Player player)
+    {
+        int relics = 2 + (player.GetRelic<BlackStar>() != null ? 1 : 0);
+        (int wongos, bool uncertain) = WongosRelics(runState, player, mapPoint);
+        List<string> rewards = new()
+        {
+            RelicLine(relics + wongos, uncertain),
+            BlitzCardRewardLine(runState, CardRarity.Uncommon, upgradesApply: true),
+        };
+        if (player.GetRelic<WhiteStar>() != null)
+        {
+            rewards.Add(WhiteStarRewardLine());
+        }
+        return rewards;
+    }
+
+    // Boss (acts 1-2; the final boss ends the run): a Rare card reward and a potion. Boss card
+    // rewards skip the Blitz upgrade (BlitzRunModel.TryModifyCardRewardOptionsLate).
+    private static List<string> BlitzBossRewardLines(MapPoint mapPoint, IRunState runState, Player player)
+    {
+        List<string> rewards = new();
+        if (CombatRelicLine(runState, player, mapPoint, isElite: false) is { } relicLine)
+        {
+            rewards.Add(relicLine);
+        }
+        rewards.Add(BlitzCardRewardLine(runState, CardRarity.Rare, upgradesApply: false));
+        rewards.Add(Loc("POTION"));
+        return rewards;
+    }
+
+    // "Card reward (Uncommon)" / "Card reward (Uncommon, 1 upgraded)". Blitz card rewards are a fixed
+    // rarity per room type — the options are drawn from a pool filtered to it, with no rarity roll
+    // (BlitzRunModel.TryReplaceDefaultRoomRewards). From act 2 on, Blitz also upgrades some of a
+    // non-boss combat card reward's options: one in act 2, two in act 3
+    // (BlitzRunModel.TryModifyCardRewardOptionsLate; an option that can't be upgraded stays as is).
+    private static string BlitzCardRewardLine(IRunState runState, CardRarity rarity, bool upgradesApply)
+    {
+        string rarityText = RarityText(rarity);
+        int upgraded = upgradesApply ? Math.Clamp(runState.CurrentActIndex, 0, 2) : 0;
+        return upgraded > 0
+            ? Loc("CARD_REWARD_RARITY_UPGRADED", ("Rarity", rarityText), ("Count", upgraded))
+            : Loc("CARD_REWARD_RARITY", ("Rarity", rarityText));
+    }
+
+    // Whether a Blitz Monster node's fight is the act's weak one (no potion): true/false, or null if
+    // it can't be placed. The fight in progress reads its own encounter; an upcoming node is weak
+    // iff it's the act's first normal combat (Blitz's single weak slot). The line map has exactly
+    // one route, so the depth is always exact.
+    private static bool? BlitzMonsterIsWeak(IRunState runState, MapPoint target)
+    {
+        if (target.coord == runState.MapLocation.coord && runState.CurrentRoom is CombatRoom combat)
+        {
+            return combat.Encounter.IsWeak;
+        }
+        if (MonsterDepthBounds(runState, target) is not { } bounds || GetWeakEncounterCount(runState) is not { } weakCount)
+        {
+            return null;
+        }
+        int done = GetNormalsFought(runState);
+        if (done + bounds.max <= weakCount)
+        {
+            return true;
+        }
+        return done + bounds.min > weakCount ? false : null;
+    }
+
+    // Blitz treasure relics (TreasureRoomRelicSynchronizer): singleplayer adds one extra relic to the
+    // chest and lets you take both; multiplayer adds two extras to the shared pick, but each player
+    // still takes one. Silver Crucible's empty chest only drops your own relic, not the extras.
+    private static int BlitzTreasureRelics(IRunState runState, Player player)
+    {
+        if (runState.Players.Count > 1)
+        {
+            return 1;
+        }
+        return (Hook.ShouldGenerateTreasure(runState, player) ? 1 : 0) + 1;
     }
 
     // Merchant node: approximate price ranges by rarity (prices vary ~±5-15%) laid out as an aligned
@@ -663,7 +818,7 @@ public static class MapNodeInfoTooltipPatch
         int removalStep = AscensionHelper.GetValueIfAscension(AscensionLevel.Inflation, 50, 25);
         int removalCost = Mathf.RoundToInt((removalBase + removalStep * player.ExtraFields.CardShopRemovalsUsed) * discount);
         string goldRange = goldMin == goldMax ? goldMin.ToString() : $"{goldMin}-{goldMax}";
-        return MerchantPriceTable(discount, goldMin, removalCost) + "\n\n" + Loc("EXPECTED_GOLD", ("Amount", Gold(goldRange)));
+        return MerchantPriceTable(discount, goldMin, removalCost) + $"\n{SectionGap}" + Loc("EXPECTED_GOLD", ("Amount", Gold(goldRange)));
     }
 
     // A 4-column BBCode table (row label + Common/Uncommon/Rare) — the description label renders
@@ -811,8 +966,8 @@ public static class MapNodeInfoTooltipPatch
 
     // Rest site: the full list of options available here, which depends on the player's relics,
     // quests and party. Built from the game's own RestSiteOption.Generate (Heal + Smith always,
-    // Mend in multiplayer, and Dig/Lift/Cook/Kindle/Clone/Hatch added by their relics or cards via
-    // the ModifyRestSiteOptions hook), so any option the game would offer here appears, each with a
+    // Mend in multiplayer, and Dig/Lift/Cook/Kindle/Clone/Hatch — plus v0.113.0's Evolve (Byrdpip)
+    // and Restore (Wuppy) — added by their relics or cards via the ModifyRestSiteOptions hook), so any option the game would offer here appears, each with a
     // concise value. Generate is side-effect free — the option constructors and every hook listener
     // only build/filter the list. Options that exist but can't be taken right now (Smith with
     // nothing upgradable, Cook with fewer than two removable cards) are greyed, like the rest screen.
@@ -856,8 +1011,9 @@ public static class MapNodeInfoTooltipPatch
             case "MEND":
                 return Loc("REST_MEND");
             case "SMITH":
-                int smithCount = option is SmithRestSiteOption smith ? smith.SmithCount : 1;
-                return smithCount == 1 ? Loc("REST_SMITH_ONE") : Loc("REST_SMITH_MANY", ("Count", smithCount));
+                // Always one card: v0.111.0's settable SmithCount was never raised by anything, and
+                // v0.113.0 removed it.
+                return Loc("REST_SMITH_ONE");
             case "COOK":
                 return Loc("REST_COOK", ("MaxHp", CookMaxHpGain));
             case "DIG":
@@ -870,9 +1026,45 @@ public static class MapNodeInfoTooltipPatch
                 return Loc("REST_CLONE");
             case "KINDLE":
                 return Loc("REST_KINDLE");
+            case "EVOLVE":
+                return EvolveDetail(player);
+            case "RESTORE":
+                return RestoreDetail(player);
             default:
                 return string.Empty;
         }
+    }
+
+    // v0.113.0 rest options from beta-only relics (Byrdine, Wuppy), so those types are resolved by
+    // name; the options themselves only ever appear on that branch. Both details are built from the
+    // game's own localized relic titles plus existing keys, so they need no new translations.
+    private static readonly Type? ByrdineType = AccessTools.TypeByName("MegaCrit.Sts2.Core.Models.Relics.Byrdine");
+    private static readonly Type? WuppyType = AccessTools.TypeByName("MegaCrit.Sts2.Core.Models.Relics.Wuppy");
+    private static readonly PropertyInfo? WuppyCurrentHp = WuppyType == null ? null : AccessTools.Property(WuppyType, "CurrentHp");
+    private static readonly PropertyInfo? WuppyMaxHp = WuppyType == null ? null : AccessTools.Property(WuppyType, "MaxHp");
+
+    // Evolve replaces the 6-Swoop Byrdpip with Byrdine: "Byrdpip → Byrdine".
+    private static string EvolveDetail(Player player)
+    {
+        if (player.GetRelic<Byrdpip>() is not { } byrdpip || ByrdineType == null
+            || ModelDb.GetByIdOrNull<RelicModel>(ModelDb.GetId(ByrdineType)) is not { } byrdine)
+        {
+            return string.Empty;
+        }
+        return $"{byrdpip.Title.GetFormattedText()} → {byrdine.Title.GetFormattedText()}";
+    }
+
+    // Restore heals Wuppy (the pet relic) to full: "Wuppy +23 HP". Unavailable at full HP, where
+    // there's nothing to add.
+    private static string RestoreDetail(Player player)
+    {
+        if (WuppyType == null || WuppyCurrentHp == null || WuppyMaxHp == null
+            || player.Relics.FirstOrDefault(r => WuppyType.IsInstanceOfType(r)) is not { } wuppy)
+        {
+            return string.Empty;
+        }
+        int missing = (int)WuppyMaxHp.GetValue(wuppy)! - (int)WuppyCurrentHp.GetValue(wuppy)!;
+        return missing > 0 ? $"{wuppy.Title.GetFormattedText()} {Loc("REST_HEAL_DETAIL", ("Hp", missing))}" : string.Empty;
     }
 
     // Cook's max-HP gain differs across game branches (v0.109.0 nerfed it from 9 to 5). The value
@@ -927,7 +1119,9 @@ public static class MapNodeInfoTooltipPatch
     // Returns null when `target` isn't a recorded rolling combat node or the checksum fails.
     public static (float chance, bool rollHit, bool hasGuaranteedPotion, bool forced)? HistoricalPotionInfo(IRunState runState, MapPointHistoryEntry target, ulong playerId)
     {
-        if (!ColinsPatchKitConfig.ShowPotionChances)
+        // Blitz potions are fixed per room (no pity roll), so there's no chance to report — the
+        // vanilla history rows already list the potion when the room gave one.
+        if (!ColinsPatchKitConfig.ShowPotionChances || BranchCompat.IsBlitz(runState))
         {
             return null;
         }
@@ -995,7 +1189,7 @@ public static class MapNodeInfoTooltipPatch
     private static readonly ModelId PunchOffEncounterId = ModelDb.GetId(typeof(PunchOffEventEncounter));
 
     // White Beast Statue forces its owner's combat potion rewards (the only
-    // ShouldForcePotionReward implementer as of v0.110.1). From v0.109.0 a forced reward
+    // ShouldForcePotionReward implementer as of v0.113.0). From v0.109.0 a forced reward
     // returns before the pity bookkeeping (PotionRewardOdds.Roll), so forced combats must not
     // step the replayed pity on that branch; on v0.107 the forced roll still steps it as usual.
     private static readonly ModelId WhiteBeastStatueId = ModelDb.GetId(typeof(WhiteBeastStatue));
@@ -1524,29 +1718,49 @@ public static class MapNodeInfoTooltipPatch
     // predicts it on both branches. When it will fire for this node's combat we show "+ Power".
     // If the parity isn't fixed — the number of combats you clear before this node varies by
     // route or includes an unresolved "?" — the Power gets an asterisk (it may or may not fire).
-    private static string CardRewardLine(IRunState runState, Player player, MapPoint target)
+    // `rarity` is the reward's guaranteed rarity when the room fixes one (bosses), shown as
+    // "Card reward (Rare)"; null for a rolled rarity. Lasting Candy's extra Power option is separate
+    // from that guarantee, so it reads "Card reward (Rare) + Power".
+    private static string CardRewardLine(IRunState runState, Player player, MapPoint target, CardRarity? rarity = null)
     {
+        string plain = rarity is { } r ? Loc("CARD_REWARD_RARITY", ("Rarity", RarityText(r))) : Loc("CARD_REWARD");
+        string power = rarity is { } r2 ? Loc("CARD_REWARD_RARITY_POWER", ("Rarity", RarityText(r2))) : Loc("CARD_REWARD_POWER");
         LastingCandy? candy = player.GetRelic<LastingCandy>();
         if (candy == null)
         {
-            return Loc("CARD_REWARD");
+            return plain;
         }
         if (LastingCandyCounter == null // future rename: can't predict, mark uncertain
             || CombatsBeforeBounds(runState, target) is not { } before || before.min != before.max)
         {
-            return Loc("CARD_REWARD_POWER") + "*";
+            return power + "*";
         }
         int counter = (int)LastingCandyCounter.GetValue(candy)! + PendingCurrentCombatTick(runState, target);
         bool fires = (counter + before.min + 1) % 2 == 0;
-        return fires ? Loc("CARD_REWARD_POWER") : Loc("CARD_REWARD");
+        return fires ? power : plain;
     }
+
+    // The game's own localized rarity name ("Common", "Rare", ...).
+    private static string RarityText(CardRarity rarity) => rarity.ToLocString().GetFormattedText();
+
+    // The Big Game Hunter run modifier (custom/daily runs) restricts elite card rewards to Rare: it
+    // switches their odds to Uniform and filters the pool to Rare cards
+    // (BigGameHunter.ModifyCardRewardCreationOptions; identical on both game branches). Blitz builds
+    // its elite card reward without the elite-encounter odds the modifier keys on, so it's untouched.
+    private static bool HasBigGameHunter(IRunState runState) => runState.Modifiers.OfType<BigGameHunter>().Any();
+
+    // White Star's extra elite card reward is generated as a boss reward
+    // (CardCreationOptions.ForRoom(Owner, RoomType.Boss)), so it is always Rare — Blitz included,
+    // since the relic adds it on top of whatever the room grants.
+    private static string WhiteStarRewardLine() =>
+        Loc("EXTRA_CARD_REWARD_RARITY", ("Rarity", RarityText(CardRarity.Rare)));
 
     // The candy's counter ticks when a combat's rewards are offered — after the fight ends — so
     // while the map is open mid-combat the current fight's tick is still pending: it will land
     // before any FUTURE node's reward, but is in neither the counter nor CombatsBeforeBounds
     // (which only counts nodes between current and target). Without this correction the parity
     // is off by one for every future node hovered during a fight, on both game branches (v0.107
-    // ticks at AfterCombatEnd, v0.108 at BeforeCombatRewardOffered — both after IsInProgress
+    // ticks at AfterCombatEnd, v0.108+ at BeforeCombatRewardOffered — both after IsInProgress
     // drops). The current node itself never gets the correction: its own reward IS the pending
     // tick, and reads the counter as-is.
     private static int PendingCurrentCombatTick(IRunState runState, MapPoint target)
@@ -1684,13 +1898,18 @@ public static class MapNodeInfoTooltipPatch
 
     // How many opening normal combats of the current act draw from the easy pool (varies per act:
     // 2 or 3). Read by reflection from the protected ActModel.NumberOfWeakEncounters; null if
-    // unreadable (callers then show both pools).
+    // unreadable (callers then show both pools). Blitz overrides it to a single weak combat per act
+    // at generation time (ActModel.GenerateRooms' isBlitz), leaving the property untouched.
     private static int? GetWeakEncounterCount(IRunState runState)
     {
         ActModel? act = runState.Act;
         if (act == null)
         {
             return null;
+        }
+        if (BranchCompat.IsBlitz(runState))
+        {
+            return 1;
         }
         try
         {
@@ -1925,12 +2144,20 @@ public static class MapNodeInfoTooltipPatch
         return $"[color=#{hex}]{text}[/color]";
     }
 
-    // Rebuild the hovered Unknown/Monster node's tooltip when the Cmd/Ctrl state changes (called
-    // each frame from MapNodeInfoModifierPatch), expanding/collapsing the possible-list.
+    // Rebuild the hovered Unknown/Monster/Elite node's tooltip when the Cmd/Ctrl state changes
+    // (called each frame from MapNodeInfoModifierPatch), expanding/collapsing the possible-list.
     public static void RefreshHoveredExpandableIfModifierChanged()
     {
-        if (_hoveredExpandable == null || _hoveredRunState == null || _hoveredScreen == null || _hoveredPlayer == null)
+        if (_hoveredExpandable == null || _hoveredMapPoint == null || _hoveredRunState == null
+            || _hoveredPlayer == null || _hoveredPlace == null)
         {
+            return;
+        }
+        // The anchor can be freed or hidden without an unfocus (a run ending, the top bar rebuilt per
+        // act, the map screen closing under the cursor); never resurrect its tooltip then.
+        if (!GodotObject.IsInstanceValid(_hoveredExpandable) || !_hoveredExpandable.IsVisibleInTree())
+        {
+            ClearHoverIf(_hoveredExpandable);
             return;
         }
         bool held = IsModifierHeld();
@@ -1939,17 +2166,18 @@ public static class MapNodeInfoTooltipPatch
             return;
         }
         _expandedShown = held;
-        ShowExpectedRewardsTooltip(_hoveredExpandable, _hoveredRunState, _hoveredScreen, _hoveredPlayer);
+        ShowExpectedRewardsTooltip(_hoveredExpandable, _hoveredMapPoint, _hoveredRunState, _hoveredPlayer, _hoveredPlace);
     }
 
-    public static void ClearHoverIf(NMapPoint point)
+    public static void ClearHoverIf(Control anchor)
     {
-        if (_hoveredExpandable == point)
+        if (_hoveredExpandable == anchor)
         {
             _hoveredExpandable = null;
+            _hoveredMapPoint = null;
             _hoveredRunState = null;
-            _hoveredScreen = null;
             _hoveredPlayer = null;
+            _hoveredPlace = null;
         }
     }
 
@@ -1968,12 +2196,17 @@ public static class MapNodeInfoTooltipPatch
         return OS.GetName().Contains("macOS");
     }
 
+    // Poverty's gold cut. The game inlines this literal at each use site (EncounterModel gold
+    // rewards, treasure gold) — its AscensionHelper constant, a double property on v0.111.0 and a
+    // decimal const on v0.113.0, isn't what the math reads — so mirror the literal; the per-update
+    // decompile sweep catches a rebalance.
+    private const decimal PovertyGoldMultiplier = 0.75m;
+
     private static (int min, int max) GoldRange(int baseMin, int baseMax)
     {
         if (AscensionHelper.HasAscension(AscensionLevel.Poverty))
         {
-            return ((int)(baseMin * AscensionHelper.PovertyAscensionGoldMultiplier),
-                (int)(baseMax * AscensionHelper.PovertyAscensionGoldMultiplier));
+            return ((int)(baseMin * PovertyGoldMultiplier), (int)(baseMax * PovertyGoldMultiplier));
         }
         return (baseMin, baseMax);
     }
@@ -2041,9 +2274,11 @@ public static class MapNodeInfoUnfocusPatch
     }
 }
 
-// Polls the Cmd/Ctrl modifier each frame while the map screen is up, so holding it expands the
-// hovered Unknown node's tooltip to the full possible-events list (and releasing collapses it).
-[HarmonyPatch(typeof(NMapScreen), "_Process")]
+// Polls the Cmd/Ctrl modifier each frame during a run, so holding it expands the hovered node's
+// tooltip to the full possible-events / enemies / elites list (and releasing collapses it). Hooks
+// NRun rather than NMapScreen because Blitz's top-bar map (BlitzTopBarMapPointTooltipPatch) is
+// hovered while the map screen is closed.
+[HarmonyPatch(typeof(NRun), "_Process")]
 public static class MapNodeInfoModifierPatch
 {
     public static void Postfix()

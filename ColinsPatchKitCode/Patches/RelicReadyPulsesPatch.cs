@@ -162,9 +162,11 @@ public static class RelicReadyPulsesManager
 // takeable, Normal once it's used or you leave — under the same ShowRelicReadyPulses toggle.
 //
 // Deliberately not covered: Regal Pillow and the Venerable Tea Sets (vanilla already pulses them),
-// Eternal Feather (its heal fires instantly on entry, so nothing is left pending), and Pumpkin
-// Candle (it already drives its own Status — a charge counter that grays out when empty — which a
-// pulse would clobber).
+// Eternal Feather (its heal fires instantly on entry, so nothing is left pending), Pumpkin Candle
+// (it already drives its own Status — a charge counter that grays out when empty — which a pulse
+// would clobber), and v0.113.0's Byrdpip (Evolve: vanilla already sets it Active once it can
+// evolve) and Wuppy (Restore: it drives its own Status, Disabled at 0 HP, and its HP counter
+// already shows what Restore would heal).
 public static class RestSiteReadyPulsesManager
 {
     // Each tracked relic and the rest-site option whose presence means "still takeable". A null
