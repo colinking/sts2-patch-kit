@@ -51,6 +51,9 @@ public static class TestWindowPatch
         ("choosecard-e2e", false),
         ("simplegrid-e2e", false),
         ("gameover-abandon-e2e", false),
+        ("retainslots-e2e", false),
+        ("retainslots-sizecheck", false),
+        ("retainslots", false),
         ("pulsegif", false),
     ];
 

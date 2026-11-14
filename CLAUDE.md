@@ -237,6 +237,14 @@ Hard-won API facts:
   immediately and detaches the process; monitor `godot.log` and `pkill -9 -f "Slay the Spire 2"` to
   stop it. The bare-binary form below still works but grabs focus, so reserve it for the rare case
   Steam isn't running. The per-flag examples below list just the flags:
+  - `"./Slay the Spire 2" --retainslots=3:1 --retainslots-shot=/tmp/retain_slots.png --retainslots-quit`
+    — static visual check at the main menu (~15s boot, then screenshots and exits); `3:1` = 3 slots
+    with slot index 1 filled by a card.
+  - `"./Slay the Spire 2" --retainslots-e2e=<profile>` — full in-combat check: starts a throwaway
+    run, jumps to a weak fight, grants Well Laid Plans x2, ends the turn, then picks/deselects/
+    re-picks cards, saving /tmp/retain_e2e_*.png at each step, and switches back to the original
+    profile before quitting. It **abandons any run in progress on the given profile** — only ever
+    pass a scratch profile whose saves are disposable, never one with a real run.
   - `"./Slay the Spire 2" --relicpulse-e2e=<profile>` — verifies the relic ready-pulse patch in a
     real combat: grants Permafrost/Music Box (tracked) plus Pael's Tears (untracked negative
     control), jumps to a weak fight, and logs a `relicpulse-e2e: PASS <assertion>` line per
@@ -335,7 +343,7 @@ Hard-won API facts:
   it touches (Fullscreen/TargetDisplay/WindowSize/WindowPosition) — that store is global and
   `NGame.Quit()` persists it, so without the restore a test run would overwrite the user's real
   fullscreen/resolution preferences (settings live at `.../SlayTheSpire2/steam/<id>/settings.save`).
-  Note this also shrinks `--pulsegif` captures to the 1280x800 window; re-derive
+  Note this also shrinks `--pulsegif`/`--retainslots` captures to the 1280x800 window; re-derive
   GIF crop coords if you regenerate README assets, or pass `--test-screen` to a full-size display.
 - Direct (non-Steam) launches need a `steam_appid.txt` containing `2868840` next to the game binary.
 - The game ignores SIGTERM; kill it with SIGKILL. On macOS the log is at

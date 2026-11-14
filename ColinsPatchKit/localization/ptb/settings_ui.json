@@ -11,6 +11,9 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "Mostra sua chance de soltar poção nas dicas do mapa de combate — em andares passados, atuais e futuros.",
 
   "COLINSPATCHKIT-COMBAT.title": "Combate",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "Mostrar espaços de retenção para Planos Bem Elaborados",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "Mostrar espaços de retenção para Planos Bem Elaborados",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "Ao reter cartas com Planos Bem Elaborados, mostra um contorno de carta pontilhado para cada carta que você ainda pode reter.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Maldições e status primeiro ao exaurir/transformar",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Maldições e status primeiro ao exaurir/transformar",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "Ao escolher uma carta da pilha de compra para exaurir (Purificar) ou transformar (Carga, Sessão Espírita), lista maldições, status e cartas de missão primeiro em vez de por último — geralmente são as que você quer eliminar.",

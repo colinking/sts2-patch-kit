@@ -11,6 +11,9 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "แสดงโอกาสที่จะดรอปยาในทูลทิปแผนที่การต่อสู้ — ทั้งชั้นที่ผ่านมาแล้ว ชั้นปัจจุบัน และชั้นที่จะไปถึง",
 
   "COLINSPATCHKIT-COMBAT.title": "การต่อสู้",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "แสดงช่องเก็บการ์ดสำหรับ Well Laid Plans",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "แสดงช่องเก็บการ์ดสำหรับ Well Laid Plans",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "เมื่อเก็บการ์ดด้วย Well Laid Plans จะแสดงเส้นกรอบการ์ดแบบประหนึ่งช่องต่อการ์ดหนึ่งใบที่คุณยังเก็บได้",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "เรียงคำสาปและสถานะขึ้นก่อนเมื่อกำจัด/แปลงร่าง",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "เรียงคำสาปและสถานะขึ้นก่อนเมื่อกำจัด/แปลงร่าง",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "เมื่อเลือกการ์ดจากกองจั่วเพื่อกำจัด (Cleanse) หรือแปลงร่าง (Charge, Séance) จะเรียงคำสาป สถานะ และการ์ดเควสต์ขึ้นก่อนแทนที่จะอยู่ท้ายสุด — เพราะมักเป็นใบที่คุณอยากกำจัดออก",

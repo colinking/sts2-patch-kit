@@ -11,6 +11,9 @@
   "COLINSPATCHKIT-SHOW_POTION_CHANCES.hover.desc": "Показывать ваш шанс выпадения зелья в боевых подсказках на карте — на пройденных, текущем и предстоящих этажах.",
 
   "COLINSPATCHKIT-COMBAT.title": "Бой",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.title": "Показывать слоты удержания для «Чёткого плана»",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.title": "Показывать слоты удержания для «Чёткого плана»",
+  "COLINSPATCHKIT-SHOW_WELL_LAID_PLANS_RETAIN_SLOTS.hover.desc": "При удержании карт с помощью «Чёткого плана» показывать один пунктирный контур карты на каждую карту, которую вы ещё можете удержать.",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.title": "Проклятия и статусы первыми при истощении/превращении",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.title": "Проклятия и статусы первыми при истощении/превращении",
   "COLINSPATCHKIT-SORT_CURSES_AND_STATUSES_FIRST.hover.desc": "При выборе карты из колоды добора для истощения (Cleanse) или превращения (Charge, Séance) показывать проклятия, статусы и карты заданий первыми, а не последними — обычно именно от них вы хотите избавиться.",
