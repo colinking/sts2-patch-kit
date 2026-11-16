@@ -1467,59 +1467,94 @@ public static class MapNodeInfoTooltipPatch
 
     // The elites this node can be, deduced from player-knowable information only. The game deals
     // elites from a grab bag: the act's generated elite sequence is built by shuffling the full
-    // pool, dealing it out, and reshuffling once empty (ActModel.GenerateRooms), and elite fights
-    // consume it in order (RoomSet.NextEliteEncounter). So every consecutive run of poolSize elite
-    // fights contains each elite exactly once — a rule the player can combine with their own fight
-    // history: an elite fought in the current cycle can't reappear until the cycle completes. That
-    // exclusion only holds while the node's fight is guaranteed to land within the current cycle
-    // on every route; otherwise (or on a fresh cycle) any elite in the pool is possible and the
-    // whole pool is shown. As with normal encounters (see GetEnemyBody), we never read the
-    // generated sequence's *composition* — that would leak hidden per-run RNG state.
+    // pool, dealing it out, and refilling once empty (ActModel.GenerateRooms), and elite fights
+    // consume it in order (RoomSet.NextEliteEncounter). Every draw also avoids the elite drawn just
+    // before it and anything sharing an EncounterTag with it, falling back to any bag entry only
+    // when none qualifies (ActModel.AddWithoutRepeatingTags). Two rules a player can apply to their
+    // own fight history follow:
+    //   - Each cycle of poolSize consecutive elite fights contains each elite at most once, so an
+    //     elite fought this cycle can't reappear until the cycle completes.
+    //   - The first fight of a new cycle (a full bag) can't repeat the elite that ended the last
+    //     one, so with a 3-elite pool the 4th elite is never the 3rd.
+    // The node's fight may land at several sequence positions depending on route, so the shown set
+    // is the union of what's possible at each. As with normal encounters (see GetEnemyBody), we
+    // never read the generated sequence's *composition* — that would leak hidden per-run RNG state.
     private static List<string> GetPossibleEliteNames(IRunState runState, MapPoint target)
     {
         return EncounterNames(
             runState.Act?.AllEliteEncounters ?? Enumerable.Empty<EncounterModel>(),
-            CurrentCycleEliteExclusions(runState, target));
+            EliteExclusions(runState, target));
     }
 
-    // The elite ids the current grab-bag cycle has already consumed, when (and only when) that
-    // exclusion provably applies to `target`'s fight — otherwise empty, meaning no exclusion.
-    private static HashSet<string> CurrentCycleEliteExclusions(IRunState runState, MapPoint target)
+    // The elite ids `target`'s fight provably can't be — empty when nothing can be ruled out.
+    private static HashSet<string> EliteExclusions(IRunState runState, MapPoint target)
     {
         HashSet<string> none = new();
-        int poolSize = (runState.Act?.AllEliteEncounters ?? Enumerable.Empty<EncounterModel>())
-            .Where(e => e != null)
-            .Select(e => e.Id.Entry)
-            .Distinct()
-            .Count();
-        if (poolSize == 0)
+        Dictionary<string, EncounterModel> pool = new();
+        foreach (EncounterModel e in runState.Act?.AllEliteEncounters ?? Enumerable.Empty<EncounterModel>())
+        {
+            if (e != null)
+            {
+                pool.TryAdd(e.Id.Entry, e);
+            }
+        }
+        (int min, int max)? bounds = EliteDepthBounds(runState, target);
+        if (pool.Count == 0 || bounds == null)
         {
             return none;
         }
         List<string> fought = FoughtEliteIdsInOrder(runState);
-        int consumed = fought.Count % poolSize; // slots consumed so far in the current cycle
-        if (consumed == 0)
-        {
-            return none; // fresh cycle: every elite is possible
-        }
-        // The generated sequence is finite and wraps by index (visited % count), so pool sizes
-        // that don't divide it leave a trailing partial cycle without the each-elite-once
-        // structure — stop deducing once the current cycle would extend past the end. Only the
-        // sequence's *length* is read here (a fixed 15 in ActModel.GenerateRooms, used as the
-        // fallback when the room set is unreadable), never its contents.
+        // Only the sequence's *length* is read here (a fixed 15 in ActModel.GenerateRooms, used as
+        // the fallback when the room set is unreadable), never its contents.
         int sequenceLength = GetRooms(runState)?.eliteEncounters.Count ?? 15;
-        if ((fought.Count / poolSize + 1) * poolSize > sequenceLength)
+        HashSet<string> possible = new();
+        for (int depth = Math.Max(1, bounds.Value.min); depth <= bounds.Value.max; depth++)
         {
-            return none;
+            possible.UnionWith(PossibleElitesAt(fought.Count + depth - 1, fought, pool, sequenceLength));
+            if (possible.Count >= pool.Count)
+            {
+                return none;
+            }
         }
-        // The exclusion holds only if this node's fight lands in the current cycle on every
-        // route: at most (poolSize - consumed) elite fights, this one included, may precede it.
-        (int min, int max)? bounds = EliteDepthBounds(runState, target);
-        if (bounds == null || bounds.Value.max > poolSize - consumed)
+        return pool.Keys.Where(id => !possible.Contains(id)).ToHashSet();
+    }
+
+    // The elite ids that can sit at 0-based `index` of the act's generated elite sequence, given
+    // the elites fought so far (`fought[i]` is entry i). A sound over-approximation: it never drops
+    // an elite the game could deal there.
+    private static HashSet<string> PossibleElitesAt(
+        int index, List<string> fought, Dictionary<string, EncounterModel> pool, int sequenceLength)
+    {
+        if (index < fought.Count)
         {
-            return none;
+            return new HashSet<string> { fought[index] };
         }
-        return fought.Skip(fought.Count - consumed).ToHashSet();
+        if (index >= sequenceLength)
+        {
+            return pool.Keys.ToHashSet(); // fights past the end wrap to the start: no adjacency rules
+        }
+        int cycleStart = index - index % pool.Count;
+        // Elites already fought this cycle were removed from the bag.
+        HashSet<string> candidates = pool.Keys.ToHashSet();
+        candidates.ExceptWith(fought.Skip(cycleStart));
+        // The no-repeat/no-shared-tag rule against the previous entry is only safe to apply when we
+        // know the bag's exact contents at this draw (a fresh cycle, or every earlier draw this
+        // cycle fought): otherwise its fallback could deal an excluded elite from a bag we can't see.
+        bool bagKnown = index == cycleStart || index == fought.Count;
+        if (index == 0 || !bagKnown)
+        {
+            return candidates;
+        }
+        HashSet<string> result = new();
+        foreach (string prevId in PossibleElitesAt(index - 1, fought, pool, sequenceLength))
+        {
+            pool.TryGetValue(prevId, out EncounterModel? prev);
+            List<string> allowed = candidates
+                .Where(id => id != prevId && (prev == null || !pool[id].SharesTagsWith(prev)))
+                .ToList();
+            result.UnionWith(allowed.Count > 0 ? allowed : candidates);
+        }
+        return result;
     }
 
     // The elite encounter ids fought this act, oldest first — duplicates kept, because the cycle

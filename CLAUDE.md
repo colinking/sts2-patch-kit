@@ -292,6 +292,16 @@ Hard-won API facts:
     site to check the game offers both and that neither relic's own Status was clobbered, then
     checks Restore greys out at full HP (`restoptions-e2e: PASS ...` lines), saving
     /tmp/rest_options.png. Same scratch-profile warning as above.
+  - `"./Slay the Spire 2" --elitecycle-e2e=<profile> [--elitecycle-seed=<seed>]` — beta-only
+    (v0.113.0+, plays as the Fool): verifies the elite-node tooltip's grab-bag deductions. Starts a
+    seeded custom run (default `DBJKEQ8KBEYK`, A2, whose act 3 deals Soul Nexus, Mecha Knight,
+    Knights, Mecha Knight), runs `unlock all` (unlocks shift the room-generation RNG), jumps to act 3, walks the most-elite
+    route winning every fight, and before each elite checks the possible-elites list (whole pool;
+    minus the 1st; only the last one left; and for the 4th, everything but the 3rd), that each real
+    elite was listed. It also checks the rendered Cmd-expanded tooltips: from the 3rd's parent, the
+    3rd (only the elite left) and the 4th two ahead (the other two, when every route to it passes
+    exactly one elite); and the 4th from its own parent (`elitecycle-e2e: PASS ...` lines), saving
+    /tmp/elite_cycle_*.png. Same scratch-profile warning as above.
   - `"./Slay the Spire 2" --pulsegif=<profile>` — captures 30 frames (100ms apart) of pulsing
     relics and powers to /tmp/pulse_gif/ for the README GIFs (assemble with ffmpeg crop+
     palettegen). Uses `RenderingServer.ForceDraw(swapBuffers, frameStep)` per frame because
